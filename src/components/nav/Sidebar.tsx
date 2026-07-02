@@ -7,7 +7,7 @@ export function Sidebar() {
     <aside className="hidden md:flex md:w-60 md:flex-col md:shrink-0 bg-navy-900 px-4 py-6">
       <div className="mb-8 px-2">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-        <img src="/logo.png" alt="Audax Ventures" className="h-9 w-auto mb-2" />
+        <img src="/logo.png" alt="Audax Ventures" className="h-16 w-auto mb-2" />
         <p className="font-heading text-xl font-medium text-burnt-400">Audax HQ</p>
       </div>
       <nav className="flex flex-1 flex-col gap-1">
