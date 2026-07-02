@@ -1,0 +1,23 @@
+import { Sidebar } from "@/components/nav/Sidebar";
+import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
+import { PageTransition } from "@/components/PageTransition";
+
+// This app is a live daily-use tool backed by Postgres — every page here
+// needs fresh data on every request, so opt the whole section out of static
+// prerendering rather than annotating each page individually.
+export const dynamic = "force-dynamic";
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen w-full">
+      <Sidebar />
+      <div className="flex flex-1 flex-col min-w-0">
+        <MobileTopBar />
+        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
+          <PageTransition>{children}</PageTransition>
+        </main>
+        <MobileTabBar />
+      </div>
+    </div>
+  );
+}

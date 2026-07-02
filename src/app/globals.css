@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+:root {
+  /* Navy — primary dark/base */
+  --color-navy-950: #0a1424;
+  --color-navy-900: #101d33;
+  --color-navy-800: #16283f;
+  --color-navy-700: #223655;
+  --color-navy-600: #33496e;
+  --color-navy-500: #4c5f82;
+  --color-navy-400: #7c8aa3;
+  --color-navy-300: #aeb8cb;
+  --color-navy-200: #d3d9e5;
+  --color-navy-100: #e9ecf2;
+
+  /* Cream — light background/neutral */
+  --color-cream-50: #fdfbf6;
+  --color-cream-100: #f8f2e6;
+  --color-cream-200: #f0e6d2;
+  --color-cream-300: #e4d4b4;
+
+  /* Burnt orange — primary accent */
+  --color-burnt-700: #7a3512;
+  --color-burnt-600: #9c4416;
+  --color-burnt-500: #be5a1e;
+  --color-burnt-400: #d67a3c;
+  --color-burnt-300: #e6a26b;
+  --color-burnt-200: #f0c299;
+  --color-burnt-100: #f7e2cc;
+
+  /* Status accents — muted, earthy, harmonize with the brand palette */
+  --color-sage-600: #3f6c4c;
+  --color-sage-100: #e1ebe2;
+  --color-gold-600: #a87423;
+  --color-gold-100: #f2e4c6;
+  --color-brick-600: #a23f30;
+  --color-brick-100: #f2dbd6;
+  --color-slate-600: #55637a;
+  --color-slate-100: #e7eaf0;
+
+  --background: var(--color-cream-50);
+  --foreground: var(--color-navy-900);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-navy-950: var(--color-navy-950);
+  --color-navy-900: var(--color-navy-900);
+  --color-navy-800: var(--color-navy-800);
+  --color-navy-700: var(--color-navy-700);
+  --color-navy-600: var(--color-navy-600);
+  --color-navy-500: var(--color-navy-500);
+  --color-navy-400: var(--color-navy-400);
+  --color-navy-300: var(--color-navy-300);
+  --color-navy-200: var(--color-navy-200);
+  --color-navy-100: var(--color-navy-100);
+
+  --color-cream-50: var(--color-cream-50);
+  --color-cream-100: var(--color-cream-100);
+  --color-cream-200: var(--color-cream-200);
+  --color-cream-300: var(--color-cream-300);
+
+  --color-burnt-700: var(--color-burnt-700);
+  --color-burnt-600: var(--color-burnt-600);
+  --color-burnt-500: var(--color-burnt-500);
+  --color-burnt-400: var(--color-burnt-400);
+  --color-burnt-300: var(--color-burnt-300);
+  --color-burnt-200: var(--color-burnt-200);
+  --color-burnt-100: var(--color-burnt-100);
+
+  --color-sage-600: var(--color-sage-600);
+  --color-sage-100: var(--color-sage-100);
+  --color-gold-600: var(--color-gold-600);
+  --color-gold-100: var(--color-gold-100);
+  --color-brick-600: var(--color-brick-600);
+  --color-brick-100: var(--color-brick-100);
+  --color-slate-600: var(--color-slate-600);
+  --color-slate-100: var(--color-slate-100);
+
+  --font-heading: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--color-burnt-200);
+  color: var(--color-navy-900);
+}
+
+* {
+  scrollbar-color: var(--color-navy-300) transparent;
+}
