@@ -18,6 +18,9 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Audax HQ",
   description: "Client, lead, and task management for Audax Ventures.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export const viewport: Viewport = {
