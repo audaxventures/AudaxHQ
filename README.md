@@ -1,0 +1,68 @@
+# Audax HQ
+
+Internal client, lead, and task management app for Audax Ventures. Single-user, passcode-gated, deployed on Vercel with a Neon Postgres database.
+
+## Stack
+
+- **Next.js 16** (App Router, TypeScript, Turbopack)
+- **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql`; query helpers in `src/lib/data/`
+- **Framer Motion** for page-transition polish
+- A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
+
+## Local development
+
+```bash
+npm install
+cp .env.example .env.local   # fill in APP_PASSCODE and DATABASE_URL
+npm run dev
+```
+
+You need a Postgres database to develop against — see "Database setup" below. Point `DATABASE_URL` at it.
+
+## Deploying
+
+### 1. Create the database (Neon / Vercel Postgres)
+
+1. In your Vercel project, go to **Storage → Create Database → Postgres** (this provisions a Neon database and wires up env vars automatically), or create a database directly at [neon.com](https://neon.com) and copy its connection string.
+2. Run the schema migration once against that database:
+   ```bash
+   psql "$DATABASE_URL" -f migrations/001_init.sql
+   ```
+   (Or paste the contents of `migrations/001_init.sql` into the Neon SQL editor.)
+
+There's no ORM/migration tool — `migrations/001_init.sql` is the entire schema. If you need to change it later, write a new `migrations/002_*.sql` file and run it the same way.
+
+### 2. Set environment variables in Vercel
+
+In the Vercel project's **Settings → Environment Variables**, set:
+
+| Variable | Value |
+|---|---|
+| `APP_PASSCODE` | The shared passcode for accessing the app |
+| `AUTH_SECRET` | (optional) random string, `openssl rand -hex 32` |
+| `DATABASE_URL` | Your Neon/Vercel Postgres connection string (if you provisioned via Vercel Storage, this is set automatically as `POSTGRES_URL` — copy its value into `DATABASE_URL`, or rename the reference) |
+
+### 3. Deploy
+
+Push to your connected Git branch, or run `vercel --prod`. That's it — no build-time database access is required (every page under `/` is rendered on-demand, not statically prerendered).
+
+### 4. (Optional) Automate monthly recurring invoices
+
+Recurring clients get their current month's invoice row created automatically the next time the dashboard or their client page is loaded — so in practice a new month's invoice always appears the first time you open the app that month. If you'd rather have it happen exactly on the 1st regardless of whether anyone opens the app, add a [Vercel Cron Job](https://vercel.com/docs/cron-jobs) that hits a route calling `ensureRecurringInvoicesForAllActiveClients()` (see `src/lib/data/clients.ts`) — not included by default since the lazy approach covers the actual use case.
+
+## Access model
+
+There are no user accounts. `src/proxy.ts` checks every request (except `/login` and static assets) for a signed session cookie; `/login` posts a passcode to a server action that validates it against `APP_PASSCODE` and sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`.
+
+## Project structure
+
+```
+migrations/001_init.sql        the whole DB schema
+src/proxy.ts                   passcode gate
+src/lib/db.ts                  Neon client
+src/lib/data/                  query functions, grouped by domain (clients, leads, todos, dashboard)
+src/app/login/                 passcode gate UI + server action
+src/app/(app)/                 everything behind the gate: dashboard, clients, leads, todos
+src/components/ui/             design-system primitives (Button, Badge, Card, Field, ...)
+```
