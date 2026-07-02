@@ -12,7 +12,7 @@ export default async function LoginPage({
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-          <img src="/logo.png" alt="Audax Ventures" className="h-10 w-auto mx-auto mb-3" />
+          <img src="/logo.png" alt="Audax Ventures" className="h-20 w-auto mx-auto mb-3" />
           <h1 className="font-heading text-3xl font-medium text-burnt-400">Audax HQ</h1>
         </div>
         <div className="rounded-2xl border border-navy-800 bg-navy-900/60 p-8 shadow-xl backdrop-blur">
