@@ -18,5 +18,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|login).*)"],
+  // logo.png must stay excluded: it's rendered on the login page itself,
+  // before the visitor has a valid session cookie.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png|login).*)"],
 };
