@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-dvh w-full">
       <Sidebar />
       <div className="flex flex-1 flex-col min-w-0">
         <MobileTopBar />
