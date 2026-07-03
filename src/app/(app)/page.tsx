@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarClock, TrendingUp, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { LeadStatusBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
@@ -89,33 +88,28 @@ export default async function DashboardPage() {
             <h3 className="font-heading text-base font-medium text-navy-900">
               Follow-ups &amp; hot leads
             </h3>
-            <Link href="/leads" className="text-xs font-medium text-burnt-600 hover:underline">
-              View all
-            </Link>
           </div>
-          {data.hotLeads.length === 0 ? (
+          {data.hotFollowUps.length === 0 ? (
             <p className="text-sm text-navy-400 py-2">No follow-ups due today. You&apos;re caught up.</p>
           ) : (
             <ul className="divide-y divide-navy-100 -mx-1">
-              {data.hotLeads.map((lead) => (
-                <li key={lead.id}>
+              {data.hotFollowUps.map((f) => (
+                <li key={f.id}>
                   <Link
-                    href={`/leads/${lead.id}`}
+                    href={f.ownerKind === "client" ? `/clients/${f.clientId}` : `/leads/${f.leadId}`}
                     className="flex items-center justify-between gap-3 px-1 py-2.5 hover:bg-cream-100/60 rounded-lg transition-colors"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-navy-900 truncate">{lead.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <LeadStatusBadge status={lead.status} />
-                      </div>
+                      <p className="text-sm font-medium text-navy-900 truncate">{f.label}</p>
+                      <p className="text-xs text-navy-500 truncate">{f.ownerName}</p>
                     </div>
                     <span
                       className={cn(
                         "text-xs font-medium shrink-0",
-                        lead.isOverdue ? "text-brick-600" : "text-navy-500"
+                        f.isOverdue ? "text-brick-600" : "text-navy-500"
                       )}
                     >
-                      {lead.isOverdue ? "Overdue" : "Today"}
+                      {f.isOverdue ? "Overdue" : "Today"}
                     </span>
                   </Link>
                 </li>
@@ -135,17 +129,17 @@ export default async function DashboardPage() {
             <p className="text-sm text-navy-400 py-2">Nothing due today or overdue.</p>
           ) : (
             <ul className="divide-y divide-navy-100 -mx-1">
-              {data.todoSnapshot.slice(0, 8).map((todo) => (
-                <li key={todo.id} className="flex items-center justify-between gap-3 px-1 py-2.5">
-                  <p className="text-sm font-medium text-navy-900 truncate">{todo.title}</p>
-                  {todo.dueDate && (
+              {data.todoSnapshot.slice(0, 8).map((task) => (
+                <li key={task.id} className="flex items-center justify-between gap-3 px-1 py-2.5">
+                  <p className="text-sm font-medium text-navy-900 truncate">{task.title}</p>
+                  {task.dueDate && (
                     <span
                       className={cn(
                         "text-xs font-medium shrink-0",
-                        isOverdue(todo.dueDate) ? "text-brick-600" : "text-navy-500"
+                        isOverdue(task.dueDate) ? "text-brick-600" : "text-navy-500"
                       )}
                     >
-                      {formatDate(todo.dueDate)}
+                      {formatDate(task.dueDate)}
                     </span>
                   )}
                 </li>
@@ -173,7 +167,7 @@ export default async function DashboardPage() {
                     href={`/clients/${c.id}`}
                     className="flex items-center justify-between gap-3 px-1 py-2.5 hover:bg-cream-100/60 rounded-lg transition-colors"
                   >
-                    <p className="text-sm font-medium text-navy-900 truncate">{c.name}</p>
+                    <p className="text-sm font-medium text-navy-900 truncate">{c.companyName}</p>
                     <span className="text-xs font-medium text-navy-500 shrink-0">
                       {formatCurrency(c.rate)}
                     </span>
@@ -201,7 +195,7 @@ export default async function DashboardPage() {
                     href={`/clients/${c.id}`}
                     className="flex items-center justify-between gap-3 px-1 py-2.5 hover:bg-cream-100/60 rounded-lg transition-colors"
                   >
-                    <p className="text-sm font-medium text-navy-900 truncate">{c.name}</p>
+                    <p className="text-sm font-medium text-navy-900 truncate">{c.companyName}</p>
                     <span className="text-xs font-medium text-navy-500 shrink-0">
                       {formatCurrency(c.rate)}/mo
                     </span>

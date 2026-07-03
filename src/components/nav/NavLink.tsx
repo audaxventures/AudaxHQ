@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, CheckSquare } from "lucide-react";
+import { LayoutDashboard, Users, Target, CheckSquare, NotebookPen } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
 
@@ -10,17 +10,20 @@ const ICONS = {
   dashboard: LayoutDashboard,
   clients: Users,
   leads: Target,
+  meetingNotes: NotebookPen,
   todos: CheckSquare,
 } as const satisfies Record<NavIconKey, unknown>;
 
 export function NavLink({
   href,
   label,
+  tabLabel,
   icon,
   variant = "sidebar",
 }: {
   href: string;
   label: string;
+  tabLabel?: string;
   icon: NavIconKey;
   variant?: "sidebar" | "tab";
 }) {
@@ -38,7 +41,7 @@ export function NavLink({
         )}
       >
         <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-        {label}
+        {tabLabel ?? label}
       </Link>
     );
   }

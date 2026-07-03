@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Badge, ClientStatusBadge, InvoiceStatusBadge } from "@/components/ui/Badge";
+import { Badge, ClientStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
-import type { Client, InvoiceStatus } from "@/lib/types";
+import type { Client } from "@/lib/types";
 
 export function ClientListRow({
   client,
 }: {
-  client: Client & { projectInvoiceStatus: string | null; unpaidRecurringCount: number };
+  client: Client & { unpaidInvoiceCount: number; invoiceCount: number };
 }) {
   return (
     <Link
@@ -17,22 +17,19 @@ export function ClientListRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-heading text-base font-medium text-navy-900 truncate">
-            {client.name}
+            {client.companyName}
           </p>
-          {client.company && (
-            <span className="text-sm text-navy-400 truncate">{client.company}</span>
+          {client.contactName && (
+            <span className="text-sm text-navy-400 truncate">{client.contactName}</span>
           )}
         </div>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <ClientStatusBadge status={client.status} />
           <Badge tone="navy">{client.type === "PROJECT" ? "Project" : "Recurring"}</Badge>
-          {client.type === "PROJECT" && client.projectInvoiceStatus && (
-            <InvoiceStatusBadge status={client.projectInvoiceStatus as InvoiceStatus} />
-          )}
-          {client.type === "RECURRING" && (
-            <Badge tone={client.unpaidRecurringCount > 0 ? "gold" : "sage"}>
-              {client.unpaidRecurringCount > 0
-                ? `${client.unpaidRecurringCount} unpaid month${client.unpaidRecurringCount === 1 ? "" : "s"}`
+          {client.invoiceCount > 0 && (
+            <Badge tone={client.unpaidInvoiceCount > 0 ? "gold" : "sage"}>
+              {client.unpaidInvoiceCount > 0
+                ? `${client.unpaidInvoiceCount} unpaid invoice${client.unpaidInvoiceCount === 1 ? "" : "s"}`
                 : "All caught up"}
             </Badge>
           )}

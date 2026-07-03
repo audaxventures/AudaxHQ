@@ -5,7 +5,7 @@ import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Lead } from "@/lib/types";
 
-export function LeadListRow({ lead }: { lead: Lead }) {
+export function LeadListRow({ lead }: { lead: Lead & { nextFollowUpDate: string | null } }) {
   const overdue = isOverdue(lead.nextFollowUpDate) && lead.status !== "WON" && lead.status !== "LOST";
 
   return (
@@ -15,8 +15,8 @@ export function LeadListRow({ lead }: { lead: Lead }) {
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-heading text-base font-medium text-navy-900 truncate">{lead.name}</p>
-          {lead.company && <span className="text-sm text-navy-400 truncate">{lead.company}</span>}
+          <p className="font-heading text-base font-medium text-navy-900 truncate">{lead.companyName}</p>
+          {lead.contactName && <span className="text-sm text-navy-400 truncate">{lead.contactName}</span>}
         </div>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <LeadStatusBadge status={lead.status} />

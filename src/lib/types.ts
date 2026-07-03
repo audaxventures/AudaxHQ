@@ -8,22 +8,41 @@ export type LeadStatus =
   | "NEGOTIATING"
   | "WON"
   | "LOST";
-export type TodoStatus = "OPEN" | "DONE";
+export type TaskStatus =
+  | "TO_BE_DONE"
+  | "IN_PROGRESS"
+  | "AWAITING_CLIENT_FEEDBACK"
+  | "COMPLETED";
+export type TaskType =
+  | "CLIENT"
+  | "LEAD"
+  | "GENERAL"
+  | "PERSONAL"
+  | "AUDAX_VENTURES"
+  | "H2MB"
+  | "OTHER";
+export type WorkType =
+  | "CUSTOM_SOFTWARE"
+  | "WEB_APP"
+  | "MOBILE_APP"
+  | "INTERNAL_TOOL"
+  | "WEBSITE"
+  | "INTEGRATION_API"
+  | "OTHER";
+export type LeadSource =
+  | "REFERRAL"
+  | "COLD_OUTREACH"
+  | "RILEY_OUTREACH"
+  | "AD"
+  | "INBOUND"
+  | "OTHER";
+export type FollowUpStatus = "UPCOMING" | "COMPLETED";
 
 export interface ClientLink {
   id: string;
   clientId: string;
   label: string;
   url: string;
-}
-
-export interface ClientTask {
-  id: string;
-  clientId: string;
-  title: string;
-  done: boolean;
-  sortOrder: number;
-  createdAt: string;
 }
 
 export interface ClientNote {
@@ -33,63 +52,6 @@ export interface ClientNote {
   createdAt: string;
 }
 
-export interface ProjectInvoice {
-  id: string;
-  clientId: string;
-  amount: string;
-  status: InvoiceStatus;
-  invoicedDate: string | null;
-  paidDate: string | null;
-}
-
-export interface RecurringInvoice {
-  id: string;
-  clientId: string;
-  periodMonth: number;
-  periodYear: number;
-  amount: string;
-  status: InvoiceStatus;
-  invoicedDate: string | null;
-  paidDate: string | null;
-  createdAt: string;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  company: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  type: ClientType;
-  status: ClientStatus;
-  rate: string;
-  startDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ClientWithRelations extends Client {
-  tasks: ClientTask[];
-  notes: ClientNote[];
-  links: ClientLink[];
-  projectInvoice: ProjectInvoice | null;
-  recurringInvoices: RecurringInvoice[];
-}
-
-export interface Lead {
-  id: string;
-  name: string;
-  company: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  status: LeadStatus;
-  estimatedValue: string | null;
-  nextFollowUpDate: string | null;
-  createdAt: string;
-  updatedAt: string;
-  convertedClientId: string | null;
-}
-
 export interface LeadNote {
   id: string;
   leadId: string;
@@ -97,19 +59,106 @@ export interface LeadNote {
   createdAt: string;
 }
 
-export interface LeadWithNotes extends Lead {
-  notes: LeadNote[];
+export interface Invoice {
+  id: string;
+  clientId: string;
+  label: string;
+  amount: string;
+  status: InvoiceStatus;
+  invoicedDate: string | null;
+  paidDate: string | null;
+  periodMonth: number | null;
+  periodYear: number | null;
+  createdAt: string;
 }
 
-export interface Todo {
+export interface FollowUp {
+  id: string;
+  clientId: string | null;
+  leadId: string | null;
+  label: string;
+  date: string;
+  status: FollowUpStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MeetingNote {
+  id: string;
+  clientId: string | null;
+  leadId: string | null;
+  meetingDate: string;
+  attendees: string | null;
+  notes: string;
+  createdAt: string;
+  // present when returned from a query that joins in the owner's name
+  ownerName?: string;
+}
+
+export interface Task {
   id: string;
   title: string;
   description: string | null;
   dueDate: string | null;
-  status: TodoStatus;
+  status: TaskStatus;
+  type: TaskType;
+  clientId: string | null;
+  leadId: string | null;
   createdAt: string;
   updatedAt: string;
   tags: string[];
+  // present when returned from a query that joins in the owner's name
+  clientName?: string;
+  leadName?: string;
+}
+
+export interface Client {
+  id: string;
+  companyName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  type: ClientType;
+  status: ClientStatus;
+  rate: string;
+  workType: WorkType | null;
+  workTypeOther: string | null;
+  startDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientWithRelations extends Client {
+  tasks: Task[];
+  notes: ClientNote[];
+  links: ClientLink[];
+  invoices: Invoice[];
+  followUps: FollowUp[];
+  meetingNotes: MeetingNote[];
+}
+
+export interface Lead {
+  id: string;
+  companyName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  status: LeadStatus;
+  estimatedValue: string | null;
+  workType: WorkType | null;
+  workTypeOther: string | null;
+  source: LeadSource | null;
+  sourceOther: string | null;
+  createdAt: string;
+  updatedAt: string;
+  convertedClientId: string | null;
+}
+
+export interface LeadWithRelations extends Lead {
+  notes: LeadNote[];
+  tasks: Task[];
+  followUps: FollowUp[];
+  meetingNotes: MeetingNote[];
 }
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
@@ -146,3 +195,80 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "WON",
   "LOST",
 ];
+
+export const WORK_TYPE_LABELS: Record<WorkType, string> = {
+  CUSTOM_SOFTWARE: "Custom Software Development",
+  WEB_APP: "Web App",
+  MOBILE_APP: "Mobile App",
+  INTERNAL_TOOL: "Internal Tool",
+  WEBSITE: "Website",
+  INTEGRATION_API: "Integration/API Work",
+  OTHER: "Other",
+};
+
+export const WORK_TYPE_ORDER: WorkType[] = [
+  "CUSTOM_SOFTWARE",
+  "WEB_APP",
+  "MOBILE_APP",
+  "INTERNAL_TOOL",
+  "WEBSITE",
+  "INTEGRATION_API",
+  "OTHER",
+];
+
+export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
+  REFERRAL: "Referral",
+  COLD_OUTREACH: "Cold Outreach",
+  RILEY_OUTREACH: "Riley Outreach",
+  AD: "Ad",
+  INBOUND: "Inbound",
+  OTHER: "Other",
+};
+
+export const LEAD_SOURCE_ORDER: LeadSource[] = [
+  "REFERRAL",
+  "COLD_OUTREACH",
+  "RILEY_OUTREACH",
+  "AD",
+  "INBOUND",
+  "OTHER",
+];
+
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  TO_BE_DONE: "To Be Done",
+  IN_PROGRESS: "In Progress",
+  AWAITING_CLIENT_FEEDBACK: "Awaiting Client Feedback",
+  COMPLETED: "Completed",
+};
+
+export const TASK_STATUS_ORDER: TaskStatus[] = [
+  "TO_BE_DONE",
+  "IN_PROGRESS",
+  "AWAITING_CLIENT_FEEDBACK",
+  "COMPLETED",
+];
+
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  CLIENT: "Client",
+  LEAD: "Lead",
+  GENERAL: "General",
+  PERSONAL: "Personal",
+  AUDAX_VENTURES: "Audax Ventures",
+  H2MB: "H2MB",
+  OTHER: "Other",
+};
+
+export const TASK_TYPE_ORDER: TaskType[] = [
+  "CLIENT",
+  "LEAD",
+  "GENERAL",
+  "PERSONAL",
+  "AUDAX_VENTURES",
+  "H2MB",
+  "OTHER",
+];
+
+export const FOLLOWUP_STATUS_LABELS: Record<FollowUpStatus, string> = {
+  UPCOMING: "Upcoming",
+  COMPLETED: "Completed",
+};
