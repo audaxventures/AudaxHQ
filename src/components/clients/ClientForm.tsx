@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
+import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { Button } from "@/components/ui/Button";
 import type { Client, ClientStatus, ClientType } from "@/lib/types";
+import { WORK_TYPE_LABELS, WORK_TYPE_ORDER } from "@/lib/types";
 import { formatDateInput } from "@/lib/format";
 import { createClient, updateClient } from "@/app/(app)/clients/actions";
+
+const WORK_TYPE_OPTIONS = WORK_TYPE_ORDER.map((v) => ({ value: v, label: WORK_TYPE_LABELS[v] }));
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -20,29 +24,35 @@ function SubmitButton({ label }: { label: string }) {
 export function ClientForm({
   client,
   submitLabel = "Save client",
-  fromLeadId,
 }: {
   client?: Client;
   submitLabel?: string;
-  fromLeadId?: string;
 }) {
   const [type, setType] = useState<ClientType>(client?.type ?? "PROJECT");
 
-  const action = client?.id
-    ? updateClient.bind(null, client.id)
-    : createClient;
+  const action = client?.id ? updateClient.bind(null, client.id) : createClient;
 
   return (
     <form action={action} className="space-y-5">
-      {fromLeadId && <input type="hidden" name="fromLeadId" value={fromLeadId} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" required defaultValue={client?.name} placeholder="Jane Doe" />
+          <Label htmlFor="companyName">Company name</Label>
+          <Input
+            id="companyName"
+            name="companyName"
+            required
+            defaultValue={client?.companyName}
+            placeholder="Acme Inc."
+          />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="company">Company</Label>
-          <Input id="company" name="company" defaultValue={client?.company ?? ""} placeholder="Acme Inc." />
+          <Label htmlFor="contactName">Contact name</Label>
+          <Input
+            id="contactName"
+            name="contactName"
+            defaultValue={client?.contactName ?? ""}
+            placeholder="Jane Doe"
+          />
         </FieldGroup>
         <FieldGroup>
           <Label htmlFor="contactEmail">Email</Label>
@@ -94,6 +104,14 @@ export function ClientForm({
           <Label htmlFor="startDate">Start date</Label>
           <Input id="startDate" name="startDate" type="date" defaultValue={formatDateInput(client?.startDate)} />
         </FieldGroup>
+        <SelectWithOther
+          label="Work type"
+          name="workType"
+          otherName="workTypeOther"
+          options={WORK_TYPE_OPTIONS}
+          defaultValue={client?.workType}
+          defaultOtherValue={client?.workTypeOther}
+        />
       </div>
       <SubmitButton label={submitLabel} />
     </form>

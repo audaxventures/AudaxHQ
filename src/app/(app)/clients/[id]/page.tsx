@@ -4,11 +4,14 @@ import { deleteClient } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
 import { ClientForm } from "@/components/clients/ClientForm";
-import { ClientTasks } from "@/components/clients/ClientTasks";
 import { ClientLinks } from "@/components/clients/ClientLinks";
+import { InvoicesList } from "@/components/clients/InvoicesList";
+import { FollowUpsList } from "@/components/FollowUpsList";
+import { MeetingNotesSection } from "@/components/MeetingNotesSection";
+import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
-import { InvoiceForm } from "@/components/clients/InvoiceForm";
-import { formatCurrency, monthName } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { WORK_TYPE_LABELS } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 
 export default async function ClientDetailPage({
@@ -21,6 +24,7 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   const boundDeleteClient = deleteClient.bind(null, id);
+  const owner = { type: "CLIENT" as const, clientId: id };
 
   return (
     <div>
@@ -30,12 +34,17 @@ export default async function ClientDetailPage({
             Client
           </p>
           <h1 className="font-heading text-3xl sm:text-4xl font-medium text-navy-900 leading-tight">
-            {client.name}
+            {client.companyName}
           </h1>
-          {client.company && <p className="mt-1 text-navy-500">{client.company}</p>}
+          {client.contactName && <p className="mt-1 text-navy-500">{client.contactName}</p>}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <ClientStatusBadge status={client.status} />
             <Badge tone="navy">{client.type === "PROJECT" ? "Project-based" : "Recurring"}</Badge>
+            {client.workType && (
+              <Badge tone="burnt">
+                {client.workType === "OTHER" ? client.workTypeOther || "Other" : WORK_TYPE_LABELS[client.workType]}
+              </Badge>
+            )}
           </div>
         </div>
         <form action={boundDeleteClient}>
@@ -53,51 +62,23 @@ export default async function ClientDetailPage({
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-1">Invoicing</h3>
+            <h3 className="font-heading text-lg font-medium text-navy-900 mb-1">Invoices</h3>
             <p className="text-sm text-navy-500 mb-4">
-              {client.type === "PROJECT"
-                ? "Single project invoice."
-                : "One entry per month, created automatically."}
+              {client.type === "RECURRING"
+                ? "One entry per month, created automatically — add one-off invoices any time."
+                : "Split the project total across deposits, milestones, or however you invoice this client."}
             </p>
-            {client.type === "PROJECT" ? (
-              client.projectInvoice ? (
-                <InvoiceForm
-                  key={`${client.projectInvoice.status}-${client.projectInvoice.amount}-${client.projectInvoice.invoicedDate}-${client.projectInvoice.paidDate}`}
-                  clientId={id}
-                  amount={client.projectInvoice.amount}
-                  status={client.projectInvoice.status}
-                  invoicedDate={client.projectInvoice.invoicedDate}
-                  paidDate={client.projectInvoice.paidDate}
-                  amountLabel="Project total ($)"
-                />
-              ) : (
-                <p className="text-sm text-navy-400">No invoice record yet.</p>
-              )
-            ) : (
-              <div className="space-y-5">
-                {client.recurringInvoices.length === 0 ? (
-                  <p className="text-sm text-navy-400">No monthly invoices yet.</p>
-                ) : (
-                  client.recurringInvoices.map((inv) => (
-                    <div key={inv.id} className="border-t border-navy-100 pt-4 first:border-t-0 first:pt-0">
-                      <p className="text-sm font-medium text-navy-700 mb-2">
-                        {monthName(inv.periodMonth)} {inv.periodYear}
-                      </p>
-                      <InvoiceForm
-                        key={`${inv.id}-${inv.status}-${inv.amount}-${inv.invoicedDate}-${inv.paidDate}`}
-                        clientId={id}
-                        invoiceId={inv.id}
-                        amount={inv.amount}
-                        status={inv.status}
-                        invoicedDate={inv.invoicedDate}
-                        paidDate={inv.paidDate}
-                        amountLabel="Amount ($)"
-                      />
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+            <InvoicesList clientId={id} invoices={client.invoices} />
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Follow-ups</h3>
+            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} />
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Meeting notes</h3>
+            <MeetingNotesSection owner={owner} notes={client.meetingNotes} />
           </Card>
 
           <Card className="p-6">
@@ -117,10 +98,8 @@ export default async function ClientDetailPage({
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">
-              Task checklist
-            </h3>
-            <ClientTasks clientId={id} tasks={client.tasks} />
+            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">Tasks</h3>
+            <ScopedTaskList owner={owner} tasks={client.tasks} />
           </Card>
 
           <Card className="p-6">

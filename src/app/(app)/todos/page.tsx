@@ -2,32 +2,47 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NewTodoForm } from "@/components/todos/NewTodoForm";
-import { TagFilterBar } from "@/components/todos/TagFilterBar";
+import { TaskFilterBar } from "@/components/todos/TaskFilterBar";
 import { TodoItem } from "@/components/todos/TodoItem";
-import { listAllTags, listTodos } from "@/lib/data/todos";
+import { listAllTags, listTasks } from "@/lib/data/todos";
+import { listClients } from "@/lib/data/clients";
+import { listLeads } from "@/lib/data/leads";
+import type { TaskStatus, TaskType } from "@/lib/types";
 
 export default async function TodosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; type?: string; status?: string }>;
 }) {
-  const { tag } = await searchParams;
-  const [todos, allTags] = await Promise.all([listTodos({ tag }), listAllTags()]);
+  const { tag, type, status } = await searchParams;
+  const [tasks, allTags, clients, leads] = await Promise.all([
+    listTasks({
+      tag,
+      type: type as TaskType | undefined,
+      status: status as TaskStatus | undefined,
+    }),
+    listAllTags(),
+    listClients(),
+    listLeads(),
+  ]);
 
-  const open = todos.filter((t) => t.status === "OPEN");
-  const done = todos.filter((t) => t.status === "DONE");
+  const open = tasks.filter((t) => t.status !== "COMPLETED");
+  const done = tasks.filter((t) => t.status === "COMPLETED");
 
   return (
     <div>
       <PageHeader
         eyebrow="To-Dos"
         title="To-Dos"
-        description="Everything on your plate, tagged and sorted by what's due soonest."
+        description="Everything on your plate — general, client, and lead tasks — sorted by what's due soonest."
       />
-      <NewTodoForm />
-      <TagFilterBar tags={allTags} active={tag} />
+      <NewTodoForm
+        clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
+        leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
+      />
+      <TaskFilterBar type={type} status={status} tag={tag} allTags={allTags} />
 
-      {todos.length === 0 ? (
+      {tasks.length === 0 ? (
         <EmptyState title="Nothing here" description="Add a to-do above to get started." />
       ) : (
         <div className="space-y-8">
@@ -40,8 +55,8 @@ export default async function TodosPage({
             ) : (
               <Card className="p-2">
                 <ul className="divide-y divide-navy-100">
-                  {open.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} allTags={allTags} />
+                  {open.map((task) => (
+                    <TodoItem key={task.id} task={task} allTags={allTags} />
                   ))}
                 </ul>
               </Card>
@@ -51,12 +66,12 @@ export default async function TodosPage({
           {done.length > 0 && (
             <div>
               <h3 className="font-heading text-sm font-medium uppercase tracking-wide text-navy-500 mb-2">
-                Done ({done.length})
+                Completed ({done.length})
               </h3>
               <Card className="p-2 opacity-70">
                 <ul className="divide-y divide-navy-100">
-                  {done.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} allTags={allTags} />
+                  {done.map((task) => (
+                    <TodoItem key={task.id} task={task} allTags={allTags} />
                   ))}
                 </ul>
               </Card>

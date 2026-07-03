@@ -2,10 +2,14 @@
 
 import { useFormStatus } from "react-dom";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
+import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { Button } from "@/components/ui/Button";
 import type { Lead } from "@/lib/types";
-import { formatDateInput } from "@/lib/format";
+import { WORK_TYPE_LABELS, WORK_TYPE_ORDER, LEAD_SOURCE_LABELS, LEAD_SOURCE_ORDER } from "@/lib/types";
 import { createLead, updateLead } from "@/app/(app)/leads/actions";
+
+const WORK_TYPE_OPTIONS = WORK_TYPE_ORDER.map((v) => ({ value: v, label: WORK_TYPE_LABELS[v] }));
+const SOURCE_OPTIONS = LEAD_SOURCE_ORDER.map((v) => ({ value: v, label: LEAD_SOURCE_LABELS[v] }));
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -29,12 +33,23 @@ export function LeadForm({
     <form action={action} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" name="name" required defaultValue={lead?.name} placeholder="Jane Doe" />
+          <Label htmlFor="companyName">Company name</Label>
+          <Input
+            id="companyName"
+            name="companyName"
+            required
+            defaultValue={lead?.companyName}
+            placeholder="Acme Inc."
+          />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="company">Company</Label>
-          <Input id="company" name="company" defaultValue={lead?.company ?? ""} placeholder="Acme Inc." />
+          <Label htmlFor="contactName">Contact name</Label>
+          <Input
+            id="contactName"
+            name="contactName"
+            defaultValue={lead?.contactName ?? ""}
+            placeholder="Jane Doe"
+          />
         </FieldGroup>
         <FieldGroup>
           <Label htmlFor="contactEmail">Email</Label>
@@ -73,15 +88,22 @@ export function LeadForm({
             placeholder="0.00"
           />
         </FieldGroup>
-        <FieldGroup>
-          <Label htmlFor="nextFollowUpDate">Next follow-up</Label>
-          <Input
-            id="nextFollowUpDate"
-            name="nextFollowUpDate"
-            type="date"
-            defaultValue={formatDateInput(lead?.nextFollowUpDate)}
-          />
-        </FieldGroup>
+        <SelectWithOther
+          label="Work type / service interested in"
+          name="workType"
+          otherName="workTypeOther"
+          options={WORK_TYPE_OPTIONS}
+          defaultValue={lead?.workType}
+          defaultOtherValue={lead?.workTypeOther}
+        />
+        <SelectWithOther
+          label="Lead source"
+          name="source"
+          otherName="sourceOther"
+          options={SOURCE_OPTIONS}
+          defaultValue={lead?.source}
+          defaultOtherValue={lead?.sourceOther}
+        />
       </div>
       <SubmitButton label={submitLabel} />
     </form>

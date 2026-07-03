@@ -1,10 +1,13 @@
 import { cn } from "@/lib/cn";
 import type {
   ClientStatus,
+  FollowUpStatus,
   InvoiceStatus,
   LeadStatus,
-  TodoStatus,
+  TaskStatus,
+  TaskType,
 } from "@/lib/types";
+import { TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/lib/types";
 
 type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy";
 
@@ -94,10 +97,35 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Badge>;
 }
 
-export function TodoStatusBadge({ status }: { status: TodoStatus }) {
-  return status === "DONE" ? (
-    <Badge tone="sage">Done</Badge>
+const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
+  TO_BE_DONE: "slate",
+  IN_PROGRESS: "navy",
+  AWAITING_CLIENT_FEEDBACK: "gold",
+  COMPLETED: "sage",
+};
+
+export function TaskStatusBadge({ status }: { status: TaskStatus }) {
+  return <Badge tone={TASK_STATUS_TONE[status]}>{TASK_STATUS_LABELS[status]}</Badge>;
+}
+
+const TASK_TYPE_TONE: Record<TaskType, Tone> = {
+  CLIENT: "navy",
+  LEAD: "burnt",
+  GENERAL: "slate",
+  PERSONAL: "gold",
+  AUDAX_VENTURES: "sage",
+  H2MB: "brick",
+  OTHER: "slate",
+};
+
+export function TaskTypeBadge({ type }: { type: TaskType }) {
+  return <Badge tone={TASK_TYPE_TONE[type]}>{TASK_TYPE_LABELS[type]}</Badge>;
+}
+
+export function FollowUpStatusBadge({ status }: { status: FollowUpStatus }) {
+  return status === "COMPLETED" ? (
+    <Badge tone="sage">Completed</Badge>
   ) : (
-    <Badge tone="slate">Open</Badge>
+    <Badge tone="slate">Upcoming</Badge>
   );
 }
