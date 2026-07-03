@@ -4,17 +4,17 @@ import { NavLink } from "@/components/nav/NavLink";
 
 export function MobileTopBar() {
   return (
-    <header className="flex md:hidden items-center justify-between border-b border-navy-100 bg-cream-50/90 px-4 py-3 backdrop-blur sticky top-0 z-20">
+    <header className="flex md:hidden items-center justify-between bg-navy-900 px-4 py-3 sticky top-0 z-20">
       <div className="flex items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
         <img src="/logo.png" alt="Audax Ventures" className="h-6 w-auto" />
-        <p className="font-heading text-lg font-medium text-burnt-500">Audax HQ</p>
+        <p className="font-heading text-lg font-medium text-burnt-400">Audax HQ</p>
       </div>
       <form action="/api/logout" method="post">
         <button
           type="submit"
           aria-label="Sign out"
-          className="flex items-center justify-center rounded-full p-2 text-navy-500 hover:bg-navy-100 cursor-pointer"
+          className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
         >
           <LogOut size={18} strokeWidth={1.75} />
         </button>

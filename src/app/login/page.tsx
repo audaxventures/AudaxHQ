@@ -8,7 +8,7 @@ export default async function LoginPage({
   const { next } = await searchParams;
 
   return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-navy-950 px-4">
+    <div className="flex min-h-dvh flex-1 items-center justify-center bg-navy-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
