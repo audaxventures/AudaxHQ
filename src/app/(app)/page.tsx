@@ -24,7 +24,7 @@ export default async function DashboardPage() {
           {todayLabel()}
         </p>
         <h1 className="font-heading text-3xl sm:text-4xl font-medium text-navy-900 leading-tight">
-          Your briefing
+          Audax Dashboard
         </h1>
         <p className="mt-2 text-navy-500">What needs your attention today.</p>
       </div>
