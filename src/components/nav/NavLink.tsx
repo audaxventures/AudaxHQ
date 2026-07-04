@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, CheckSquare, NotebookPen } from "lucide-react";
+import { LayoutDashboard, Users, Target, CheckSquare, NotebookPen, Calendar, Receipt } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
 
@@ -11,6 +11,8 @@ const ICONS = {
   clients: Users,
   leads: Target,
   meetingNotes: NotebookPen,
+  calendar: Calendar,
+  invoices: Receipt,
   todos: CheckSquare,
 } as const satisfies Record<NavIconKey, unknown>;
 

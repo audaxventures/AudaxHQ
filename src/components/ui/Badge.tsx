@@ -2,12 +2,13 @@ import { cn } from "@/lib/cn";
 import type {
   ClientStatus,
   FollowUpStatus,
+  InvoiceAgeBracket,
   InvoiceStatus,
   LeadStatus,
   TaskStatus,
   TaskType,
 } from "@/lib/types";
-import { TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/lib/types";
+import { INVOICE_AGE_BRACKET_LABELS, TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/lib/types";
 
 type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy";
 
@@ -128,4 +129,14 @@ export function FollowUpStatusBadge({ status }: { status: FollowUpStatus }) {
   ) : (
     <Badge tone="slate">Upcoming</Badge>
   );
+}
+
+const INVOICE_AGE_BRACKET_TONE: Record<InvoiceAgeBracket, Tone> = {
+  UNDER_15: "slate",
+  DAYS_15_30: "gold",
+  OVER_30: "brick",
+};
+
+export function InvoiceAgeBracketBadge({ bracket }: { bracket: InvoiceAgeBracket }) {
+  return <Badge tone={INVOICE_AGE_BRACKET_TONE[bracket]}>{INVOICE_AGE_BRACKET_LABELS[bracket]}</Badge>;
 }

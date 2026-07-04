@@ -1,6 +1,7 @@
 import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
+import { getInvoiceAgingSummary, type InvoiceAgingSummary } from "@/lib/data/invoicing";
 import type { Client, ClientType, Task, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
@@ -18,6 +19,7 @@ export interface DashboardData {
   attentionFlags: AttentionFlag[];
   todoSnapshot: Task[];
   overdueTodoCount: number;
+  invoiceAging: InvoiceAgingSummary;
 }
 
 function mapClient(row: Record<string, unknown>): Client {
@@ -51,6 +53,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     staleInvoiceRows,
     todoRows,
     overdueCountRows,
+    invoiceAging,
   ] = await Promise.all([
     sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
     sql`
@@ -87,6 +90,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       order by (t.due_date is null), t.due_date asc, t.created_at desc
     `,
     sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < current_date`,
+    getInvoiceAgingSummary(),
   ]);
 
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
@@ -148,5 +152,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     overdueTodoCount: Number(
       (overdueCountRows[0] as Record<string, unknown>).count
     ),
+    invoiceAging,
   };
 }
