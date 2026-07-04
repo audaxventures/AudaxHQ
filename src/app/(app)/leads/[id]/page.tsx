@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { EmailSection } from "@/components/EmailSection";
+import { CostSummarySection } from "@/components/CostSummarySection";
 import { NotesLog } from "@/components/NotesLog";
 import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
@@ -92,6 +93,13 @@ export default async function LeadDetailPage({
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Core info</h3>
             <LeadForm key={lead.updatedAt} lead={lead} submitLabel="Save changes" />
           </Card>
+
+          <CostSummarySection
+            entries={lead.costEntries}
+            totalInvoiced={0}
+            budgetedHours={null}
+            reportHref={`/api/reports?${new URLSearchParams({ leadId: id, summary: "1" }).toString()}`}
+          />
 
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Follow-ups</h3>

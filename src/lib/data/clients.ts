@@ -15,6 +15,7 @@ import type {
 import { listFollowUpsForClient } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { listDocuments } from "@/lib/data/documents";
+import { listCostEntries } from "@/lib/data/costEntries";
 
 function mapClient(row: Record<string, unknown>): Client {
   return {
@@ -29,6 +30,7 @@ function mapClient(row: Record<string, unknown>): Client {
     workType: row.work_type as WorkType | null,
     workTypeOther: row.work_type_other as string | null,
     startDate: row.start_date as string | null,
+    budgetedHours: row.budgeted_hours !== null ? Number(row.budgeted_hours) : null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -101,7 +103,7 @@ export async function listClients(filters: ClientFilters = {}): Promise<
 }
 
 export async function getClient(id: string): Promise<ClientWithRelations | null> {
-  const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes, documents] =
+  const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes, documents, costEntries] =
     await Promise.all([
       sql`select * from clients where id = ${id}`,
       sql`select * from client_notes where client_id = ${id} order by created_at desc`,
@@ -111,6 +113,7 @@ export async function getClient(id: string): Promise<ClientWithRelations | null>
       listFollowUpsForClient(id),
       listMeetingNotes({ clientId: id }),
       listDocuments(id),
+      listCostEntries({ clientId: id }),
     ]);
 
   if (clientRows.length === 0) return null;
@@ -124,6 +127,7 @@ export async function getClient(id: string): Promise<ClientWithRelations | null>
     followUps,
     meetingNotes,
     documents,
+    costEntries,
   };
 }
 
@@ -138,14 +142,16 @@ export interface ClientInput {
   workType?: WorkType | null;
   workTypeOther?: string | null;
   startDate?: string | null;
+  budgetedHours?: number | null;
 }
 
 export async function createClient(input: ClientInput): Promise<Client> {
   const rows = await sql`
-    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type, work_type_other, start_date)
+    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type, work_type_other, start_date, budgeted_hours)
     values (
       ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
-      ${input.type}, ${input.status}, ${input.rate}, ${input.workType ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null}
+      ${input.type}, ${input.status}, ${input.rate}, ${input.workType ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
+      ${input.budgetedHours ?? null}
     )
     returning *
   `;
@@ -171,6 +177,7 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
       work_type = ${input.workType ?? null},
       work_type_other = ${input.workTypeOther ?? null},
       start_date = ${input.startDate ?? null},
+      budgeted_hours = ${input.budgetedHours ?? null},
       updated_at = now()
     where id = ${id}
   `;

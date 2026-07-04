@@ -10,6 +10,7 @@ import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { EmailSection } from "@/components/EmailSection";
 import { DocumentsSection } from "@/components/clients/DocumentsSection";
+import { CostSummarySection } from "@/components/CostSummarySection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency } from "@/lib/format";
@@ -74,6 +75,15 @@ export default async function ClientDetailPage({
             </p>
             <InvoicesList clientId={id} invoices={client.invoices} />
           </Card>
+
+          <CostSummarySection
+            entries={client.costEntries}
+            totalInvoiced={client.invoices
+              .filter((i) => i.status !== "NOT_INVOICED")
+              .reduce((sum, i) => sum + Number(i.amount), 0)}
+            budgetedHours={client.budgetedHours}
+            reportHref={`/api/reports?${new URLSearchParams({ clientId: id, summary: "1" }).toString()}`}
+          />
 
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Follow-ups</h3>

@@ -28,6 +28,7 @@ const clientSchema = z.object({
   ]).optional(),
   workTypeOther: z.string().optional(),
   startDate: z.string().optional(),
+  budgetedHours: z.coerce.number().min(0).optional(),
 });
 
 function parseClientForm(formData: FormData) {
@@ -42,6 +43,7 @@ function parseClientForm(formData: FormData) {
     workType: formData.get("workType") || undefined,
     workTypeOther: formData.get("workTypeOther") || undefined,
     startDate: formData.get("startDate") || undefined,
+    budgetedHours: formData.get("budgetedHours") || undefined,
   });
   return {
     ...parsed,
@@ -51,6 +53,7 @@ function parseClientForm(formData: FormData) {
     workType: parsed.workType ?? null,
     workTypeOther: parsed.workType === "OTHER" ? parsed.workTypeOther ?? null : null,
     startDate: parsed.startDate ?? null,
+    budgetedHours: parsed.budgetedHours ?? null,
   };
 }
 

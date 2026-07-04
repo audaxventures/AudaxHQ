@@ -1,0 +1,87 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import * as costEntries from "@/lib/data/costEntries";
+import * as teamMembers from "@/lib/data/teamMembers";
+import type { FixedCostCategory } from "@/lib/types";
+
+function revalidateOwner(clientId: string | null, leadId: string | null) {
+  revalidatePath("/tracker");
+  if (clientId) revalidatePath(`/clients/${clientId}`);
+  if (leadId) revalidatePath(`/leads/${leadId}`);
+}
+
+/** The Add Entry form's owner select encodes its value as "client:<id>" or "lead:<id>". */
+function parseOwner(raw: string): { clientId: string | null; leadId: string | null } {
+  const [type, id] = raw.split(":");
+  if (!id) throw new Error("Choose a client or lead.");
+  return { clientId: type === "client" ? id : null, leadId: type === "lead" ? id : null };
+}
+
+export async function createTimeEntry(formData: FormData) {
+  const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
+  const teamMemberId = String(formData.get("teamMemberId") ?? "");
+  const date = String(formData.get("date") ?? "");
+  const hours = Number(formData.get("hours"));
+  const rate = Number(formData.get("rate"));
+  const billable = formData.get("billable") === "on";
+  const description = String(formData.get("description") ?? "").trim() || null;
+
+  if (!teamMemberId || !date || !(hours > 0) || !(rate >= 0)) {
+    throw new Error("Fill in team member, date, and hours.");
+  }
+
+  await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, date, hours, rate, billable, description });
+  revalidateOwner(clientId, leadId);
+}
+
+export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
+  await costEntries.deleteTimeEntry(id);
+  revalidateOwner(clientId, leadId);
+}
+
+export async function createFixedCost(formData: FormData) {
+  const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
+  const date = String(formData.get("date") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const amount = Number(formData.get("amount"));
+  const category = (String(formData.get("category") ?? "") || null) as FixedCostCategory | null;
+
+  if (!date || !description || !(amount >= 0)) {
+    throw new Error("Fill in date, description, and amount.");
+  }
+
+  await costEntries.createFixedCost({ clientId, leadId, date, description, amount, category });
+  revalidateOwner(clientId, leadId);
+}
+
+export async function deleteFixedCost(id: string, clientId: string | null, leadId: string | null) {
+  await costEntries.deleteFixedCost(id);
+  revalidateOwner(clientId, leadId);
+}
+
+export async function createTeamMember(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
+  if (!name) return;
+  await teamMembers.createTeamMember({ name, defaultHourlyRate });
+  revalidatePath("/tracker");
+}
+
+export async function updateTeamMember(id: string, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
+  if (!name) return;
+  await teamMembers.updateTeamMember(id, { name, defaultHourlyRate });
+  revalidatePath("/tracker");
+}
+
+export async function activateTeamMember(id: string) {
+  await teamMembers.setTeamMemberActive(id, true);
+  revalidatePath("/tracker");
+}
+
+export async function deactivateTeamMember(id: string) {
+  await teamMembers.setTeamMemberActive(id, false);
+  revalidatePath("/tracker");
+}

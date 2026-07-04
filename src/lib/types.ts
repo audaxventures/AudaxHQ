@@ -138,6 +138,7 @@ export interface Client {
   workType: WorkType | null;
   workTypeOther: string | null;
   startDate: string | null;
+  budgetedHours: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -150,6 +151,7 @@ export interface ClientWithRelations extends Client {
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
   documents: ClientDocument[];
+  costEntries: CostEntry[];
 }
 
 export interface Lead {
@@ -174,6 +176,73 @@ export interface LeadWithRelations extends Lead {
   tasks: Task[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
+  costEntries: CostEntry[];
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  defaultHourlyRate: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";
+
+export const FIXED_COST_CATEGORY_LABELS: Record<FixedCostCategory, string> = {
+  SOFTWARE_TOOLS: "Software / Tools",
+  CONTRACTOR: "Contractor",
+  LICENSING: "Licensing",
+  OTHER: "Other",
+};
+
+export const FIXED_COST_CATEGORY_ORDER: FixedCostCategory[] = [
+  "SOFTWARE_TOOLS",
+  "CONTRACTOR",
+  "LICENSING",
+  "OTHER",
+];
+
+export type CostEntryType = "TIME" | "FIXED_COST";
+
+/** A time entry or fixed cost, normalized to one shape for the combined entry log. */
+export interface CostEntry {
+  id: string;
+  entryType: CostEntryType;
+  clientId: string | null;
+  leadId: string | null;
+  ownerName: string;
+  date: string;
+  description: string | null;
+  hours: number | null;
+  rate: number | null;
+  billable: boolean | null;
+  teamMemberName: string | null;
+  category: FixedCostCategory | null;
+  /** hours × rate for a time entry, or the flat amount for a fixed cost. */
+  amount: number;
+  createdAt: string;
+}
+
+export interface CostRollup {
+  billableHours: number;
+  nonBillableHours: number;
+  totalHours: number;
+  /** Cost of billable hours only — non-billable time isn't part of what was priced. */
+  variableCost: number;
+  fixedCost: number;
+  totalCost: number;
+}
+
+export interface CostSummary extends CostRollup {
+  totalInvoiced: number;
+  profit: number;
+  /** Null when nothing has been invoiced yet — a percentage isn't meaningful without a denominator. */
+  profitMarginPercent: number | null;
+  /** Null when there are no billable hours to divide by. */
+  effectiveHourlyRate: number | null;
+  budgetedHours: number | null;
+  overBudget: boolean;
 }
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
