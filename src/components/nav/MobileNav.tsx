@@ -6,10 +6,8 @@ export function MobileTopBar() {
   return (
     <header className="flex md:hidden items-center justify-between bg-navy-900 px-4 py-3 sticky top-0 z-20">
       <div className="flex items-center gap-2.5">
-        <div className="rounded-md bg-cream-50 px-1.5 py-1">
-          {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-          <img src="/logo.png" alt="Audax Ventures" className="h-5 w-auto" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
+        <img src="/logo.white.png" alt="Audax Ventures" className="h-6 w-auto" />
         <p className="font-heading text-lg font-medium text-burnt-400">Audax HQ</p>
       </div>
       <form action="/api/logout" method="post">
