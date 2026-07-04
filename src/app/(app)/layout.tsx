@@ -16,12 +16,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MobileTopBar />
         <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
           <div className="mb-4 hidden justify-end md:flex">
-            <Link
-              href="/"
-              className="rounded-xl bg-navy-900 px-4 py-2.5 opacity-90 transition-opacity hover:opacity-100"
-            >
+            <Link href="/" className="transition-opacity hover:opacity-80">
               {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-              <img src="/logo.png" alt="Audax Ventures" className="h-7 w-auto" />
+              <img src="/logo.png" alt="Audax Ventures" className="h-16 w-auto" />
             </Link>
           </div>
           <PageTransition>{children}</PageTransition>
