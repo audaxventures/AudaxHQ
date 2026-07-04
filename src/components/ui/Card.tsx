@@ -1,20 +1,24 @@
 import { cn } from "@/lib/cn";
-import { CARD_TONE_CLASSES, type Tone } from "@/lib/tone";
+import { CARD_SOLID_TONE_CLASSES, CARD_TONE_CLASSES, type Tone } from "@/lib/tone";
 
 export function Card({
   children,
   className,
   tone = "neutral",
+  variant = "wash",
 }: {
   children: React.ReactNode;
   className?: string;
   tone?: Tone;
+  variant?: "wash" | "solid";
 }) {
+  const toneClasses =
+    variant === "solid" && tone !== "neutral" ? CARD_SOLID_TONE_CLASSES[tone] : CARD_TONE_CLASSES[tone];
   return (
     <div
       className={cn(
         "rounded-2xl border shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)]",
-        CARD_TONE_CLASSES[tone],
+        toneClasses,
         className
       )}
     >
