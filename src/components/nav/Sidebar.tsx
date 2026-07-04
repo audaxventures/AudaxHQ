@@ -13,10 +13,9 @@ export function Sidebar() {
           background: "radial-gradient(120% 60% at 50% 0%, rgba(214,122,60,0.16), transparent 60%)",
         }}
       />
-      <div className="relative mb-6 border-b border-navy-800/60 px-2 pb-5">
-        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-        <img src="/logo.png" alt="Audax Ventures" className="h-16 w-auto mb-2" />
-        <p className="font-heading text-xl font-medium text-burnt-400">Audax HQ</p>
+      <div className="relative mb-6 border-b border-navy-800/60 px-2 pt-4 pb-5">
+        <p className="font-heading text-3xl font-semibold text-burnt-400 leading-tight">Audax HQ</p>
+        <p className="mt-1.5 text-xs italic text-cream-100/70">Your business command centre.</p>
       </div>
       <nav className="relative flex flex-1 flex-col gap-1">
         {NAV_LINKS.map((link) => (

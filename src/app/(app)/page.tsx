@@ -46,8 +46,8 @@ export default async function DashboardPage() {
         <p className="text-xs font-medium uppercase tracking-[0.15em] text-burnt-500 mb-2">
           {todayLabel()}
         </p>
-        <h1 className="font-heading text-3xl sm:text-4xl font-medium text-navy-900 leading-tight">
-          Audax Dashboard
+        <h1 className="font-heading text-3xl sm:text-4xl font-medium text-navy-900 leading-tight text-balance">
+          Welcome to your <span className="font-semibold italic text-burnt-500">Audax HQ</span> Dashboard
         </h1>
         <p className="mt-2 text-navy-500">What needs your attention today.</p>
       </div>
