@@ -17,12 +17,12 @@ export function Sidebar() {
         <p className="font-heading text-3xl font-semibold text-burnt-400 leading-tight">Audax HQ</p>
         <p className="mt-1.5 text-xs italic text-cream-100/70">Your business command centre.</p>
       </div>
-      <nav className="relative flex flex-1 flex-col gap-1">
+      <nav className="relative flex flex-col gap-1">
         {NAV_LINKS.map((link) => (
           <NavLink key={link.href} {...link} />
         ))}
       </nav>
-      <form action="/api/logout" method="post" className="relative">
+      <form action="/api/logout" method="post" className="relative mt-1">
         <button
           type="submit"
           className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-navy-400 transition-colors hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
