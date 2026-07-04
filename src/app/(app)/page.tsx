@@ -1,10 +1,21 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarClock, Receipt, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Briefcase,
+  CalendarClock,
+  Flame,
+  ListChecks,
+  Receipt,
+  Repeat,
+  Users,
+} from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RevenueHero } from "@/components/dashboard/RevenueHero";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
+import { PanelHeading } from "@/components/dashboard/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -42,7 +53,10 @@ export default async function DashboardPage() {
         </DashboardItem>
 
         <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <Card className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <Card
+            tone="slate"
+            className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5"
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-600">
               <Users size={17} />
             </div>
@@ -53,7 +67,10 @@ export default async function DashboardPage() {
               <p className="text-[11.5px] font-medium text-navy-400">Active clients</p>
             </div>
           </Card>
-          <Card className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+          <Card
+            tone="gold"
+            className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5"
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gold-100 text-gold-600">
               <CalendarClock size={17} />
             </div>
@@ -67,7 +84,10 @@ export default async function DashboardPage() {
             </div>
           </Card>
           <Link href="/invoices" className="block">
-            <Card className="p-4 h-full flex items-center gap-3 transition-transform hover:-translate-y-0.5 hover:border-navy-200">
+            <Card
+              tone="burnt"
+              className="p-4 h-full flex items-center gap-3 transition-transform hover:-translate-y-0.5 hover:border-burnt-200"
+            >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-burnt-100 text-burnt-600">
                 <Receipt size={17} />
               </div>
@@ -129,12 +149,8 @@ export default async function DashboardPage() {
         )}
 
         <DashboardItem className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-heading text-base font-medium text-navy-900">
-                Follow-ups &amp; hot leads
-              </h3>
-            </div>
+          <Card tone="burnt" className="p-5">
+            <PanelHeading icon={Flame} tone="burnt" title="Follow-ups & hot leads" />
             {data.hotFollowUps.length === 0 ? (
               <p className="text-sm text-navy-400 py-2">No follow-ups due today. You&apos;re caught up.</p>
             ) : (
@@ -165,20 +181,36 @@ export default async function DashboardPage() {
             )}
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-heading text-base font-medium text-navy-900">To-do snapshot</h3>
-              <Link href="/todos" className="text-xs font-medium text-burnt-600 hover:underline">
-                View all
-              </Link>
-            </div>
+          <Card tone="gold" className="p-5">
+            <PanelHeading
+              icon={ListChecks}
+              tone="gold"
+              title="To-do snapshot"
+              action={
+                <Link href="/todos" className="text-xs font-medium text-burnt-600 hover:underline">
+                  View all
+                </Link>
+              }
+            />
             {data.todoSnapshot.length === 0 ? (
               <p className="text-sm text-navy-400 py-2">Nothing due today or overdue.</p>
             ) : (
               <ul className="divide-y divide-navy-100 -mx-1">
                 {data.todoSnapshot.slice(0, 8).map((task) => (
-                  <li key={task.id} className="flex items-center justify-between gap-3 px-1 py-2.5">
-                    <p className="text-sm font-medium text-navy-900 truncate">{task.title}</p>
+                  <li key={task.id} className="flex items-center gap-3 px-1 py-2.5">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        !task.dueDate
+                          ? "bg-navy-200"
+                          : isOverdue(task.dueDate)
+                            ? "bg-brick-600"
+                            : "bg-gold-600"
+                      )}
+                    />
+                    <p className="text-sm font-medium text-navy-900 truncate flex-1 min-w-0">
+                      {task.title}
+                    </p>
                     {task.dueDate && (
                       <span
                         className={cn(
@@ -197,13 +229,20 @@ export default async function DashboardPage() {
         </DashboardItem>
 
         <DashboardItem className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-heading text-base font-medium text-navy-900">Project clients</h3>
-              <Link href="/clients?type=PROJECT" className="text-xs font-medium text-burnt-600 hover:underline">
-                View all
-              </Link>
-            </div>
+          <Card tone="slate" className="p-5">
+            <PanelHeading
+              icon={Briefcase}
+              tone="slate"
+              title="Project clients"
+              action={
+                <Link
+                  href="/clients?type=PROJECT"
+                  className="text-xs font-medium text-burnt-600 hover:underline"
+                >
+                  View all
+                </Link>
+              }
+            />
             {data.projectClients.length === 0 ? (
               <EmptyState title="No active project clients" />
             ) : (
@@ -228,13 +267,20 @@ export default async function DashboardPage() {
             )}
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-heading text-base font-medium text-navy-900">Recurring clients</h3>
-              <Link href="/clients?type=RECURRING" className="text-xs font-medium text-burnt-600 hover:underline">
-                View all
-              </Link>
-            </div>
+          <Card tone="sage" className="p-5">
+            <PanelHeading
+              icon={Repeat}
+              tone="sage"
+              title="Recurring clients"
+              action={
+                <Link
+                  href="/clients?type=RECURRING"
+                  className="text-xs font-medium text-burnt-600 hover:underline"
+                >
+                  View all
+                </Link>
+              }
+            />
             {data.recurringClients.length === 0 ? (
               <EmptyState title="No active recurring clients" />
             ) : (
