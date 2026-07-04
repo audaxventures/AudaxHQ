@@ -55,30 +55,32 @@ export default async function DashboardPage() {
         <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <Card
             tone="slate"
-            className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5"
+            variant="solid"
+            className="p-5 flex items-center gap-3.5 transition-transform hover:-translate-y-0.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-600">
-              <Users size={17} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-slate-600 shadow-sm">
+              <Users size={20} />
             </div>
             <div className="min-w-0">
-              <p className="font-heading text-xl text-navy-900 tabular-nums leading-tight">
+              <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
                 {data.activeClients.length}
               </p>
-              <p className="text-[11.5px] font-medium text-navy-400">Active clients</p>
+              <p className="text-xs font-semibold text-navy-600">Active clients</p>
             </div>
           </Card>
           <Card
             tone="gold"
-            className="p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5"
+            variant="solid"
+            className="p-5 flex items-center gap-3.5 transition-transform hover:-translate-y-0.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gold-100 text-gold-600">
-              <CalendarClock size={17} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-gold-600 shadow-sm">
+              <CalendarClock size={20} />
             </div>
             <div className="min-w-0">
-              <p className="font-heading text-xl text-navy-900 tabular-nums leading-tight">
+              <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
                 {data.todoSnapshot.length}
               </p>
-              <p className="text-[11.5px] font-medium text-navy-400">
+              <p className="text-xs font-semibold text-navy-600">
                 {data.overdueTodoCount > 0 ? `${data.overdueTodoCount} overdue` : "To-dos due today"}
               </p>
             </div>
@@ -86,16 +88,17 @@ export default async function DashboardPage() {
           <Link href="/invoices" className="block">
             <Card
               tone="burnt"
-              className="p-4 h-full flex items-center gap-3 transition-transform hover:-translate-y-0.5 hover:border-burnt-200"
+              variant="solid"
+              className="p-5 h-full flex items-center gap-3.5 transition-transform hover:-translate-y-0.5 hover:border-burnt-300"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-burnt-100 text-burnt-600">
-                <Receipt size={17} />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-burnt-600 shadow-sm">
+                <Receipt size={20} />
               </div>
               <div className="min-w-0">
-                <p className="font-heading text-xl text-navy-900 tabular-nums leading-tight">
+                <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
                   {formatCurrency(data.invoiceAging.totalOutstanding)}
                 </p>
-                <p className="text-[11.5px] font-medium text-navy-400">
+                <p className="text-xs font-semibold text-navy-600">
                   {data.invoiceAging.overdueCount > 0
                     ? `${data.invoiceAging.overdueCount} over 30 days`
                     : "Outstanding invoices"}
@@ -108,9 +111,8 @@ export default async function DashboardPage() {
         {data.attentionFlags.length > 0 && (
           <DashboardItem className="mb-8">
             <Card className="p-0 overflow-hidden">
-              <div className="flex items-center gap-2 px-5 pt-4 pb-3">
-                <AlertTriangle size={16} className="text-burnt-600" />
-                <h3 className="font-heading text-base font-medium text-navy-900">Needs attention</h3>
+              <div className="px-5 pt-4 pb-1">
+                <PanelHeading icon={AlertTriangle} tone="burnt" title="Needs attention" />
               </div>
               <ul className="divide-y divide-navy-100">
                 {data.attentionFlags.map((flag, i) => {
@@ -155,7 +157,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-navy-400 py-2">No follow-ups due today. You&apos;re caught up.</p>
             ) : (
               <ul className="divide-y divide-navy-100 -mx-1">
-                {data.hotFollowUps.map((f) => (
+                {data.hotFollowUps.slice(0, 3).map((f) => (
                   <li key={f.id}>
                     <Link
                       href={f.ownerKind === "client" ? `/clients/${f.clientId}` : `/leads/${f.leadId}`}
@@ -196,7 +198,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-navy-400 py-2">Nothing due today or overdue.</p>
             ) : (
               <ul className="divide-y divide-navy-100 -mx-1">
-                {data.todoSnapshot.slice(0, 8).map((task) => (
+                {data.todoSnapshot.slice(0, 3).map((task) => (
                   <li key={task.id} className="flex items-center gap-3 px-1 py-2.5">
                     <span
                       className={cn(
