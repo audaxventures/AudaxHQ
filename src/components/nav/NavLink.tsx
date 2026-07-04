@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Target, CheckSquare, NotebookPen, Calendar, Receipt } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Target,
+  CheckSquare,
+  NotebookPen,
+  Calendar,
+  Receipt,
+  BarChart3,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
 
@@ -10,6 +19,7 @@ const ICONS = {
   dashboard: LayoutDashboard,
   clients: Users,
   leads: Target,
+  leadAnalytics: BarChart3,
   meetingNotes: NotebookPen,
   calendar: Calendar,
   invoices: Receipt,
