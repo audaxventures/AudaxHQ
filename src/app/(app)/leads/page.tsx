@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Target } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -19,6 +19,8 @@ export default async function LeadsPage({
   return (
     <div>
       <PageHeader
+        icon={Target}
+        tone="burnt"
         eyebrow="Leads"
         title="Leads"
         description="Your pipeline of prospective clients, sorted by who needs a follow-up next."
@@ -36,7 +38,7 @@ export default async function LeadsPage({
           action={<LinkButton href="/leads/new">Add a lead</LinkButton>}
         />
       ) : (
-        <Card className="divide-y divide-navy-100 overflow-hidden">
+        <Card tone="burnt" className="divide-y divide-navy-100 overflow-hidden">
           {leads.map((lead) => (
             <LeadListRow key={lead.id} lead={lead} />
           ))}

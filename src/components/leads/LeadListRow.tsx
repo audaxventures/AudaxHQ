@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, CalendarClock } from "lucide-react";
+import { AvatarChip } from "@/components/ui/AvatarChip";
 import { LeadStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -13,6 +14,7 @@ export function LeadListRow({ lead }: { lead: Lead & { nextFollowUpDate: string 
       href={`/leads/${lead.id}`}
       className="group flex items-center gap-4 px-5 py-4 hover:bg-cream-100/60 transition-colors"
     >
+      <AvatarChip name={lead.companyName} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-heading text-base font-medium text-navy-900 truncate">{lead.companyName}</p>

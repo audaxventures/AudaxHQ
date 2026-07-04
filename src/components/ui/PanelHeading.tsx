@@ -1,12 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const ICON_TONES = {
-  burnt: "bg-burnt-100 text-burnt-600",
-  gold: "bg-gold-100 text-gold-600",
-  sage: "bg-sage-100 text-sage-600",
-  slate: "bg-slate-100 text-slate-600",
-} as const;
+import { ICON_TONE_CLASSES, type IconTone } from "@/lib/tone";
 
 export function PanelHeading({
   icon: Icon,
@@ -15,7 +9,7 @@ export function PanelHeading({
   action,
 }: {
   icon: LucideIcon;
-  tone: keyof typeof ICON_TONES;
+  tone: IconTone;
   title: string;
   action?: React.ReactNode;
 }) {
@@ -25,7 +19,7 @@ export function PanelHeading({
         <div
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px]",
-            ICON_TONES[tone]
+            ICON_TONE_CLASSES[tone]
           )}
         >
           <Icon size={14} />
