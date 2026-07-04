@@ -151,7 +151,6 @@ export interface ClientWithRelations extends Client {
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
   documents: ClientDocument[];
-  costEntries: CostEntry[];
 }
 
 export interface Lead {
@@ -176,10 +175,17 @@ export interface LeadWithRelations extends Lead {
   tasks: Task[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
-  costEntries: CostEntry[];
 }
 
 export interface TeamMember {
+  id: string;
+  name: string;
+  defaultHourlyRate: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface WorkCategory {
   id: string;
   name: string;
   defaultHourlyRate: string;
@@ -218,6 +224,10 @@ export interface CostEntry {
   rate: number | null;
   billable: boolean | null;
   teamMemberName: string | null;
+  /** Work category (Admin Hours, Professional Development, ...) — time entries only. */
+  workCategoryId: string | null;
+  workCategoryName: string | null;
+  /** Fixed-cost category (Software/Tools, Contractor, ...) — a separate concept from workCategory, fixed costs only. */
   category: FixedCostCategory | null;
   /** hours × rate for a time entry, or the flat amount for a fixed cost. */
   amount: number;
@@ -234,6 +244,15 @@ export interface CostRollup {
   totalCost: number;
 }
 
+export interface CategoryBreakdown {
+  categoryId: string | null;
+  /** "Uncategorized" when categoryId is null. */
+  categoryName: string;
+  billableHours: number;
+  nonBillableHours: number;
+  cost: number;
+}
+
 export interface CostSummary extends CostRollup {
   totalInvoiced: number;
   profit: number;
@@ -243,6 +262,7 @@ export interface CostSummary extends CostRollup {
   effectiveHourlyRate: number | null;
   budgetedHours: number | null;
   overBudget: boolean;
+  categoryBreakdown: CategoryBreakdown[];
 }
 
 export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {

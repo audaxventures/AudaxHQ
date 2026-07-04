@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as costEntries from "@/lib/data/costEntries";
 import * as teamMembers from "@/lib/data/teamMembers";
+import * as workCategories from "@/lib/data/workCategories";
 import type { FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -21,6 +22,7 @@ function parseOwner(raw: string): { clientId: string | null; leadId: string | nu
 export async function createTimeEntry(formData: FormData) {
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const teamMemberId = String(formData.get("teamMemberId") ?? "");
+  const categoryId = String(formData.get("categoryId") ?? "") || null;
   const date = String(formData.get("date") ?? "");
   const hours = Number(formData.get("hours"));
   const rate = Number(formData.get("rate"));
@@ -31,7 +33,7 @@ export async function createTimeEntry(formData: FormData) {
     throw new Error("Fill in team member, date, and hours.");
   }
 
-  await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, date, hours, rate, billable, description });
+  await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
   revalidateOwner(clientId, leadId);
 }
 
@@ -83,5 +85,31 @@ export async function activateTeamMember(id: string) {
 
 export async function deactivateTeamMember(id: string) {
   await teamMembers.setTeamMemberActive(id, false);
+  revalidatePath("/tracker");
+}
+
+export async function createWorkCategory(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
+  if (!name) return;
+  await workCategories.createWorkCategory({ name, defaultHourlyRate });
+  revalidatePath("/tracker");
+}
+
+export async function updateWorkCategory(id: string, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
+  if (!name) return;
+  await workCategories.updateWorkCategory(id, { name, defaultHourlyRate });
+  revalidatePath("/tracker");
+}
+
+export async function activateWorkCategory(id: string) {
+  await workCategories.setWorkCategoryActive(id, true);
+  revalidatePath("/tracker");
+}
+
+export async function deactivateWorkCategory(id: string) {
+  await workCategories.setWorkCategoryActive(id, false);
   revalidatePath("/tracker");
 }

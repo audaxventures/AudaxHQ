@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private bucket for client document uploads (`src/lib/storage.ts`); Neon only stores each file's metadata and storage path, never the file itself
 - **Framer Motion** for page-transition polish
 - A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
@@ -33,10 +33,11 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/003_work_type_update.sql
    psql "$DATABASE_URL" -f migrations/004_documents.sql
    psql "$DATABASE_URL" -f migrations/005_hour_cost_tracker.sql
+   psql "$DATABASE_URL" -f migrations/006_work_categories.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
-There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/006_*.sql` file and run it the same way.
+There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/007_*.sql` file and run it the same way.
 
 **`002_feature_update.sql` is a breaking change** — it renames columns (`clients.name`/`leads.name` → `contact_name` + new `company_name`), replaces the single project/recurring invoice fields with a per-client `invoices` list, replaces `leads.next_follow_up_date` with a `follow_ups` list, adds a `meeting_notes` table, and folds `client_tasks` into a unified `todos` table with a new `type`/`status` model. It migrates existing data in place (wrapped in a transaction), but the app code in this deploy will not run against the old (pre-002) schema — **run it before or as part of deploying this version**, not after.
 
@@ -45,6 +46,8 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 **`004_documents.sql`** just adds a new `documents` table — not breaking, but the app won't be able to store client documents until both this migration and the Supabase setup below are done.
 
 **`005_hour_cost_tracker.sql`** adds `team_members`, `time_entries`, and `fixed_costs` tables plus a `clients.budgeted_hours` column, for the Hour & Cost Tracker module — not breaking, purely additive.
+
+**`006_work_categories.sql`** adds a `work_categories` table (each with its own default hourly rate) and a nullable `time_entries.category_id` — not breaking, purely additive.
 
 ### 2. Document storage setup (Supabase)
 
@@ -87,10 +90,11 @@ migrations/002_feature_update.sql  breaking schema update (invoices/follow-ups/m
 migrations/003_work_type_update.sql  breaking change: new work_type categories (fractional exec / marketing services)
 migrations/004_documents.sql    adds the documents table (client file upload metadata)
 migrations/005_hour_cost_tracker.sql  adds team_members/time_entries/fixed_costs + clients.budgeted_hours
+migrations/006_work_categories.sql  adds work_categories + time_entries.category_id
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents)
-src/lib/data/                  query functions, grouped by domain (clients, leads, todos, followups, meetingnotes, documents, costEntries, teamMembers, dashboard)
+src/lib/data/                  query functions, grouped by domain (clients, leads, todos, followups, meetingnotes, documents, costEntries, teamMembers, workCategories, dashboard)
 src/lib/actions/               shared server actions used across the clients/leads/todos pages (tasks, followups, meetingnotes)
 src/app/login/                 passcode gate UI + server action
 src/app/(app)/                 everything behind the gate: dashboard, clients, leads, meeting-notes, todos

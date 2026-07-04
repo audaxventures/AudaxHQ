@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
+import { CostDateRangeFilter } from "@/components/CostDateRangeFilter";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { buildCostSummary } from "@/lib/data/costEntries";
@@ -27,11 +28,15 @@ export function CostSummarySection({
   totalInvoiced,
   budgetedHours,
   reportHref,
+  dateFrom,
+  dateTo,
 }: {
   entries: CostEntry[];
   totalInvoiced: number;
   budgetedHours: number | null;
   reportHref: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const summary = buildCostSummary(entries, totalInvoiced, budgetedHours);
 
@@ -43,6 +48,8 @@ export function CostSummarySection({
           Download report
         </a>
       </div>
+
+      <CostDateRangeFilter dateFrom={dateFrom} dateTo={dateTo} />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Metric label="Billable hours" value={summary.billableHours.toFixed(1)} />
@@ -73,6 +80,44 @@ export function CostSummarySection({
           {summary.overBudget && <AlertTriangle size={14} className="shrink-0" />}
           {summary.totalHours.toFixed(1)} of {summary.budgetedHours.toFixed(1)} budgeted hours used
           {summary.overBudget && " — over budget"}
+        </div>
+      )}
+
+      {summary.categoryBreakdown.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-navy-500">Hours by category</p>
+          <div className="overflow-x-auto rounded-lg border border-navy-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy-100 bg-cream-100/40 text-left text-xs font-medium uppercase tracking-wide text-navy-400">
+                  <th className="py-2 pl-3 pr-4">Category</th>
+                  <th className="py-2 pr-4">Billable hrs</th>
+                  <th className="py-2 pr-4">Non-billable hrs</th>
+                  <th className="py-2 pl-4 pr-3 text-right">Cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-navy-100">
+                {summary.categoryBreakdown.map((c) => (
+                  <tr key={c.categoryId ?? "uncategorized"}>
+                    <td className="py-2 pl-3 pr-4 font-medium text-navy-800">{c.categoryName}</td>
+                    <td className="py-2 pr-4 tabular-nums text-navy-600">{c.billableHours.toFixed(1)}</td>
+                    <td className="py-2 pr-4 tabular-nums text-navy-600">{c.nonBillableHours.toFixed(1)}</td>
+                    <td className="py-2 pl-4 pr-3 text-right font-medium tabular-nums text-navy-900">
+                      {formatCurrency(c.cost)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-cream-100/40 font-medium">
+                  <td className="py-2 pl-3 pr-4 text-navy-900">Total</td>
+                  <td className="py-2 pr-4 tabular-nums text-navy-900">{summary.billableHours.toFixed(1)}</td>
+                  <td className="py-2 pr-4 tabular-nums text-navy-900">{summary.nonBillableHours.toFixed(1)}</td>
+                  <td className="py-2 pl-4 pr-3 text-right tabular-nums text-navy-900">
+                    {formatCurrency(summary.variableCost)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

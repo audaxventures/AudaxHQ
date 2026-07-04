@@ -47,7 +47,8 @@ export function CostEntryTable({
             <th className="py-2 pr-4">Date</th>
             {showOwner && <th className="py-2 pr-4">Client / Lead</th>}
             <th className="py-2 pr-4">Type</th>
-            <th className="py-2 pr-4">Who</th>
+            <th className="py-2 pr-4">Team member</th>
+            <th className="py-2 pr-4">Category</th>
             <th className="py-2 pr-4">Description</th>
             <th className="py-2 pr-4">Hours</th>
             <th className="py-2 pr-4">Rate</th>
@@ -66,8 +67,13 @@ export function CostEntryTable({
               <td className="py-2.5 pr-4 whitespace-nowrap text-navy-600">
                 {e.entryType === "TIME" ? "Time" : "Fixed cost"}
               </td>
+              <td className="py-2.5 pr-4 whitespace-nowrap text-navy-600">{e.teamMemberName ?? "—"}</td>
               <td className="py-2.5 pr-4 whitespace-nowrap text-navy-600">
-                {e.teamMemberName ?? (e.category ? FIXED_COST_CATEGORY_LABELS[e.category] : "—")}
+                {e.entryType === "TIME"
+                  ? e.workCategoryName ?? "Uncategorized"
+                  : e.category
+                    ? FIXED_COST_CATEGORY_LABELS[e.category]
+                    : "—"}
               </td>
               <td className="py-2.5 pr-4 max-w-xs truncate text-navy-600">{e.description || "—"}</td>
               <td className="py-2.5 pr-4 tabular-nums text-navy-600">{e.hours ?? "—"}</td>

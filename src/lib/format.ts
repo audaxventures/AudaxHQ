@@ -73,3 +73,17 @@ export function isTodayOrPast(dateStr: string | null | undefined): boolean {
   const date = new Date(dateStr);
   return date.getTime() <= today.getTime();
 }
+
+/** True when value falls within [from, to] (either bound optional/open-ended). False if value is null/unparseable. */
+export function isDateInRange(
+  value: string | Date | null | undefined,
+  from?: string,
+  to?: string
+): boolean {
+  if (!from && !to) return true;
+  const normalized = formatDateInput(value);
+  if (!normalized) return false;
+  if (from && normalized < from) return false;
+  if (to && normalized > to) return false;
+  return true;
+}
