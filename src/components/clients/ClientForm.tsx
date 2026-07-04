@@ -104,6 +104,18 @@ export function ClientForm({
           <Label htmlFor="startDate">Start date</Label>
           <Input id="startDate" name="startDate" type="date" defaultValue={formatDateInput(client?.startDate)} />
         </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="budgetedHours">Budgeted hours (optional)</Label>
+          <Input
+            id="budgetedHours"
+            name="budgetedHours"
+            type="number"
+            step="0.5"
+            min="0"
+            defaultValue={client?.budgetedHours ?? ""}
+            placeholder="e.g. 40"
+          />
+        </FieldGroup>
         <SelectWithOther
           label="Work type"
           name="workType"

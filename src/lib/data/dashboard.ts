@@ -37,6 +37,7 @@ function mapClient(row: Record<string, unknown>): Client {
     workType: row.work_type as Client["workType"],
     workTypeOther: row.work_type_other as string | null,
     startDate: row.start_date as string | null,
+    budgetedHours: row.budgeted_hours !== null ? Number(row.budgeted_hours) : null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

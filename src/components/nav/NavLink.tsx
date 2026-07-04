@@ -11,6 +11,7 @@ import {
   Calendar,
   Receipt,
   BarChart3,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
@@ -23,6 +24,7 @@ const ICONS = {
   meetingNotes: NotebookPen,
   calendar: Calendar,
   invoices: Receipt,
+  tracker: Clock,
   todos: CheckSquare,
 } as const satisfies Record<NavIconKey, unknown>;
 

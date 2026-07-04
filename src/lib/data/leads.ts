@@ -2,6 +2,7 @@ import { sql } from "@/lib/db";
 import { listTasks } from "@/lib/data/todos";
 import { listFollowUpsForLead } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
+import { listCostEntries } from "@/lib/data/costEntries";
 import { createClient } from "@/lib/data/clients";
 import type {
   Lead,
@@ -69,12 +70,13 @@ export async function listLeads(
 }
 
 export async function getLead(id: string): Promise<LeadWithRelations | null> {
-  const [leadRows, noteRows, tasks, followUps, meetingNotes] = await Promise.all([
+  const [leadRows, noteRows, tasks, followUps, meetingNotes, costEntries] = await Promise.all([
     sql`select * from leads where id = ${id}`,
     sql`select * from lead_notes where lead_id = ${id} order by created_at desc`,
     listTasks({ leadId: id }),
     listFollowUpsForLead(id),
     listMeetingNotes({ leadId: id }),
+    listCostEntries({ leadId: id }),
   ]);
   if (leadRows.length === 0) return null;
   return {
@@ -83,6 +85,7 @@ export async function getLead(id: string): Promise<LeadWithRelations | null> {
     tasks,
     followUps,
     meetingNotes,
+    costEntries,
   };
 }
 
