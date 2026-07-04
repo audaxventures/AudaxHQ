@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { getLead } from "@/lib/data/leads";
+import { listCostEntries } from "@/lib/data/costEntries";
 import { deleteLead, convertLeadToClient } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
@@ -22,11 +23,14 @@ export default async function LeadDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ converted?: string }>;
+  searchParams: Promise<{ converted?: string; costFrom?: string; costTo?: string }>;
 }) {
   const { id } = await params;
-  const { converted } = await searchParams;
-  const lead = await getLead(id);
+  const { converted, costFrom, costTo } = await searchParams;
+  const [lead, costEntries] = await Promise.all([
+    getLead(id),
+    listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }),
+  ]);
   if (!lead) notFound();
 
   const boundDeleteLead = deleteLead.bind(null, id);
@@ -95,10 +99,17 @@ export default async function LeadDetailPage({
           </Card>
 
           <CostSummarySection
-            entries={lead.costEntries}
+            entries={costEntries}
             totalInvoiced={0}
             budgetedHours={null}
-            reportHref={`/api/reports?${new URLSearchParams({ leadId: id, summary: "1" }).toString()}`}
+            reportHref={`/api/reports?${new URLSearchParams({
+              leadId: id,
+              summary: "1",
+              ...(costFrom ? { dateFrom: costFrom } : {}),
+              ...(costTo ? { dateTo: costTo } : {}),
+            }).toString()}`}
+            dateFrom={costFrom}
+            dateTo={costTo}
           />
 
           <Card className="p-6">

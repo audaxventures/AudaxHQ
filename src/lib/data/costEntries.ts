@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { CostEntry, CostRollup, CostSummary, FixedCostCategory } from "@/lib/types";
+import type { CategoryBreakdown, CostEntry, CostRollup, CostSummary, FixedCostCategory } from "@/lib/types";
 
 function mapCostEntry(row: Record<string, unknown>): CostEntry {
   return {
@@ -14,6 +14,8 @@ function mapCostEntry(row: Record<string, unknown>): CostEntry {
     rate: row.rate !== null ? Number(row.rate) : null,
     billable: row.billable as boolean | null,
     teamMemberName: row.team_member_name as string | null,
+    workCategoryId: row.work_category_id as string | null,
+    workCategoryName: row.work_category_name as string | null,
     category: row.category as FixedCostCategory | null,
     amount: Number(row.amount),
     createdAt: row.created_at as string,
@@ -24,6 +26,7 @@ export interface CostEntryFilters {
   clientId?: string;
   leadId?: string;
   teamMemberId?: string;
+  workCategoryId?: string;
   billable?: boolean;
   dateFrom?: string;
   dateTo?: string;
@@ -31,9 +34,10 @@ export interface CostEntryFilters {
 
 /**
  * Combined log of time entries and fixed costs, newest first. The
- * team-member and billable filters only apply to time entries (fixed
- * costs have neither concept), so setting either narrows the fixed-cost
- * branch to nothing rather than ignoring the filter.
+ * team-member, work-category, and billable filters only apply to time
+ * entries (fixed costs have none of those concepts), so setting any of
+ * them narrows the fixed-cost branch to nothing rather than ignoring
+ * the filter.
  */
 export async function listCostEntries(filters: CostEntryFilters = {}): Promise<CostEntry[]> {
   const rows = await sql`
@@ -42,15 +46,18 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         te.id, 'TIME' as entry_type, te.client_id, te.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name,
         te.date, te.description, te.hours, te.rate, te.billable,
-        tm.name as team_member_name, null::text as category,
+        tm.name as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
+        null::text as category,
         (te.hours * te.rate) as amount, te.created_at
       from time_entries te
       join team_members tm on tm.id = te.team_member_id
+      left join work_categories wc on wc.id = te.category_id
       left join clients c on c.id = te.client_id
       left join leads l on l.id = te.lead_id
       where (${filters.clientId ?? null}::uuid is null or te.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or te.lead_id = ${filters.leadId ?? null})
         and (${filters.teamMemberId ?? null}::uuid is null or te.team_member_id = ${filters.teamMemberId ?? null})
+        and (${filters.workCategoryId ?? null}::uuid is null or te.category_id = ${filters.workCategoryId ?? null})
         and (${filters.billable ?? null}::boolean is null or te.billable = ${filters.billable ?? null})
         and (${filters.dateFrom ?? null}::date is null or te.date >= ${filters.dateFrom ?? null})
         and (${filters.dateTo ?? null}::date is null or te.date <= ${filters.dateTo ?? null})
@@ -61,7 +68,8 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         fc.id, 'FIXED_COST' as entry_type, fc.client_id, fc.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name,
         fc.date, fc.description, null::numeric as hours, null::numeric as rate, null::boolean as billable,
-        null::text as team_member_name, fc.category,
+        null::text as team_member_name, null::uuid as work_category_id, null::text as work_category_name,
+        fc.category,
         fc.amount, fc.created_at
       from fixed_costs fc
       left join clients c on c.id = fc.client_id
@@ -69,6 +77,7 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
       where (${filters.clientId ?? null}::uuid is null or fc.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or fc.lead_id = ${filters.leadId ?? null})
         and ${filters.teamMemberId ?? null}::uuid is null
+        and ${filters.workCategoryId ?? null}::uuid is null
         and ${filters.billable ?? null}::boolean is null
         and (${filters.dateFrom ?? null}::date is null or fc.date >= ${filters.dateFrom ?? null})
         and (${filters.dateTo ?? null}::date is null or fc.date <= ${filters.dateTo ?? null})
@@ -101,6 +110,34 @@ export function rollupCostEntries(entries: CostEntry[]): CostRollup {
   return { billableHours, nonBillableHours, totalHours, variableCost, fixedCost, totalCost: variableCost + fixedCost };
 }
 
+/** Per-work-category hours/cost breakdown for time entries, sorted by total hours descending. */
+export function buildCategoryBreakdown(entries: CostEntry[]): CategoryBreakdown[] {
+  const byCategory = new Map<string, CategoryBreakdown>();
+
+  for (const e of entries) {
+    if (e.entryType !== "TIME") continue;
+    const key = e.workCategoryId ?? "uncategorized";
+    const row = byCategory.get(key) ?? {
+      categoryId: e.workCategoryId,
+      categoryName: e.workCategoryName ?? "Uncategorized",
+      billableHours: 0,
+      nonBillableHours: 0,
+      cost: 0,
+    };
+    if (e.billable) {
+      row.billableHours += e.hours ?? 0;
+      row.cost += e.amount;
+    } else {
+      row.nonBillableHours += e.hours ?? 0;
+    }
+    byCategory.set(key, row);
+  }
+
+  return [...byCategory.values()].sort(
+    (a, b) => b.billableHours + b.nonBillableHours - (a.billableHours + a.nonBillableHours)
+  );
+}
+
 export function buildCostSummary(
   entries: CostEntry[],
   totalInvoiced: number,
@@ -116,6 +153,7 @@ export function buildCostSummary(
     effectiveHourlyRate: rollup.billableHours > 0 ? totalInvoiced / rollup.billableHours : null,
     budgetedHours,
     overBudget: budgetedHours !== null && rollup.totalHours > budgetedHours,
+    categoryBreakdown: buildCategoryBreakdown(entries),
   };
 }
 
@@ -123,6 +161,7 @@ export interface TimeEntryInput {
   clientId: string | null;
   leadId: string | null;
   teamMemberId: string;
+  categoryId: string | null;
   date: string;
   hours: number;
   rate: number;
@@ -132,9 +171,9 @@ export interface TimeEntryInput {
 
 export async function createTimeEntry(input: TimeEntryInput): Promise<void> {
   await sql`
-    insert into time_entries (client_id, lead_id, team_member_id, date, hours, rate, billable, description)
+    insert into time_entries (client_id, lead_id, team_member_id, category_id, date, hours, rate, billable, description)
     values (
-      ${input.clientId}, ${input.leadId}, ${input.teamMemberId}, ${input.date},
+      ${input.clientId}, ${input.leadId}, ${input.teamMemberId}, ${input.categoryId}, ${input.date},
       ${input.hours}, ${input.rate}, ${input.billable}, ${input.description}
     )
   `;

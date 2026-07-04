@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
-import type { TeamMember } from "@/lib/types";
+import type { TeamMember, WorkCategory } from "@/lib/types";
 
 interface OwnerOption {
   id: string;
@@ -13,11 +13,13 @@ export function TrackerFilters({
   clients,
   leads,
   teamMembers,
+  workCategories,
   filters,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
   teamMembers: TeamMember[];
+  workCategories: WorkCategory[];
   filters: Record<string, string | undefined>;
 }) {
   const router = useRouter();
@@ -34,7 +36,7 @@ export function TrackerFilters({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       <FieldGroup>
         <Label htmlFor="filter-client">Client</Label>
         <Select id="filter-client" value={filters.clientId ?? ""} onChange={(e) => update("clientId", e.target.value)}>
@@ -68,6 +70,21 @@ export function TrackerFilters({
           {teamMembers.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
+            </option>
+          ))}
+        </Select>
+      </FieldGroup>
+      <FieldGroup>
+        <Label htmlFor="filter-category">Category</Label>
+        <Select
+          id="filter-category"
+          value={filters.workCategoryId ?? ""}
+          onChange={(e) => update("workCategoryId", e.target.value)}
+        >
+          <option value="">All categories</option>
+          {workCategories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </Select>

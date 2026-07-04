@@ -5,8 +5,10 @@ import { TrackerFilters } from "@/components/tracker/TrackerFilters";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
 import { AddEntryForm } from "@/components/tracker/AddEntryForm";
 import { TeamMembersPanel } from "@/components/tracker/TeamMembersPanel";
+import { WorkCategoriesPanel } from "@/components/tracker/WorkCategoriesPanel";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
+import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { formatCurrency } from "@/lib/format";
@@ -31,14 +33,16 @@ export default async function TrackerPage({
     clientId: sp.clientId || undefined,
     leadId: sp.leadId || undefined,
     teamMemberId: sp.teamMemberId || undefined,
+    workCategoryId: sp.workCategoryId || undefined,
     billable: sp.billable === "true" ? true : sp.billable === "false" ? false : undefined,
     dateFrom: sp.dateFrom || undefined,
     dateTo: sp.dateTo || undefined,
   };
 
-  const [entries, teamMembers, clients, leads] = await Promise.all([
+  const [entries, teamMembers, workCategories, clients, leads] = await Promise.all([
     listCostEntries(filters),
     listTeamMembers({ includeInactive: true }),
+    listWorkCategories({ includeInactive: true }),
     listClients(),
     listLeads(),
   ]);
@@ -49,6 +53,7 @@ export default async function TrackerPage({
   if (filters.clientId) reportQuery.set("clientId", filters.clientId);
   if (filters.leadId) reportQuery.set("leadId", filters.leadId);
   if (filters.teamMemberId) reportQuery.set("teamMemberId", filters.teamMemberId);
+  if (filters.workCategoryId) reportQuery.set("workCategoryId", filters.workCategoryId);
   if (filters.billable !== undefined) reportQuery.set("billable", String(filters.billable));
   if (filters.dateFrom) reportQuery.set("dateFrom", filters.dateFrom);
   if (filters.dateTo) reportQuery.set("dateTo", filters.dateTo);
@@ -71,7 +76,7 @@ export default async function TrackerPage({
       </div>
 
       <Card className="mb-6 p-6">
-        <TrackerFilters clients={clients} leads={leads} teamMembers={teamMembers} filters={sp} />
+        <TrackerFilters clients={clients} leads={leads} teamMembers={teamMembers} workCategories={workCategories} filters={sp} />
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -93,12 +98,22 @@ export default async function TrackerPage({
         <div className="space-y-6">
           <Card className="p-6">
             <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Add entry</h3>
-            <AddEntryForm clients={clients} leads={leads} teamMembers={teamMembers.filter((t) => t.active)} />
+            <AddEntryForm
+              clients={clients}
+              leads={leads}
+              teamMembers={teamMembers.filter((t) => t.active)}
+              workCategories={workCategories.filter((c) => c.active)}
+            />
           </Card>
 
           <Card className="p-6">
             <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Team members</h3>
             <TeamMembersPanel teamMembers={teamMembers} />
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Work categories</h3>
+            <WorkCategoriesPanel categories={workCategories} />
           </Card>
         </div>
       </div>

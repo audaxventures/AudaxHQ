@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getClient } from "@/lib/data/clients";
+import { listCostEntries } from "@/lib/data/costEntries";
 import { activateClient, archiveClient } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
@@ -13,17 +14,23 @@ import { DocumentsSection } from "@/components/clients/DocumentsSection";
 import { CostSummarySection } from "@/components/CostSummarySection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, isDateInRange } from "@/lib/format";
 import { WORK_TYPE_LABELS } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ costFrom?: string; costTo?: string }>;
 }) {
   const { id } = await params;
-  const client = await getClient(id);
+  const { costFrom, costTo } = await searchParams;
+  const [client, costEntries] = await Promise.all([
+    getClient(id),
+    listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }),
+  ]);
   if (!client) notFound();
 
   const isArchived = client.status === "CHURNED";
@@ -77,12 +84,20 @@ export default async function ClientDetailPage({
           </Card>
 
           <CostSummarySection
-            entries={client.costEntries}
+            entries={costEntries}
             totalInvoiced={client.invoices
               .filter((i) => i.status !== "NOT_INVOICED")
+              .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
               .reduce((sum, i) => sum + Number(i.amount), 0)}
             budgetedHours={client.budgetedHours}
-            reportHref={`/api/reports?${new URLSearchParams({ clientId: id, summary: "1" }).toString()}`}
+            reportHref={`/api/reports?${new URLSearchParams({
+              clientId: id,
+              summary: "1",
+              ...(costFrom ? { dateFrom: costFrom } : {}),
+              ...(costTo ? { dateTo: costTo } : {}),
+            }).toString()}`}
+            dateFrom={costFrom}
+            dateTo={costTo}
           />
 
           <Card className="p-6">

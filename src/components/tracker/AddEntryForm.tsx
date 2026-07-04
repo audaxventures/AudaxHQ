@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
-import type { TeamMember } from "@/lib/types";
+import type { TeamMember, WorkCategory } from "@/lib/types";
 import { FIXED_COST_CATEGORY_LABELS, FIXED_COST_CATEGORY_ORDER } from "@/lib/types";
 import { createFixedCost, createTimeEntry } from "@/app/(app)/tracker/actions";
 
@@ -16,13 +16,16 @@ export function AddEntryForm({
   clients,
   leads,
   teamMembers,
+  workCategories,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
   teamMembers: TeamMember[];
+  workCategories: WorkCategory[];
 }) {
   const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">("TIME");
   const [teamMemberId, setTeamMemberId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [rate, setRate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -32,6 +35,15 @@ export function AddEntryForm({
     setTeamMemberId(id);
     const tm = teamMembers.find((t) => t.id === id);
     if (tm) setRate(tm.defaultHourlyRate);
+  }
+
+  // Selecting a work category re-fills the rate too — whichever of team
+  // member or category was picked most recently wins, and the rate stays
+  // manually editable either way.
+  function handleCategoryChange(id: string) {
+    setCategoryId(id);
+    const category = workCategories.find((c) => c.id === id);
+    if (category) setRate(category.defaultHourlyRate);
   }
 
   return (
@@ -48,6 +60,7 @@ export function AddEntryForm({
             }
             formRef.current?.reset();
             setTeamMemberId("");
+            setCategoryId("");
             setRate("");
           } catch (e) {
             setError(e instanceof Error ? e.message : "Could not save this entry.");
@@ -128,6 +141,25 @@ export function AddEntryForm({
               {teamMembers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+          <FieldGroup>
+            <Label htmlFor="entry-work-category">Category</Label>
+            <Select
+              id="entry-work-category"
+              name="categoryId"
+              required
+              value={categoryId}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              <option value="" disabled>
+                Choose…
+              </option>
+              {workCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </Select>
