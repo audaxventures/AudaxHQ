@@ -37,6 +37,7 @@ export type LeadSource =
   | "INBOUND"
   | "OTHER";
 export type FollowUpStatus = "UPCOMING" | "COMPLETED";
+export type InvoiceAgeBracket = "UNDER_15" | "DAYS_15_30" | "OVER_30";
 
 export interface ClientLink {
   id: string;
@@ -172,6 +173,8 @@ export const CLIENT_TYPE_LABELS: Record<ClientType, string> = {
   RECURRING: "Recurring",
 };
 
+export const CLIENT_TYPE_ORDER: ClientType[] = ["PROJECT", "RECURRING"];
+
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   NOT_INVOICED: "Not invoiced",
   INVOICED: "Invoiced",
@@ -272,3 +275,21 @@ export const FOLLOWUP_STATUS_LABELS: Record<FollowUpStatus, string> = {
   UPCOMING: "Upcoming",
   COMPLETED: "Completed",
 };
+
+export const INVOICE_AGE_BRACKET_LABELS: Record<InvoiceAgeBracket, string> = {
+  UNDER_15: "0–14 days",
+  DAYS_15_30: "15–30 days",
+  OVER_30: "30+ days",
+};
+
+export const INVOICE_AGE_BRACKET_ORDER: InvoiceAgeBracket[] = [
+  "UNDER_15",
+  "DAYS_15_30",
+  "OVER_30",
+];
+
+export function invoiceAgeBracket(daysOutstanding: number): InvoiceAgeBracket {
+  if (daysOutstanding >= 30) return "OVER_30";
+  if (daysOutstanding >= 15) return "DAYS_15_30";
+  return "UNDER_15";
+}

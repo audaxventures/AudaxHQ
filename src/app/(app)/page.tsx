@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarClock, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, Receipt, TrendingUp, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getDashboardData } from "@/lib/data/dashboard";
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
         <p className="mt-2 text-navy-500">What needs your attention today.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="p-5">
           <div className="flex items-center gap-2 text-navy-400 mb-2">
             <Users size={16} />
@@ -58,6 +58,22 @@ export default async function DashboardPage() {
             {data.overdueTodoCount > 0 ? `${data.overdueTodoCount} overdue` : "None overdue"}
           </p>
         </Card>
+        <Link href="/invoices" className="block">
+          <Card className="p-5 h-full hover:border-navy-200 transition-colors">
+            <div className="flex items-center gap-2 text-navy-400 mb-2">
+              <Receipt size={16} />
+              <p className="text-xs font-medium uppercase tracking-wide">Outstanding invoices</p>
+            </div>
+            <p className="font-heading text-3xl text-navy-900">
+              {formatCurrency(data.invoiceAging.totalOutstanding)}
+            </p>
+            <p className="mt-1 text-sm text-navy-500">
+              {data.invoiceAging.overdueCount > 0
+                ? `${data.invoiceAging.overdueCount} over 30 days`
+                : "None over 30 days"}
+            </p>
+          </Card>
+        </Link>
       </div>
 
       {data.attentionFlags.length > 0 && (

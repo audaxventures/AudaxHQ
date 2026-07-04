@@ -234,6 +234,13 @@ export async function deleteInvoice(id: string): Promise<void> {
   await sql`delete from invoices where id = ${id}`;
 }
 
+export async function markInvoicePaid(id: string): Promise<void> {
+  await sql`
+    update invoices set status = 'PAID', paid_date = coalesce(paid_date, current_date)
+    where id = ${id}
+  `;
+}
+
 export async function ensureCurrentMonthRecurringInvoice(
   clientId: string,
   rate: number
