@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Receipt } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -26,19 +27,21 @@ export default async function InvoiceAgingPage({
   return (
     <div>
       <PageHeader
+        icon={Receipt}
+        tone="burnt"
         eyebrow="Invoicing"
         title="Invoice Aging"
         description="Every invoice that's been sent but not yet paid, oldest first."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <Card className="p-5">
+        <Card tone="burnt" className="p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-navy-400 mb-2">
             Total outstanding
           </p>
           <p className="font-heading text-3xl text-navy-900">{formatCurrency(totalOutstanding)}</p>
         </Card>
-        <Card className="p-5">
+        <Card tone="burnt" className="p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-navy-400 mb-2">
             Invoices shown
           </p>
@@ -54,7 +57,7 @@ export default async function InvoiceAgingPage({
           description="No sent-but-unpaid invoices match this filter."
         />
       ) : (
-        <Card className="divide-y divide-navy-100 overflow-hidden">
+        <Card tone="burnt" className="divide-y divide-navy-100 overflow-hidden">
           {invoices.map((inv) => (
             <div
               key={inv.id}

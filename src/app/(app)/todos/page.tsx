@@ -1,6 +1,8 @@
+import { CheckSquare, ListChecks, ListTodo } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PanelHeading } from "@/components/ui/PanelHeading";
 import { NewTodoForm } from "@/components/todos/NewTodoForm";
 import { TaskFilterBar } from "@/components/todos/TaskFilterBar";
 import { TodoItem } from "@/components/todos/TodoItem";
@@ -32,6 +34,8 @@ export default async function TodosPage({
   return (
     <div>
       <PageHeader
+        icon={CheckSquare}
+        tone="gold"
         eyebrow="To-Dos"
         title="To-Dos"
         description="Everything on your plate — general, client, and lead tasks — sorted by what's due soonest."
@@ -47,28 +51,24 @@ export default async function TodosPage({
       ) : (
         <div className="space-y-8">
           <div>
-            <h3 className="font-heading text-sm font-medium uppercase tracking-wide text-navy-500 mb-2">
-              Open ({open.length})
-            </h3>
-            {open.length === 0 ? (
-              <p className="text-sm text-navy-400 px-3 py-2">Nothing open — nice work.</p>
-            ) : (
-              <Card className="p-2">
+            <Card tone="gold" className="p-4">
+              <PanelHeading icon={ListTodo} tone="gold" title={`Open (${open.length})`} />
+              {open.length === 0 ? (
+                <p className="text-sm text-navy-400 px-3 py-2">Nothing open — nice work.</p>
+              ) : (
                 <ul className="divide-y divide-navy-100">
                   {open.map((task) => (
                     <TodoItem key={task.id} task={task} allTags={allTags} />
                   ))}
                 </ul>
-              </Card>
-            )}
+              )}
+            </Card>
           </div>
 
           {done.length > 0 && (
             <div>
-              <h3 className="font-heading text-sm font-medium uppercase tracking-wide text-navy-500 mb-2">
-                Completed ({done.length})
-              </h3>
-              <Card className="p-2 opacity-70">
+              <Card tone="slate" className="p-4 opacity-70">
+                <PanelHeading icon={ListChecks} tone="slate" title={`Completed (${done.length})`} />
                 <ul className="divide-y divide-navy-100">
                   {done.map((task) => (
                     <TodoItem key={task.id} task={task} allTags={allTags} />

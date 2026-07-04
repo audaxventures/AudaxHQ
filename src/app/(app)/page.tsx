@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RevenueHero } from "@/components/dashboard/RevenueHero";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
-import { PanelHeading } from "@/components/dashboard/PanelHeading";
+import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";

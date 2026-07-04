@@ -6,7 +6,7 @@ import { ClientFilterBar } from "@/components/clients/ClientFilterBar";
 import { ClientListRow } from "@/components/clients/ClientListRow";
 import { listClients } from "@/lib/data/clients";
 import type { ClientStatus, ClientType } from "@/lib/types";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 export default async function ClientsPage({
   searchParams,
@@ -22,6 +22,8 @@ export default async function ClientsPage({
   return (
     <div>
       <PageHeader
+        icon={Users}
+        tone="slate"
         eyebrow="Clients"
         title="Clients"
         description="Everyone you're currently working with, and everyone you used to."
@@ -39,7 +41,7 @@ export default async function ClientsPage({
           action={<LinkButton href="/clients/new">Add a client</LinkButton>}
         />
       ) : (
-        <Card className="divide-y divide-navy-100 overflow-hidden">
+        <Card tone="slate" className="divide-y divide-navy-100 overflow-hidden">
           {clients.map((client) => (
             <ClientListRow key={client.id} client={client} />
           ))}

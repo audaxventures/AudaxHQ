@@ -1,3 +1,4 @@
+import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -41,6 +42,8 @@ export default async function CalendarPage({
   return (
     <div>
       <PageHeader
+        icon={CalendarIcon}
+        tone="navy"
         eyebrow="Calendar"
         title="Calendar"
         description="Follow-ups, meeting notes, and task due dates, all in one place."
@@ -48,7 +51,7 @@ export default async function CalendarPage({
 
       <CalendarControls year={year} month={month} activeTypes={activeTypes} />
 
-      <Card className="overflow-hidden">
+      <Card tone="navy" className="overflow-hidden">
         <div className="grid grid-cols-7 border-b border-navy-100">
           {WEEKDAY_LABELS.map((label) => (
             <div

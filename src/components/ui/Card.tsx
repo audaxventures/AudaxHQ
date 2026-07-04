@@ -1,12 +1,5 @@
 import { cn } from "@/lib/cn";
-
-const CARD_TONES = {
-  neutral: "border-navy-100 bg-white/70",
-  burnt: "border-burnt-100 bg-gradient-to-b from-white to-burnt-100/40",
-  gold: "border-gold-100 bg-gradient-to-b from-white to-gold-100/40",
-  sage: "border-sage-100 bg-gradient-to-b from-white to-sage-100/40",
-  slate: "border-slate-100 bg-gradient-to-b from-white to-slate-100/40",
-} as const;
+import { CARD_TONE_CLASSES, type Tone } from "@/lib/tone";
 
 export function Card({
   children,
@@ -15,13 +8,13 @@ export function Card({
 }: {
   children: React.ReactNode;
   className?: string;
-  tone?: keyof typeof CARD_TONES;
+  tone?: Tone;
 }) {
   return (
     <div
       className={cn(
         "rounded-2xl border shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)]",
-        CARD_TONES[tone],
+        CARD_TONE_CLASSES[tone],
         className
       )}
     >

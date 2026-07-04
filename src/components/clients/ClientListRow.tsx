@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge, ClientStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
 import type { Client } from "@/lib/types";
@@ -14,6 +15,7 @@ export function ClientListRow({
       href={`/clients/${client.id}`}
       className="group flex items-center gap-4 px-5 py-4 hover:bg-cream-100/60 transition-colors"
     >
+      <AvatarChip name={client.companyName} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-heading text-base font-medium text-navy-900 truncate">
