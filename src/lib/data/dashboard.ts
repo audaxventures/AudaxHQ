@@ -20,6 +20,8 @@ export interface DashboardData {
   todoSnapshot: Task[];
   overdueTodoCount: number;
   invoiceAging: InvoiceAgingSummary;
+  /** Revenue collected (paid invoices) per week, oldest to newest, trailing 8 weeks. */
+  weeklyRevenueCollected: number[];
 }
 
 function mapClient(row: Record<string, unknown>): Client {
@@ -54,6 +56,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     todoRows,
     overdueCountRows,
     invoiceAging,
+    weeklyRevenueRows,
   ] = await Promise.all([
     sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
     sql`
@@ -91,6 +94,18 @@ export async function getDashboardData(): Promise<DashboardData> {
     `,
     sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < current_date`,
     getInvoiceAgingSummary(),
+    sql`
+      select coalesce(sum(i.amount), 0) as total
+      from generate_series(
+        date_trunc('week', current_date) - interval '7 weeks',
+        date_trunc('week', current_date),
+        interval '1 week'
+      ) as gs(week_start)
+      left join invoices i
+        on i.paid_date >= gs.week_start and i.paid_date < gs.week_start + interval '1 week'
+      group by gs.week_start
+      order by gs.week_start
+    `,
   ]);
 
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
@@ -153,5 +168,8 @@ export async function getDashboardData(): Promise<DashboardData> {
       (overdueCountRows[0] as Record<string, unknown>).count
     ),
     invoiceAging,
+    weeklyRevenueCollected: weeklyRevenueRows.map((r) =>
+      Number((r as Record<string, unknown>).total)
+    ),
   };
 }
