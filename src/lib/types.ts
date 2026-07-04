@@ -22,12 +22,13 @@ export type TaskType =
   | "H2MB"
   | "OTHER";
 export type WorkType =
-  | "CUSTOM_SOFTWARE"
-  | "WEB_APP"
-  | "MOBILE_APP"
-  | "INTERNAL_TOOL"
-  | "WEBSITE"
-  | "INTEGRATION_API"
+  | "SOFTWARE_DEVELOPMENT"
+  | "FRACTIONAL_CAIO"
+  | "FRACTIONAL_COO"
+  | "FRACTIONAL_CMO"
+  | "MARKETING_SERVICES"
+  | "WEBSITE_DEVELOPMENT"
+  | "ADVISORY"
   | "OTHER";
 export type LeadSource =
   | "REFERRAL"
@@ -200,22 +201,24 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
 ];
 
 export const WORK_TYPE_LABELS: Record<WorkType, string> = {
-  CUSTOM_SOFTWARE: "Custom Software Development",
-  WEB_APP: "Web App",
-  MOBILE_APP: "Mobile App",
-  INTERNAL_TOOL: "Internal Tool",
-  WEBSITE: "Website",
-  INTEGRATION_API: "Integration/API Work",
+  SOFTWARE_DEVELOPMENT: "Software Development",
+  FRACTIONAL_CAIO: "Fractional CAIO",
+  FRACTIONAL_COO: "Fractional COO",
+  FRACTIONAL_CMO: "Fractional CMO",
+  MARKETING_SERVICES: "Marketing Services",
+  WEBSITE_DEVELOPMENT: "Website Development",
+  ADVISORY: "Advisory",
   OTHER: "Other",
 };
 
 export const WORK_TYPE_ORDER: WorkType[] = [
-  "CUSTOM_SOFTWARE",
-  "WEB_APP",
-  "MOBILE_APP",
-  "INTERNAL_TOOL",
-  "WEBSITE",
-  "INTEGRATION_API",
+  "SOFTWARE_DEVELOPMENT",
+  "FRACTIONAL_CAIO",
+  "FRACTIONAL_COO",
+  "FRACTIONAL_CMO",
+  "MARKETING_SERVICES",
+  "WEBSITE_DEVELOPMENT",
+  "ADVISORY",
   "OTHER",
 ];
 

@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types";
 import { INVOICE_AGE_BRACKET_LABELS, TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/lib/types";
 
-type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy";
+type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue";
 
 const TONE_CLASSES: Record<Tone, string> = {
   sage: "bg-sage-100 text-sage-600",
@@ -19,6 +19,7 @@ const TONE_CLASSES: Record<Tone, string> = {
   slate: "bg-slate-100 text-slate-600",
   burnt: "bg-burnt-100 text-burnt-600",
   navy: "bg-navy-100 text-navy-700",
+  blue: "bg-blue-100 text-blue-600",
 };
 
 export function Badge({
@@ -99,8 +100,8 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
 }
 
 const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
-  TO_BE_DONE: "slate",
-  IN_PROGRESS: "navy",
+  TO_BE_DONE: "burnt",
+  IN_PROGRESS: "blue",
   AWAITING_CLIENT_FEEDBACK: "gold",
   COMPLETED: "sage",
 };

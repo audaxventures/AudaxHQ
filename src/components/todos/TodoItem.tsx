@@ -11,6 +11,13 @@ import type { Task, TaskStatus } from "@/lib/types";
 import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
 import { deleteTask, setTaskStatus, updateTask } from "@/lib/actions/tasks";
 
+const STATUS_SELECT_TONE: Record<TaskStatus, string> = {
+  TO_BE_DONE: "border-burnt-200! bg-burnt-100! text-burnt-600!",
+  IN_PROGRESS: "border-blue-600/20! bg-blue-100! text-blue-600!",
+  AWAITING_CLIENT_FEEDBACK: "border-gold-600/20! bg-gold-100! text-gold-600!",
+  COMPLETED: "border-sage-600/20! bg-sage-100! text-sage-600!",
+};
+
 export function TodoItem({ task, allTags }: { task: Task; allTags: string[] }) {
   const [editing, setEditing] = useState(false);
   const [, startTransition] = useTransition();
@@ -119,7 +126,7 @@ export function TodoItem({ task, allTags }: { task: Task; allTags: string[] }) {
               await setTaskStatus(task.id, task.clientId, task.leadId, e.target.value as TaskStatus);
             })
           }
-          className="w-auto text-xs py-1 px-2"
+          className={cn("w-auto text-xs font-semibold py-1 px-2", STATUS_SELECT_TONE[task.status])}
           aria-label="Task status"
         >
           {TASK_STATUS_ORDER.map((s) => (
