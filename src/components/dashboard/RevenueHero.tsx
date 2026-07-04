@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/cn";
 
 const SPARK_WIDTH = 220;
 const SPARK_HEIGHT = 64;
@@ -57,6 +58,9 @@ export function RevenueHero({
   const last = points[points.length - 1];
   const areaPath = `${linePath} L${last.x},${SPARK_HEIGHT} L${points[0].x},${SPARK_HEIGHT} Z`;
   const lastValue = weeklyRevenue[weeklyRevenue.length - 1] ?? 0;
+  const priorValue = weeklyRevenue[weeklyRevenue.length - 2] ?? 0;
+  const delta = lastValue - priorValue;
+  const deltaPercent = priorValue > 0 ? Math.round((delta / priorValue) * 100) : null;
 
   return (
     <section className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-navy-900 to-navy-950 p-7 text-cream-50 sm:p-8">
@@ -86,7 +90,17 @@ export function RevenueHero({
           </Link>
         </div>
         <div className="text-right">
-          <p className="mb-2 text-[11px] text-navy-300">Collected, trailing 8 weeks</p>
+          <p className="text-[11px] text-navy-300">Collected, trailing 8 weeks</p>
+          <p
+            className={cn(
+              "mb-1 inline-flex items-center gap-0.5 text-[11px] font-semibold",
+              delta === 0 ? "invisible" : delta > 0 ? "text-sage-100" : "text-brick-100"
+            )}
+          >
+            {delta > 0 ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+            {deltaPercent !== null ? `${Math.abs(deltaPercent)}%` : formatCurrency(Math.abs(delta))} vs prior
+            week
+          </p>
           <svg viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} className="h-16 w-full overflow-visible">
             <defs>
               <linearGradient id="revSparkFill" x1="0" y1="0" x2="0" y2="1">

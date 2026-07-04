@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Receipt } from "lucide-react";
+import { FileStack, Receipt } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -35,17 +35,27 @@ export default async function InvoiceAgingPage({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <Card tone="burnt" className="p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-navy-400 mb-2">
-            Total outstanding
-          </p>
-          <p className="font-heading text-3xl text-navy-900">{formatCurrency(totalOutstanding)}</p>
+        <Card tone="burnt" variant="solid" className="p-5 flex items-center gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-burnt-600 shadow-sm">
+            <Receipt size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
+              {formatCurrency(totalOutstanding)}
+            </p>
+            <p className="text-xs font-semibold text-navy-600">Total outstanding</p>
+          </div>
         </Card>
-        <Card tone="burnt" className="p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-navy-400 mb-2">
-            Invoices shown
-          </p>
-          <p className="font-heading text-3xl text-navy-900">{invoices.length}</p>
+        <Card tone="burnt" variant="solid" className="p-5 flex items-center gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-burnt-600 shadow-sm">
+            <FileStack size={20} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
+              {invoices.length}
+            </p>
+            <p className="text-xs font-semibold text-navy-600">Invoices shown</p>
+          </div>
         </Card>
       </div>
 
