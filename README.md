@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql`; query helpers in `src/lib/data/`
 - **Framer Motion** for page-transition polish
 - A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
 
@@ -29,12 +29,15 @@ You need a Postgres database to develop against — see "Database setup" below. 
    ```bash
    psql "$DATABASE_URL" -f migrations/001_init.sql
    psql "$DATABASE_URL" -f migrations/002_feature_update.sql
+   psql "$DATABASE_URL" -f migrations/003_work_type_update.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
-There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/003_*.sql` file and run it the same way.
+There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/004_*.sql` file and run it the same way.
 
 **`002_feature_update.sql` is a breaking change** — it renames columns (`clients.name`/`leads.name` → `contact_name` + new `company_name`), replaces the single project/recurring invoice fields with a per-client `invoices` list, replaces `leads.next_follow_up_date` with a `follow_ups` list, adds a `meeting_notes` table, and folds `client_tasks` into a unified `todos` table with a new `type`/`status` model. It migrates existing data in place (wrapped in a transaction), but the app code in this deploy will not run against the old (pre-002) schema — **run it before or as part of deploying this version**, not after.
+
+**`003_work_type_update.sql` is also a breaking change** — it replaces the `work_type` enum's options (old software/website categories → Software Development, Fractional CAIO, Fractional COO, Fractional CMO, Marketing Services, Website Development, Advisory, Other) and remaps every existing client/lead onto the closest new category (see the comment at the top of the file for the exact mapping). As with 002, **run it before deploying this version** — the app's dropdown will reject/mis-render the old enum values once this code ships.
 
 ### 2. Set environment variables in Vercel
 
@@ -63,6 +66,7 @@ There are no user accounts. `src/proxy.ts` checks every request (except `/login`
 ```
 migrations/001_init.sql        the original DB schema
 migrations/002_feature_update.sql  breaking schema update (invoices/follow-ups/meeting notes lists, unified todos, company-name-primary)
+migrations/003_work_type_update.sql  breaking change: new work_type categories (fractional exec / marketing services)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/data/                  query functions, grouped by domain (clients, leads, todos, followups, meetingnotes, dashboard)
