@@ -97,6 +97,18 @@ export interface MeetingNote {
   ownerName?: string;
 }
 
+export interface ClientDocument {
+  id: string;
+  clientId: string;
+  fileName: string;
+  filePath: string;
+  fileType: string;
+  fileSize: number;
+  label: string | null;
+  uploadedBy: string;
+  createdAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -137,6 +149,7 @@ export interface ClientWithRelations extends Client {
   invoices: Invoice[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
+  documents: ClientDocument[];
 }
 
 export interface Lead {

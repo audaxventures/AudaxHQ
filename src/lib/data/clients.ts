@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types";
 import { listFollowUpsForClient } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
+import { listDocuments } from "@/lib/data/documents";
 
 function mapClient(row: Record<string, unknown>): Client {
   return {
@@ -100,7 +101,7 @@ export async function listClients(filters: ClientFilters = {}): Promise<
 }
 
 export async function getClient(id: string): Promise<ClientWithRelations | null> {
-  const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes] =
+  const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes, documents] =
     await Promise.all([
       sql`select * from clients where id = ${id}`,
       sql`select * from client_notes where client_id = ${id} order by created_at desc`,
@@ -109,6 +110,7 @@ export async function getClient(id: string): Promise<ClientWithRelations | null>
       listTasks({ clientId: id }),
       listFollowUpsForClient(id),
       listMeetingNotes({ clientId: id }),
+      listDocuments(id),
     ]);
 
   if (clientRows.length === 0) return null;
@@ -121,6 +123,7 @@ export async function getClient(id: string): Promise<ClientWithRelations | null>
     tasks,
     followUps,
     meetingNotes,
+    documents,
   };
 }
 

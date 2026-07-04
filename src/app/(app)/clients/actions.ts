@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
+import * as documents from "@/lib/data/documents";
+import { supabase, DOCUMENTS_BUCKET } from "@/lib/storage";
+import { MAX_DOCUMENT_SIZE_BYTES, getFileExtension, isAllowedDocumentExtension } from "@/lib/documents";
 
 const clientSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -145,4 +148,54 @@ export async function deleteInvoice(clientId: string, invoiceId: string) {
   await clients.deleteInvoice(invoiceId);
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/");
+}
+
+// --- Documents ---
+
+export async function uploadDocument(clientId: string, formData: FormData) {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Choose a file to upload.");
+  }
+  if (!isAllowedDocumentExtension(file.name)) {
+    throw new Error("That file type isn't supported.");
+  }
+  if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+    throw new Error("File is too large (25MB max).");
+  }
+  const label = String(formData.get("label") ?? "").trim() || null;
+  const filePath = documents.newDocumentStoragePath(clientId, file.name);
+
+  const { error } = await supabase.storage
+    .from(DOCUMENTS_BUCKET)
+    .upload(filePath, file, { contentType: file.type || undefined });
+  if (error) throw new Error(error.message);
+
+  await documents.createDocument({
+    clientId,
+    fileName: file.name,
+    filePath,
+    fileType: getFileExtension(file.name),
+    fileSize: file.size,
+    label,
+  });
+  revalidatePath(`/clients/${clientId}`);
+}
+
+export async function deleteDocument(clientId: string, documentId: string) {
+  const doc = await documents.getDocument(documentId);
+  if (!doc) return;
+  await supabase.storage.from(DOCUMENTS_BUCKET).remove([doc.filePath]);
+  await documents.deleteDocumentRecord(documentId);
+  revalidatePath(`/clients/${clientId}`);
+}
+
+export async function getDocumentDownloadUrl(documentId: string): Promise<string> {
+  const doc = await documents.getDocument(documentId);
+  if (!doc) throw new Error("Document not found.");
+  const { data, error } = await supabase.storage
+    .from(DOCUMENTS_BUCKET)
+    .createSignedUrl(doc.filePath, 60, { download: doc.fileName });
+  if (error || !data) throw new Error(error?.message ?? "Could not create a download link.");
+  return data.signedUrl;
 }
