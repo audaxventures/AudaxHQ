@@ -9,6 +9,7 @@ import { InvoicesList } from "@/components/clients/InvoicesList";
 import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { EmailSection } from "@/components/EmailSection";
+import { DocumentsSection } from "@/components/clients/DocumentsSection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency } from "@/lib/format";
@@ -82,6 +83,11 @@ export default async function ClientDetailPage({
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Meeting notes</h3>
             <MeetingNotesSection owner={owner} notes={client.meetingNotes} />
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Documents</h3>
+            <DocumentsSection clientId={id} documents={client.documents} />
           </Card>
 
           <Card className="p-6">

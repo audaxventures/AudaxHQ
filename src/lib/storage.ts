@@ -1,0 +1,20 @@
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error(
+    "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set. Add them to your environment (see .env.example)."
+  );
+}
+
+export const DOCUMENTS_BUCKET = "client-documents";
+
+// Server-only: the service_role key bypasses row-level security, so this
+// client must never be imported into client components. The bucket itself
+// is private — every download goes through a signed URL minted on request
+// (see getDocumentDownloadUrl in clients/actions.ts), never a public link.
+export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: { persistSession: false },
+});
