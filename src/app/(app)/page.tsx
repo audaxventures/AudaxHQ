@@ -31,6 +31,15 @@ function todayLabel() {
 export default async function DashboardPage() {
   const data = await getDashboardData();
 
+  const now = new Date();
+  const newClientsThisMonth = data.activeClients.filter((c) => {
+    if (!c.startDate) return false;
+    const start = new Date(c.startDate);
+    return (
+      start.getUTCFullYear() === now.getUTCFullYear() && start.getUTCMonth() === now.getUTCMonth()
+    );
+  }).length;
+
   return (
     <div>
       <div className="mb-8">
@@ -66,6 +75,11 @@ export default async function DashboardPage() {
                 {data.activeClients.length}
               </p>
               <p className="text-xs font-semibold text-navy-600">Active clients</p>
+              {newClientsThisMonth > 0 && (
+                <p className="mt-0.5 text-[11px] font-medium text-sage-600">
+                  +{newClientsThisMonth} this month
+                </p>
+              )}
             </div>
           </Card>
           <Card
@@ -180,6 +194,11 @@ export default async function DashboardPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {data.hotFollowUps.length > 3 && (
+              <p className="px-1 pt-2 text-xs font-medium text-navy-400">
+                +{data.hotFollowUps.length - 3} more
+              </p>
             )}
           </Card>
 
