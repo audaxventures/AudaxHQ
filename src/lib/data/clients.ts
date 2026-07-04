@@ -177,8 +177,8 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
   }
 }
 
-export async function deleteClient(id: string): Promise<void> {
-  await sql`delete from clients where id = ${id}`;
+export async function setClientStatus(id: string, status: ClientStatus): Promise<void> {
+  await sql`update clients set status = ${status}, updated_at = now() where id = ${id}`;
 }
 
 // --- Notes ---

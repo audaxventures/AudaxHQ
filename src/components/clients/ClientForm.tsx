@@ -85,7 +85,7 @@ export function ClientForm({
           <Select id="status" name="status" defaultValue={client?.status ?? ("ACTIVE" as ClientStatus)}>
             <option value="ACTIVE">Active</option>
             <option value="PAUSED">Paused</option>
-            <option value="CHURNED">Churned</option>
+            <option value="CHURNED">Archived</option>
           </Select>
         </FieldGroup>
         <FieldGroup>
