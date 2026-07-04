@@ -48,7 +48,7 @@ export function ClientFilterBar({
           Paused
         </FilterPill>
         <FilterPill href={buildHref(current, "status", "CHURNED")} active={status === "CHURNED"}>
-          Churned
+          Archived
         </FilterPill>
       </div>
       <span className="w-px h-5 bg-navy-200 mx-1 hidden sm:block" />

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getClient } from "@/lib/data/clients";
-import { deleteClient } from "@/app/(app)/clients/actions";
+import { activateClient, archiveClient } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
 import { ClientForm } from "@/components/clients/ClientForm";
@@ -23,7 +23,9 @@ export default async function ClientDetailPage({
   const client = await getClient(id);
   if (!client) notFound();
 
-  const boundDeleteClient = deleteClient.bind(null, id);
+  const isArchived = client.status === "CHURNED";
+  const boundArchiveClient = archiveClient.bind(null, id);
+  const boundActivateClient = activateClient.bind(null, id);
   const owner = { type: "CLIENT" as const, clientId: id };
 
   return (
@@ -47,9 +49,9 @@ export default async function ClientDetailPage({
             )}
           </div>
         </div>
-        <form action={boundDeleteClient}>
-          <Button variant="danger" size="sm" type="submit">
-            Delete client
+        <form action={isArchived ? boundActivateClient : boundArchiveClient}>
+          <Button variant={isArchived ? "primary" : "secondary"} size="sm" type="submit">
+            {isArchived ? "Activate client" : "Archive client"}
           </Button>
         </form>
       </div>

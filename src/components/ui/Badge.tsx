@@ -48,13 +48,13 @@ export function Badge({
 const CLIENT_STATUS_TONE: Record<ClientStatus, Tone> = {
   ACTIVE: "sage",
   PAUSED: "gold",
-  CHURNED: "brick",
+  CHURNED: "slate",
 };
 
 const CLIENT_STATUS_LABEL: Record<ClientStatus, string> = {
   ACTIVE: "Active",
   PAUSED: "Paused",
-  CHURNED: "Churned",
+  CHURNED: "Archived",
 };
 
 export function ClientStatusBadge({ status }: { status: ClientStatus }) {

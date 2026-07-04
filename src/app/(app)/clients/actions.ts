@@ -68,11 +68,18 @@ export async function updateClient(id: string, formData: FormData) {
   revalidatePath("/");
 }
 
-export async function deleteClient(id: string) {
-  await clients.deleteClient(id);
+export async function archiveClient(id: string) {
+  await clients.setClientStatus(id, "CHURNED");
+  revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");
-  redirect("/clients");
+}
+
+export async function activateClient(id: string) {
+  await clients.setClientStatus(id, "ACTIVE");
+  revalidatePath(`/clients/${id}`);
+  revalidatePath("/clients");
+  revalidatePath("/");
 }
 
 export async function addClientNote(clientId: string, formData: FormData) {
