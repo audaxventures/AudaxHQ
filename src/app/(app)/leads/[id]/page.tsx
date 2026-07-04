@@ -5,6 +5,7 @@ import { deleteLead, convertLeadToClient } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
 import { LeadForm } from "@/components/leads/LeadForm";
+import { EmailSection } from "@/components/EmailSection";
 import { NotesLog } from "@/components/NotesLog";
 import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
@@ -136,6 +137,12 @@ export default async function LeadDetailPage({
               </div>
             </dl>
           </Card>
+
+          <EmailSection
+            contactEmail={lead.contactEmail}
+            contactName={lead.contactName}
+            companyName={lead.companyName}
+          />
 
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">Tasks</h3>
