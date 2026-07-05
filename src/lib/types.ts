@@ -281,6 +281,8 @@ export interface CostRollup {
   totalHours: number;
   /** Cost of billable hours only — non-billable time isn't part of what was priced. */
   variableCost: number;
+  /** hours × rate for non-billable time entries — a real labor cost even though it isn't billed to anyone. */
+  nonBillableCost: number;
   fixedCost: number;
   totalCost: number;
 }

@@ -91,6 +91,7 @@ export function rollupCostEntries(entries: CostEntry[]): CostRollup {
   let billableHours = 0;
   let nonBillableHours = 0;
   let variableCost = 0;
+  let nonBillableCost = 0;
   let fixedCost = 0;
 
   for (const e of entries) {
@@ -100,6 +101,7 @@ export function rollupCostEntries(entries: CostEntry[]): CostRollup {
         variableCost += e.amount;
       } else {
         nonBillableHours += e.hours ?? 0;
+        nonBillableCost += e.amount;
       }
     } else {
       fixedCost += e.amount;
@@ -107,7 +109,15 @@ export function rollupCostEntries(entries: CostEntry[]): CostRollup {
   }
 
   const totalHours = billableHours + nonBillableHours;
-  return { billableHours, nonBillableHours, totalHours, variableCost, fixedCost, totalCost: variableCost + fixedCost };
+  return {
+    billableHours,
+    nonBillableHours,
+    totalHours,
+    variableCost,
+    nonBillableCost,
+    fixedCost,
+    totalCost: variableCost + fixedCost,
+  };
 }
 
 /** Per-work-category hours/cost breakdown for time entries, sorted by total hours descending. */

@@ -1,23 +1,28 @@
-import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { Download, Clock } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { LinkButton } from "@/components/ui/Button";
 import { TrackerFilters } from "@/components/tracker/TrackerFilters";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
-import { AddEntryForm } from "@/components/tracker/AddEntryForm";
+import { LogTimeEntryButton } from "@/components/tracker/LogTimeEntryButton";
+import { Pagination } from "@/components/ui/Pagination";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { formatCurrency } from "@/lib/format";
+import { FIXED_COST_CATEGORY_LABELS } from "@/lib/types";
 import type { Tone } from "@/lib/tone";
 
-function StatTile({ label, value, tone }: { label: string; value: string; tone: Tone }) {
+const PAGE_SIZE = 15;
+
+function StatTile({ label, value, subtext, tone }: { label: string; value: string; subtext?: string; tone: Tone }) {
   return (
     <Card tone={tone} variant="solid" className="p-4">
       <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">{value}</p>
       <p className="text-xs font-semibold text-navy-600">{label}</p>
+      {subtext && <p className="mt-0.5 text-xs text-navy-400">{subtext}</p>}
     </Card>
   );
 }
@@ -37,8 +42,11 @@ export default async function TrackerPage({
     dateFrom: sp.dateFrom || undefined,
     dateTo: sp.dateTo || undefined,
   };
+  const showArchived = sp.archived === "true";
+  const search = (sp.q ?? "").trim().toLowerCase();
+  const page = Math.max(1, Number(sp.page) || 1);
 
-  const [entries, teamMembers, workCategories, clients, leads] = await Promise.all([
+  const [allEntries, teamMembers, workCategories, clients, leads] = await Promise.all([
     listCostEntries(filters),
     listTeamMembers({ includeInactive: true }),
     listWorkCategories({ includeInactive: true }),
@@ -46,7 +54,63 @@ export default async function TrackerPage({
     listLeads(),
   ]);
 
+  const inactiveTeamMemberIds = new Set(teamMembers.filter((t) => !t.active).map((t) => t.id));
+  const inactiveCategoryIds = new Set(workCategories.filter((c) => !c.active).map((c) => c.id));
+  const churnedClientIds = new Set(clients.filter((c) => c.status === "CHURNED").map((c) => c.id));
+
+  let entries = allEntries;
+  if (!showArchived) {
+    entries = entries.filter((e) => {
+      if (e.clientId && churnedClientIds.has(e.clientId)) return false;
+      if (e.teamMemberName && e.entryType === "TIME") {
+        const tm = teamMembers.find((t) => t.name === e.teamMemberName);
+        if (tm && inactiveTeamMemberIds.has(tm.id)) return false;
+      }
+      if (e.workCategoryId && inactiveCategoryIds.has(e.workCategoryId)) return false;
+      return true;
+    });
+  }
+  if (search) {
+    entries = entries.filter((e) => {
+      const categoryLabel =
+        e.entryType === "TIME" ? e.workCategoryName ?? "Uncategorized" : e.category ? FIXED_COST_CATEGORY_LABELS[e.category] : "";
+      const haystack = [e.ownerName, e.description, e.teamMemberName, categoryLabel].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(search);
+    });
+  }
+
   const rollup = rollupCostEntries(entries);
+  const revenue = rollup.variableCost;
+  const costs = rollup.nonBillableCost + rollup.fixedCost;
+  const profit = revenue - costs;
+  const marginPercent = revenue > 0 ? (profit / revenue) * 100 : null;
+  const billablePercent = rollup.totalHours > 0 ? (rollup.billableHours / rollup.totalHours) * 100 : null;
+
+  const total = entries.length;
+  const start = (page - 1) * PAGE_SIZE;
+  const pageEntries = entries.slice(start, start + PAGE_SIZE);
+
+  const filterParams: Record<string, string | undefined> = {
+    clientId: filters.clientId,
+    leadId: filters.leadId,
+    teamMemberId: filters.teamMemberId,
+    workCategoryId: filters.workCategoryId,
+    billable: sp.billable,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    q: sp.q,
+    archived: sp.archived,
+  };
+
+  function buildPageHref(targetPage: number) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filterParams)) {
+      if (v) params.set(k, v);
+    }
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const qs = params.toString();
+    return qs ? `/tracker?${qs}` : "/tracker";
+  }
 
   const reportQuery = new URLSearchParams();
   if (filters.clientId) reportQuery.set("clientId", filters.clientId);
@@ -57,6 +121,12 @@ export default async function TrackerPage({
   if (filters.dateFrom) reportQuery.set("dateFrom", filters.dateFrom);
   if (filters.dateTo) reportQuery.set("dateTo", filters.dateTo);
 
+  const activeTeamMembers = teamMembers.filter((t) => t.active);
+  const activeWorkCategories = workCategories.filter((c) => c.active);
+  const filterClients = showArchived ? clients : clients.filter((c) => c.status !== "CHURNED");
+  const filterTeamMembers = showArchived ? teamMembers : activeTeamMembers;
+  const filterWorkCategories = showArchived ? workCategories : activeWorkCategories;
+
   return (
     <div>
       <PageHeader
@@ -65,60 +135,54 @@ export default async function TrackerPage({
         eyebrow="Time & Cost"
         title="Hour & Cost Tracker"
         description="Log time and expenses against clients and leads to see real profitability, not just invoicing status."
+        action={
+          <div className="flex items-center gap-3">
+            <LinkButton variant="secondary" href={`/api/reports?${reportQuery.toString()}`}>
+              <Download size={16} /> Export report
+            </LinkButton>
+            <LogTimeEntryButton
+              clients={clients}
+              leads={leads}
+              teamMembers={activeTeamMembers}
+              workCategories={activeWorkCategories}
+            />
+          </div>
+        }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatTile label="Hours logged" value={rollup.totalHours.toFixed(1)} tone="navy" />
-        <StatTile label="Variable cost" value={formatCurrency(rollup.variableCost)} tone="burnt" />
-        <StatTile label="Fixed cost" value={formatCurrency(rollup.fixedCost)} tone="gold" />
-        <StatTile label="Total cost" value={formatCurrency(rollup.totalCost)} tone="slate" />
+        <StatTile
+          label="Billable hours"
+          value={rollup.billableHours.toFixed(1)}
+          subtext={billablePercent !== null ? `${billablePercent.toFixed(1)}% of total` : undefined}
+          tone="slate"
+        />
+        <StatTile label="Revenue" value={formatCurrency(revenue)} subtext="From billable hours" tone="sage" />
+        <StatTile label="Costs" value={formatCurrency(costs)} subtext="Total cost" tone="burnt" />
+        <StatTile
+          label="Profit"
+          value={formatCurrency(profit)}
+          subtext={marginPercent !== null ? `${marginPercent.toFixed(1)}% margin` : undefined}
+          tone="gold"
+        />
       </div>
 
       <Card className="mb-6 p-6">
-        <TrackerFilters clients={clients} leads={leads} teamMembers={teamMembers} workCategories={workCategories} filters={sp} />
+        <TrackerFilters
+          clients={filterClients}
+          leads={leads}
+          teamMembers={filterTeamMembers}
+          workCategories={filterWorkCategories}
+          filters={filterParams}
+        />
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Card className="p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-heading text-lg font-medium text-navy-900">Entry log</h3>
-              <a
-                href={`/api/reports?${reportQuery.toString()}`}
-                className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline"
-              >
-                Download report
-              </a>
-            </div>
-            <CostEntryTable entries={entries} showOwner deletable />
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Add entry</h3>
-            <AddEntryForm
-              clients={clients}
-              leads={leads}
-              teamMembers={teamMembers.filter((t) => t.active)}
-              workCategories={workCategories.filter((c) => c.active)}
-            />
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="mb-2 font-heading text-lg font-medium text-navy-900">Team &amp; categories</h3>
-            <p className="mb-3 text-sm text-navy-500">
-              Add, edit, or archive team members and work categories from Settings.
-            </p>
-            <Link
-              href="/settings/team-members"
-              className="flex items-center gap-1.5 text-sm font-medium text-burnt-600 hover:text-burnt-700"
-            >
-              Go to Settings <ArrowRight size={14} />
-            </Link>
-          </Card>
-        </div>
-      </div>
+      <Card className="p-6">
+        <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Entry log</h3>
+        <CostEntryTable entries={pageEntries} showOwner deletable />
+        <Pagination page={page} pageSize={PAGE_SIZE} total={total} itemLabel="entries" buildHref={buildPageHref} />
+      </Card>
     </div>
   );
 }
