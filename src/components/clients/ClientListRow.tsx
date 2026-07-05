@@ -3,6 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge, ClientStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
+import { avatarColorClass } from "@/lib/avatar";
+import { cn } from "@/lib/cn";
 import type { Client } from "@/lib/types";
 
 export function ClientListRow({
@@ -13,18 +15,19 @@ export function ClientListRow({
   return (
     <Link
       href={`/clients/${client.id}`}
-      className="group flex items-center gap-4 px-5 py-4 hover:bg-cream-100/60 transition-colors"
+      className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-white py-4 pl-6 pr-5 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] transition-colors hover:bg-cream-100/60"
     >
+      <span
+        className={cn("absolute inset-y-0 left-0 w-1.5", avatarColorClass(client.companyName))}
+      />
       <AvatarChip name={client.companyName} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-heading text-base font-medium text-navy-900 truncate">
-            {client.companyName}
-          </p>
-          {client.contactName && (
-            <span className="text-sm text-navy-400 truncate">{client.contactName}</span>
-          )}
-        </div>
+        <p className="font-heading text-base font-medium text-navy-900 truncate">
+          {client.companyName}
+        </p>
+        {client.contactName && (
+          <p className="text-sm text-navy-400 truncate">{client.contactName}</p>
+        )}
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           <ClientStatusBadge status={client.status} />
           <Badge tone="navy">{client.type === "PROJECT" ? "Project" : "Recurring"}</Badge>

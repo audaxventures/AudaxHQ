@@ -1,23 +1,47 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import { ClientFilterBar } from "@/components/clients/ClientFilterBar";
 import { ClientListRow } from "@/components/clients/ClientListRow";
-import { listClients } from "@/lib/data/clients";
+import { ClientGridCard } from "@/components/clients/ClientGridCard";
+import { listClients, countClients } from "@/lib/data/clients";
 import type { ClientStatus, ClientType } from "@/lib/types";
 import { Plus, Users } from "lucide-react";
+
+const PAGE_SIZE = 10;
 
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; type?: string }>;
+  searchParams: Promise<{ status?: string; type?: string; view?: string; page?: string }>;
 }) {
-  const { status, type } = await searchParams;
-  const clients = await listClients({
-    status: status as ClientStatus | undefined,
-    type: type as ClientType | undefined,
-  });
+  const { status, type, view, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const isGrid = view === "grid";
+
+  const [clients, total] = await Promise.all([
+    listClients({
+      status: status as ClientStatus | undefined,
+      type: type as ClientType | undefined,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    }),
+    countClients({
+      status: status as ClientStatus | undefined,
+      type: type as ClientType | undefined,
+    }),
+  ]);
+
+  const buildPageHref = (targetPage: number) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (type) params.set("type", type);
+    if (view) params.set("view", view);
+    if (targetPage > 1) params.set("page", String(targetPage));
+    const qs = params.toString();
+    return qs ? `/clients?${qs}` : "/clients";
+  };
 
   return (
     <div>
@@ -33,20 +57,27 @@ export default async function ClientsPage({
           </LinkButton>
         }
       />
-      <ClientFilterBar status={status} type={type} />
+      <ClientFilterBar status={status} type={type} view={view} />
       {clients.length === 0 ? (
         <EmptyState
           title="No clients match these filters"
           description="Try a different filter, or add your first client."
           action={<LinkButton href="/clients/new">Add a client</LinkButton>}
         />
+      ) : isGrid ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {clients.map((client) => (
+            <ClientGridCard key={client.id} client={client} />
+          ))}
+        </div>
       ) : (
-        <Card tone="slate" className="divide-y divide-navy-100 overflow-hidden">
+        <div className="space-y-3">
           {clients.map((client) => (
             <ClientListRow key={client.id} client={client} />
           ))}
-        </Card>
+        </div>
       )}
+      <Pagination page={page} pageSize={PAGE_SIZE} total={total} itemLabel="clients" buildHref={buildPageHref} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-const AVATAR_COLORS = ["bg-navy-700", "bg-burnt-600", "bg-sage-600", "bg-slate-600"];
+const AVATAR_COLORS = ["bg-navy-700", "bg-sage-600", "bg-slate-600", "bg-blue-600", "bg-burnt-600"];
 
 export function avatarColorClass(seed: string): string {
   let hash = 0;

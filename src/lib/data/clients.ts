@@ -71,6 +71,8 @@ function mapInvoice(row: Record<string, unknown>): Invoice {
 export interface ClientFilters {
   status?: ClientStatus;
   type?: ClientType;
+  limit?: number;
+  offset?: number;
 }
 
 export async function listClients(filters: ClientFilters = {}): Promise<
@@ -95,12 +97,26 @@ export async function listClients(filters: ClientFilters = {}): Promise<
     where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
       and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
     order by c.status = 'ACTIVE' desc, c.company_name asc
+    limit ${filters.limit ?? null}
+    offset ${filters.offset ?? 0}
   `;
   return rows.map((row) => ({
     ...mapClient(row as Record<string, unknown>),
     unpaidInvoiceCount: Number((row as Record<string, unknown>).unpaid_invoice_count),
     invoiceCount: Number((row as Record<string, unknown>).invoice_count),
   }));
+}
+
+export async function countClients(
+  filters: Pick<ClientFilters, "status" | "type"> = {}
+): Promise<number> {
+  const rows = await sql`
+    select count(*) as count
+    from clients c
+    where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
+      and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
+  `;
+  return Number((rows[0] as Record<string, unknown>).count);
 }
 
 export async function getClient(id: string): Promise<ClientWithRelations | null> {
