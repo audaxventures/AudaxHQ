@@ -3,7 +3,7 @@ import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getInvoiceAgingSummary, type InvoiceAgingSummary } from "@/lib/data/invoicing";
 import { getAppSettings } from "@/lib/data/appSettings";
-import type { Client, ClientType, Task, TaskStatus, TaskType } from "@/lib/types";
+import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
   type: "invoice" | "lead-follow-up";
@@ -151,6 +151,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       description: row.description as string | null,
       dueDate: row.due_date as string | null,
       status: row.status as TaskStatus,
+      priority: row.priority as TaskPriority,
       type: row.type as TaskType,
       // Not surfaced on the dashboard (no type badges here), so skip the join.
       todoTypeId: row.todo_type_id as string | null,

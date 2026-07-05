@@ -13,6 +13,7 @@ export type TaskStatus =
   | "IN_PROGRESS"
   | "AWAITING_CLIENT_FEEDBACK"
   | "COMPLETED";
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 /**
  * CLIENT/LEAD are fixed system types tied structurally to an actual
  * client_id/lead_id (enforced by a DB check constraint) — not editable
@@ -99,6 +100,7 @@ export interface Task {
   description: string | null;
   dueDate: string | null;
   status: TaskStatus;
+  priority: TaskPriority;
   type: TaskType;
   /** Set (and meaningful) only when type === "CUSTOM". */
   todoTypeId: string | null;
@@ -348,7 +350,7 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   TO_BE_DONE: "To Be Done",
   IN_PROGRESS: "In Progress",
-  AWAITING_CLIENT_FEEDBACK: "Awaiting Client Feedback",
+  AWAITING_CLIENT_FEEDBACK: "Waiting on Client",
   COMPLETED: "Completed",
 };
 
@@ -358,6 +360,14 @@ export const TASK_STATUS_ORDER: TaskStatus[] = [
   "AWAITING_CLIENT_FEEDBACK",
   "COMPLETED",
 ];
+
+export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+};
+
+export const TASK_PRIORITY_ORDER: TaskPriority[] = ["HIGH", "MEDIUM", "LOW"];
 
 /** Labels for the two fixed system types; CUSTOM tasks use their joined todoTypeName instead. */
 export const FIXED_TASK_TYPE_LABELS: Record<"CLIENT" | "LEAD", string> = {

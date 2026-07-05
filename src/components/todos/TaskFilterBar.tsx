@@ -1,112 +1,193 @@
-import Link from "next/link";
-import { cn } from "@/lib/cn";
-import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
+"use client";
+
+import { useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowUpDown, Calendar, Flag, List, Search, Tag as TagIcon } from "lucide-react";
+import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
+import { TASK_PRIORITY_LABELS, TASK_PRIORITY_ORDER, TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
 import type { TodoType } from "@/lib/types";
 
-interface CurrentFilters {
+interface Filters {
+  q?: string;
   type?: string;
   todoTypeId?: string;
   status?: string;
   tag?: string;
+  priority?: string;
+  due?: string;
+  sort?: string;
 }
 
-function buildHref(current: CurrentFilters, updates: Partial<CurrentFilters>) {
-  const merged = { ...current, ...updates };
-  const params = new URLSearchParams();
-  if (merged.type) params.set("type", merged.type);
-  if (merged.todoTypeId) params.set("todoTypeId", merged.todoTypeId);
-  if (merged.status) params.set("status", merged.status);
-  if (merged.tag) params.set("tag", merged.tag);
-  const qs = params.toString();
-  return qs ? `/todos?${qs}` : "/todos";
-}
+const DUE_OPTIONS = [
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Due today" },
+  { value: "week", label: "Due this week" },
+  { value: "none", label: "No due date" },
+];
 
-function FilterPill({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-full px-3 py-1.5 text-sm font-medium transition-colors border whitespace-nowrap",
-        active
-          ? "bg-navy-900 text-cream-50 border-navy-900"
-          : "bg-transparent text-navy-600 border-navy-200 hover:border-navy-400"
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
+const SORT_OPTIONS = [
+  { value: "due", label: "Due date (soonest)" },
+  { value: "priority", label: "Priority (high to low)" },
+  { value: "created", label: "Recently created" },
+];
 
 export function TaskFilterBar({
-  type,
-  todoTypeId,
-  status,
-  tag,
+  filters,
   allTags,
   todoTypes,
 }: {
-  type?: string;
-  todoTypeId?: string;
-  status?: string;
-  tag?: string;
+  filters: Filters;
   allTags: string[];
   todoTypes: TodoType[];
 }) {
-  const current = { type, todoTypeId, status, tag };
+  const router = useRouter();
+  const pathname = usePathname();
+  const [searchValue, setSearchValue] = useState(filters.q ?? "");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeTodoTypes = todoTypes.filter((t) => t.active);
+  const hasActiveFilters = Object.values(filters).some(Boolean);
+
+  function update(updates: Partial<Filters>) {
+    const params = new URLSearchParams();
+    const merged = { ...filters, ...updates };
+    for (const [k, v] of Object.entries(merged)) {
+      if (v) params.set(k, v);
+    }
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  function handleSearchChange(value: string) {
+    setSearchValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => update({ q: value }), 400);
+  }
+
+  function handleTypeChange(value: string) {
+    if (value === "CLIENT" || value === "LEAD" || value === "") {
+      update({ type: value || undefined, todoTypeId: undefined });
+    } else {
+      update({ type: undefined, todoTypeId: value });
+    }
+  }
 
   return (
-    <div className="space-y-3 mb-6">
-      <div className="flex flex-wrap gap-2 overflow-x-auto">
-        <FilterPill
-          href={buildHref(current, { type: undefined, todoTypeId: undefined })}
-          active={!type && !todoTypeId}
-        >
-          All types
-        </FilterPill>
-        <FilterPill
-          href={buildHref(current, { type: "CLIENT", todoTypeId: undefined })}
-          active={type === "CLIENT"}
-        >
-          Client
-        </FilterPill>
-        <FilterPill
-          href={buildHref(current, { type: "LEAD", todoTypeId: undefined })}
-          active={type === "LEAD"}
-        >
-          Lead
-        </FilterPill>
-        {activeTodoTypes.map((t) => (
-          <FilterPill
-            key={t.id}
-            href={buildHref(current, { type: undefined, todoTypeId: t.id })}
-            active={todoTypeId === t.id}
+    <div className="mb-6">
+      <div className="mb-3">
+        <Input
+          placeholder="Search tasks…"
+          value={searchValue}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          icon={Search}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <FieldGroup>
+          <Label htmlFor="filter-type">Type</Label>
+          <Select
+            id="filter-type"
+            value={filters.todoTypeId || filters.type || ""}
+            onChange={(e) => handleTypeChange(e.target.value)}
+            icon={List}
           >
-            {t.name}
-          </FilterPill>
-        ))}
+            <option value="">All types</option>
+            <option value="CLIENT">Client</option>
+            <option value="LEAD">Lead</option>
+            {activeTodoTypes.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="filter-status">Status</Label>
+          <Select
+            id="filter-status"
+            value={filters.status ?? ""}
+            onChange={(e) => update({ status: e.target.value || undefined })}
+            icon={List}
+          >
+            <option value="">All statuses</option>
+            {TASK_STATUS_ORDER.map((s) => (
+              <option key={s} value={s}>
+                {TASK_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="filter-tag">Tags</Label>
+          <Select
+            id="filter-tag"
+            value={filters.tag ?? ""}
+            onChange={(e) => update({ tag: e.target.value || undefined })}
+            icon={TagIcon}
+          >
+            <option value="">All tags</option>
+            {allTags.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="filter-due">Due date</Label>
+          <Select
+            id="filter-due"
+            value={filters.due ?? ""}
+            onChange={(e) => update({ due: e.target.value || undefined })}
+            icon={Calendar}
+          >
+            <option value="">All</option>
+            {DUE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="filter-priority">Priority</Label>
+          <Select
+            id="filter-priority"
+            value={filters.priority ?? ""}
+            onChange={(e) => update({ priority: e.target.value || undefined })}
+            icon={Flag}
+          >
+            <option value="">All</option>
+            {TASK_PRIORITY_ORDER.map((p) => (
+              <option key={p} value={p}>
+                {TASK_PRIORITY_LABELS[p]}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="filter-sort">Sort</Label>
+          <Select
+            id="filter-sort"
+            value={filters.sort ?? "due"}
+            onChange={(e) => update({ sort: e.target.value === "due" ? undefined : e.target.value })}
+            icon={ArrowUpDown}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
       </div>
-      <div className="flex flex-wrap gap-2 overflow-x-auto">
-        <FilterPill href={buildHref(current, { status: undefined })} active={!status}>
-          All statuses
-        </FilterPill>
-        {TASK_STATUS_ORDER.map((s) => (
-          <FilterPill key={s} href={buildHref(current, { status: s })} active={status === s}>
-            {TASK_STATUS_LABELS[s]}
-          </FilterPill>
-        ))}
-      </div>
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 overflow-x-auto">
-          <FilterPill href={buildHref(current, { tag: undefined })} active={!tag}>
-            All tags
-          </FilterPill>
-          {allTags.map((t) => (
-            <FilterPill key={t} href={buildHref(current, { tag: t })} active={tag === t}>
-              {t}
-            </FilterPill>
-          ))}
-        </div>
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={() => router.push(pathname)}
+          className="mt-3 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
+        >
+          Clear filters
+        </button>
       )}
     </div>
   );

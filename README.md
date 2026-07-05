@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private bucket for client document uploads (`src/lib/storage.ts`); Neon only stores each file's metadata and storage path, never the file itself
 - **Framer Motion** for page-transition polish
 - A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
@@ -34,10 +34,13 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/004_documents.sql
    psql "$DATABASE_URL" -f migrations/005_hour_cost_tracker.sql
    psql "$DATABASE_URL" -f migrations/006_work_categories.sql
+   psql "$DATABASE_URL" -f migrations/007_settings.sql
+   psql "$DATABASE_URL" -f migrations/008_editable_categories.sql
+   psql "$DATABASE_URL" -f migrations/009_todo_priority.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
-There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/007_*.sql` file and run it the same way.
+There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied once, in order, and together they are the schema. If you need to change it later, write a new `migrations/010_*.sql` file and run it the same way.
 
 **`002_feature_update.sql` is a breaking change** — it renames columns (`clients.name`/`leads.name` → `contact_name` + new `company_name`), replaces the single project/recurring invoice fields with a per-client `invoices` list, replaces `leads.next_follow_up_date` with a `follow_ups` list, adds a `meeting_notes` table, and folds `client_tasks` into a unified `todos` table with a new `type`/`status` model. It migrates existing data in place (wrapped in a transaction), but the app code in this deploy will not run against the old (pre-002) schema — **run it before or as part of deploying this version**, not after.
 
@@ -48,6 +51,12 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 **`005_hour_cost_tracker.sql`** adds `team_members`, `time_entries`, and `fixed_costs` tables plus a `clients.budgeted_hours` column, for the Hour & Cost Tracker module — not breaking, purely additive.
 
 **`006_work_categories.sql`** adds a `work_categories` table (each with its own default hourly rate) and a nullable `time_entries.category_id` — not breaking, purely additive.
+
+**`007_settings.sql`** adds the Settings module's own tables (profile, business entities, app settings) — not breaking, purely additive.
+
+**`008_editable_categories.sql`** converts the fixed `work_type`, `lead_source`, and non-Client/Lead `task_type` enums into editable, archivable lookup tables — migrates existing data in place, nothing is lost.
+
+**`009_todo_priority.sql`** adds a `priority` column (`task_priority` enum: LOW/MEDIUM/HIGH, default MEDIUM) to `todos`, for the To-Dos board redesign — not breaking, purely additive.
 
 ### 2. Document storage setup (Supabase)
 
@@ -91,6 +100,9 @@ migrations/003_work_type_update.sql  breaking change: new work_type categories (
 migrations/004_documents.sql    adds the documents table (client file upload metadata)
 migrations/005_hour_cost_tracker.sql  adds team_members/time_entries/fixed_costs + clients.budgeted_hours
 migrations/006_work_categories.sql  adds work_categories + time_entries.category_id
+migrations/007_settings.sql    adds the Settings module's tables (profile, business entities, app settings)
+migrations/008_editable_categories.sql  converts work_type/lead_source/task_type enums into editable lookup tables
+migrations/009_todo_priority.sql  adds todos.priority (task_priority enum)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents)

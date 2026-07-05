@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { Task, TaskStatus, TaskType } from "@/lib/types";
+import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 interface TaskRow {
   id: string;
@@ -7,6 +7,7 @@ interface TaskRow {
   description: string | null;
   due_date: string | null;
   status: TaskStatus;
+  priority: TaskPriority;
   type: TaskType;
   todo_type_id: string | null;
   todo_type_name: string | null;
@@ -26,6 +27,7 @@ function mapTask(row: TaskRow): Task {
     description: row.description,
     dueDate: row.due_date,
     status: row.status,
+    priority: row.priority,
     type: row.type,
     todoTypeId: row.todo_type_id,
     todoTypeName: row.todo_type_name,
@@ -42,17 +44,21 @@ function mapTask(row: TaskRow): Task {
 export interface TaskFilters {
   tag?: string;
   status?: TaskStatus;
+  priority?: TaskPriority;
   /** CLIENT or LEAD — the two fixed system types. Use todoTypeId to filter by a specific custom category. */
   type?: TaskType;
   todoTypeId?: string;
   clientId?: string;
   leadId?: string;
+  /** Case-insensitive substring match against title or description. */
+  search?: string;
 }
 
 export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
+  const searchPattern = filters.search ? `%${filters.search}%` : null;
   const rows = (await sql`
     select
-      t.id, t.title, t.description, t.due_date, t.status, t.type, t.todo_type_id, t.client_id, t.lead_id,
+      t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id,
       t.created_at, t.updated_at,
       tt_lookup.name as todo_type_name,
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
@@ -65,6 +71,7 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
     left join clients c on c.id = t.client_id
     left join leads l on l.id = t.lead_id
     where (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
+      and (${filters.priority ?? null}::task_priority is null or t.priority = ${filters.priority ?? null})
       and (${filters.type ?? null}::text is null or t.type = ${filters.type ?? null})
       and (${filters.todoTypeId ?? null}::uuid is null or t.todo_type_id = ${filters.todoTypeId ?? null})
       and (${filters.clientId ?? null}::uuid is null or t.client_id = ${filters.clientId ?? null})
@@ -76,6 +83,11 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
           join tags tg2 on tg2.id = tt2.tag_id
           where tt2.todo_id = t.id and tg2.name = ${filters.tag ?? null}
         )
+      )
+      and (
+        ${searchPattern}::text is null
+        or t.title ilike ${searchPattern}
+        or t.description ilike ${searchPattern}
       )
     group by t.id, tt_lookup.name, c.company_name, l.company_name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc
@@ -130,15 +142,16 @@ export interface TaskInput {
   clientId?: string | null;
   leadId?: string | null;
   status?: TaskStatus;
+  priority?: TaskPriority;
 }
 
 export async function createTask(input: TaskInput): Promise<string> {
   const rows = await sql`
-    insert into todos (title, description, due_date, type, todo_type_id, client_id, lead_id, status)
+    insert into todos (title, description, due_date, type, todo_type_id, client_id, lead_id, status, priority)
     values (
       ${input.title}, ${input.description ?? null}, ${input.dueDate ?? null},
       ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null},
-      ${input.status ?? "TO_BE_DONE"}
+      ${input.status ?? "TO_BE_DONE"}, ${input.priority ?? "MEDIUM"}
     )
     returning id
   `;
@@ -153,6 +166,8 @@ export async function updateTask(id: string, input: TaskInput): Promise<void> {
       title = ${input.title},
       description = ${input.description ?? null},
       due_date = ${input.dueDate ?? null},
+      priority = ${input.priority ?? "MEDIUM"},
+      status = ${input.status ?? "TO_BE_DONE"},
       updated_at = now()
     where id = ${id}
   `;

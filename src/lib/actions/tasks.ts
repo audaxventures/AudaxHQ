@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import * as tasks from "@/lib/data/todos";
-import type { TaskStatus, TaskType } from "@/lib/types";
+import type { TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -13,6 +13,7 @@ const taskSchema = z.object({
   // "CLIENT", "LEAD", or a todo_types row id — see resolveTypeSelection.
   typeSelection: z.string().min(1, "Type is required"),
   status: z.enum(["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK", "COMPLETED"]).optional(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
 });
 
 /** The type <select> submits "CLIENT"/"LEAD" literally, or a todo_types row id for everything else. */
@@ -30,6 +31,7 @@ function parseTaskForm(formData: FormData) {
     tags: formData.get("tags") || undefined,
     typeSelection: formData.get("typeSelection") || "",
     status: formData.get("status") || undefined,
+    priority: formData.get("priority") || undefined,
   });
   const tagList = (parsed.tags ?? "")
     .split(",")
@@ -44,6 +46,7 @@ function parseTaskForm(formData: FormData) {
     type,
     todoTypeId,
     status: parsed.status as TaskStatus | undefined,
+    priority: parsed.priority as TaskPriority | undefined,
   };
 }
 
@@ -90,12 +93,17 @@ export async function createScopedTask(
 
 export async function updateTask(
   id: string,
-  clientId: string | null,
-  leadId: string | null,
+  previousClientId: string | null,
+  previousLeadId: string | null,
   formData: FormData
 ) {
   const input = parseTaskForm(formData);
-  await tasks.updateTask(id, { ...input, clientId, leadId });
+  const clientId = (formData.get("clientId") as string) || undefined;
+  const leadId = (formData.get("leadId") as string) || undefined;
+  await tasks.updateTask(id, { ...input, clientId: clientId ?? null, leadId: leadId ?? null });
+  // Revalidate both the previous and (possibly changed) new owner's page, so
+  // reassigning a task's client/lead doesn't leave stale data on either.
+  revalidateForTask(previousClientId, previousLeadId);
   revalidateForTask(clientId, leadId);
 }
 
