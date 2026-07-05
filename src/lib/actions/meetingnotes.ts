@@ -45,6 +45,20 @@ export async function createScopedMeetingNote(
   );
 }
 
+export async function updateMeetingNote(
+  id: string,
+  owner: { clientId?: string | null; leadId?: string | null },
+  formData: FormData
+) {
+  const meetingDate = String(formData.get("meetingDate") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
+  const attendees = (formData.get("attendees") as string) || null;
+  if (!meetingDate || !notes) return;
+
+  await meetingNotes.updateMeetingNote(id, { meetingDate, attendees, notes });
+  revalidateOwner(owner.clientId, owner.leadId);
+}
+
 export async function deleteMeetingNote(
   id: string,
   owner: { clientId?: string | null; leadId?: string | null }

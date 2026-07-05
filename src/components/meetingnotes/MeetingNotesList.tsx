@@ -1,0 +1,51 @@
+"use client";
+
+import { useState } from "react";
+import { Users } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { AvatarChip } from "@/components/ui/AvatarChip";
+import { Badge } from "@/components/ui/Badge";
+import { formatDate } from "@/lib/format";
+import type { MeetingNote } from "@/lib/types";
+import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
+
+export function MeetingNotesList({ notes }: { notes: MeetingNote[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
+
+  return (
+    <>
+      <Card tone="slate" className="divide-y divide-navy-100 overflow-hidden">
+        {notes.map((note) => (
+          <button
+            key={note.id}
+            type="button"
+            onClick={() => setSelectedId(note.id)}
+            className="flex w-full items-start gap-4 px-5 py-4 text-left hover:bg-cream-100/60 transition-colors cursor-pointer"
+          >
+            <AvatarChip name={note.ownerName ?? "?"} className="mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <p className="font-heading text-base font-medium text-navy-900">{note.ownerName}</p>
+                <Badge tone={note.clientId ? "navy" : "burnt"}>
+                  {note.clientId ? "Client" : "Lead"}
+                </Badge>
+                <span className="text-xs text-navy-400">{formatDate(note.meetingDate)}</span>
+              </div>
+              {note.attendees && (
+                <p className="flex items-center gap-1 text-xs text-navy-400 mb-1.5">
+                  <Users size={12} /> {note.attendees}
+                </p>
+              )}
+              <p className="text-sm text-navy-700 line-clamp-2">{note.notes}</p>
+            </div>
+          </button>
+        ))}
+      </Card>
+
+      {selectedNote && (
+        <MeetingNoteDetailModal note={selectedNote} onClose={() => setSelectedId(null)} />
+      )}
+    </>
+  );
+}

@@ -1,13 +1,10 @@
 import Link from "next/link";
-import { NotebookPen, Plus, Users } from "lucide-react";
+import { NotebookPen, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { AvatarChip } from "@/components/ui/AvatarChip";
-import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MeetingNotesList } from "@/components/meetingnotes/MeetingNotesList";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
-import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 export default async function MeetingNotesPage({
@@ -64,35 +61,7 @@ export default async function MeetingNotesPage({
           action={<LinkButton href="/meeting-notes/new">Add a meeting note</LinkButton>}
         />
       ) : (
-        <Card tone="slate" className="divide-y divide-navy-100 overflow-hidden">
-          {notes.map((note) => {
-            const href = note.clientId ? `/clients/${note.clientId}` : `/leads/${note.leadId}`;
-            return (
-              <Link
-                key={note.id}
-                href={href}
-                className="flex items-start gap-4 px-5 py-4 hover:bg-cream-100/60 transition-colors"
-              >
-                <AvatarChip name={note.ownerName ?? "?"} className="mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <p className="font-heading text-base font-medium text-navy-900">{note.ownerName}</p>
-                    <Badge tone={note.clientId ? "navy" : "burnt"}>
-                      {note.clientId ? "Client" : "Lead"}
-                    </Badge>
-                    <span className="text-xs text-navy-400">{formatDate(note.meetingDate)}</span>
-                  </div>
-                  {note.attendees && (
-                    <p className="flex items-center gap-1 text-xs text-navy-400 mb-1.5">
-                      <Users size={12} /> {note.attendees}
-                    </p>
-                  )}
-                  <p className="text-sm text-navy-700 line-clamp-2">{note.notes}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </Card>
+        <MeetingNotesList notes={notes} />
       )}
     </div>
   );

@@ -60,6 +60,20 @@ export async function createMeetingNote(input: CreateMeetingNoteInput): Promise<
   `;
 }
 
+export interface UpdateMeetingNoteInput {
+  meetingDate: string;
+  attendees?: string | null;
+  notes: string;
+}
+
+export async function updateMeetingNote(id: string, input: UpdateMeetingNoteInput): Promise<void> {
+  await sql`
+    update meeting_notes
+    set meeting_date = ${input.meetingDate}, attendees = ${input.attendees ?? null}, notes = ${input.notes}
+    where id = ${id}
+  `;
+}
+
 export async function deleteMeetingNote(id: string): Promise<void> {
   await sql`delete from meeting_notes where id = ${id}`;
 }
