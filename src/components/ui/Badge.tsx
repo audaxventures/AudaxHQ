@@ -130,7 +130,7 @@ export function FollowUpStatusBadge({ status }: { status: FollowUpStatus }) {
 }
 
 const INVOICE_AGE_BRACKET_TONE: Record<InvoiceAgeBracket, Tone> = {
-  UNDER_15: "slate",
+  UNDER_15: "sage",
   DAYS_15_30: "gold",
   OVER_30: "brick",
 };

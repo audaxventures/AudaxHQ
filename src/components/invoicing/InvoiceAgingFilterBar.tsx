@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CLIENT_TYPE_LABELS, CLIENT_TYPE_ORDER, INVOICE_AGE_BRACKET_ORDER } from "@/lib/types";
 import type { InvoiceAgeBracket } from "@/lib/types";
@@ -18,6 +19,15 @@ function buildHref(current: CurrentFilters, key: keyof CurrentFilters, value: st
   return qs ? `/invoices?${qs}` : "/invoices";
 }
 
+function buildExportHref(current: CurrentFilters) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(current)) {
+    if (v) params.set(k, v);
+  }
+  const qs = params.toString();
+  return qs ? `/api/invoice-aging/export?${qs}` : "/api/invoice-aging/export";
+}
+
 function FilterPill({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
     <Link
@@ -34,6 +44,15 @@ function FilterPill({ href, active, children }: { href: string; active: boolean;
   );
 }
 
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-navy-400">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
 export function InvoiceAgingFilterBar({
   clientType,
   bracket,
@@ -46,8 +65,8 @@ export function InvoiceAgingFilterBar({
   const current = { clientType, bracket };
 
   return (
-    <div className="space-y-3 mb-6">
-      <div className="flex flex-wrap gap-2 overflow-x-auto">
+    <div className="flex flex-wrap items-start gap-6 mb-6">
+      <FilterGroup label="Client type">
         <FilterPill href={buildHref(current, "clientType", undefined)} active={!clientType}>
           All client types
         </FilterPill>
@@ -56,8 +75,9 @@ export function InvoiceAgingFilterBar({
             {CLIENT_TYPE_LABELS[t]}
           </FilterPill>
         ))}
-      </div>
-      <div className="flex flex-wrap gap-2 overflow-x-auto">
+      </FilterGroup>
+      <span className="mt-6 hidden h-8 w-px bg-navy-200 sm:block" />
+      <FilterGroup label="Age">
         <FilterPill href={buildHref(current, "bracket", undefined)} active={!bracket}>
           All ages
         </FilterPill>
@@ -66,7 +86,13 @@ export function InvoiceAgingFilterBar({
             {bracketLabels[b]}
           </FilterPill>
         ))}
-      </div>
+      </FilterGroup>
+      <a
+        href={buildExportHref(current)}
+        className="ml-auto mt-6 flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-sm font-medium text-navy-600 transition-colors hover:border-navy-400 hover:bg-navy-100/50 whitespace-nowrap"
+      >
+        <Download size={15} /> Export
+      </a>
     </div>
   );
 }
