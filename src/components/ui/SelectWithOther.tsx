@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Select, Input, Label, FieldGroup } from "@/components/ui/Field";
 
 export function SelectWithOther({
@@ -12,6 +13,7 @@ export function SelectWithOther({
   defaultOtherValue,
   otherValue = "OTHER",
   otherPlaceholder = "Please specify",
+  icon,
 }: {
   label: string;
   name: string;
@@ -22,12 +24,13 @@ export function SelectWithOther({
   /** The option value that reveals the free-text field — defaults to the literal "OTHER" for fixed enums, but callers backed by a DB lookup table pass the id of whichever row is flagged as the fallback. */
   otherValue?: string;
   otherPlaceholder?: string;
+  icon?: LucideIcon;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
   return (
     <FieldGroup>
       <Label htmlFor={name}>{label}</Label>
-      <Select id={name} name={name} value={value} onChange={(e) => setValue(e.target.value)}>
+      <Select id={name} name={name} value={value} onChange={(e) => setValue(e.target.value)} icon={icon}>
         <option value="">—</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
