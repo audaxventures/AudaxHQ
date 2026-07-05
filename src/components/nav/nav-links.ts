@@ -10,4 +10,4 @@ export const NAV_LINKS = [
   { href: "/todos", label: "To-Dos", icon: "todos" },
 ] as const;
 
-export type NavIconKey = (typeof NAV_LINKS)[number]["icon"];
+export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings";

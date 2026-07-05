@@ -1,6 +1,4 @@
 import { sql } from "@/lib/db";
-import { LEAD_SOURCE_LABELS, WORK_TYPE_LABELS } from "@/lib/types";
-import type { LeadSource, WorkType } from "@/lib/types";
 
 export interface ConversionStat {
   key: string;
@@ -54,19 +52,21 @@ function sortStats(stats: ConversionStat[]): ConversionStat[] {
 export async function getConversionBySource(): Promise<ConversionStat[]> {
   const rows = await sql`
     select
-      source,
+      l.source_id, ls.name as source_name,
       count(*) as total,
-      count(*) filter (where status = 'WON') as won,
-      count(*) filter (where status = 'LOST') as lost,
-      count(*) filter (where status not in ('WON', 'LOST')) as in_progress,
-      coalesce(sum(estimated_value) filter (where status = 'WON'), 0) as won_value
-    from leads
-    group by source
+      count(*) filter (where l.status = 'WON') as won,
+      count(*) filter (where l.status = 'LOST') as lost,
+      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
+    from leads l
+    left join lead_sources ls on ls.id = l.source_id
+    group by l.source_id, ls.name
   `;
   const stats = rows.map((r) => {
     const row = r as Record<string, unknown> & GroupRow;
-    const source = row.source as LeadSource | null;
-    return toStat(source ?? "NONE", source ? LEAD_SOURCE_LABELS[source] : "Not set", row);
+    const sourceId = row.source_id as string | null;
+    const sourceName = row.source_name as string | null;
+    return toStat(sourceId ?? "NONE", sourceName ?? "Not set", row);
   });
   return sortStats(stats);
 }
@@ -74,19 +74,21 @@ export async function getConversionBySource(): Promise<ConversionStat[]> {
 export async function getConversionByWorkType(): Promise<ConversionStat[]> {
   const rows = await sql`
     select
-      work_type,
+      l.work_type_id, wt.name as work_type_name,
       count(*) as total,
-      count(*) filter (where status = 'WON') as won,
-      count(*) filter (where status = 'LOST') as lost,
-      count(*) filter (where status not in ('WON', 'LOST')) as in_progress,
-      coalesce(sum(estimated_value) filter (where status = 'WON'), 0) as won_value
-    from leads
-    group by work_type
+      count(*) filter (where l.status = 'WON') as won,
+      count(*) filter (where l.status = 'LOST') as lost,
+      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
+    from leads l
+    left join work_types wt on wt.id = l.work_type_id
+    group by l.work_type_id, wt.name
   `;
   const stats = rows.map((r) => {
     const row = r as Record<string, unknown> & GroupRow;
-    const workType = row.work_type as WorkType | null;
-    return toStat(workType ?? "NONE", workType ? WORK_TYPE_LABELS[workType] : "Not set", row);
+    const workTypeId = row.work_type_id as string | null;
+    const workTypeName = row.work_type_name as string | null;
+    return toStat(workTypeId ?? "NONE", workTypeName ?? "Not set", row);
   });
   return sortStats(stats);
 }

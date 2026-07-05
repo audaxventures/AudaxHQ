@@ -12,18 +12,9 @@ const leadSchema = z.object({
   contactPhone: z.string().optional(),
   status: z.enum(["NEW", "CONTACTED", "PROPOSAL_SENT", "NEGOTIATING", "WON", "LOST"]),
   estimatedValue: z.coerce.number().optional(),
-  workType: z.enum([
-    "SOFTWARE_DEVELOPMENT",
-    "FRACTIONAL_CAIO",
-    "FRACTIONAL_COO",
-    "FRACTIONAL_CMO",
-    "MARKETING_SERVICES",
-    "WEBSITE_DEVELOPMENT",
-    "ADVISORY",
-    "OTHER",
-  ]).optional(),
+  workTypeId: z.string().optional(),
   workTypeOther: z.string().optional(),
-  source: z.enum(["REFERRAL", "COLD_OUTREACH", "RILEY_OUTREACH", "AD", "INBOUND", "OTHER"]).optional(),
+  sourceId: z.string().optional(),
   sourceOther: z.string().optional(),
 });
 
@@ -35,9 +26,10 @@ function parseLeadForm(formData: FormData) {
     contactPhone: formData.get("contactPhone") || undefined,
     status: formData.get("status"),
     estimatedValue: formData.get("estimatedValue") || undefined,
-    workType: formData.get("workType") || undefined,
+    workTypeId: formData.get("workTypeId") || undefined,
+    // Only ever submitted by the form when the "Other" fallback row is selected.
     workTypeOther: formData.get("workTypeOther") || undefined,
-    source: formData.get("source") || undefined,
+    sourceId: formData.get("sourceId") || undefined,
     sourceOther: formData.get("sourceOther") || undefined,
   });
   return {
@@ -47,10 +39,10 @@ function parseLeadForm(formData: FormData) {
     contactPhone: parsed.contactPhone ?? null,
     status: parsed.status,
     estimatedValue: parsed.estimatedValue ?? null,
-    workType: parsed.workType ?? null,
-    workTypeOther: parsed.workType === "OTHER" ? parsed.workTypeOther ?? null : null,
-    source: parsed.source ?? null,
-    sourceOther: parsed.source === "OTHER" ? parsed.sourceOther ?? null : null,
+    workTypeId: parsed.workTypeId ?? null,
+    workTypeOther: parsed.workTypeOther ?? null,
+    sourceId: parsed.sourceId ?? null,
+    sourceOther: parsed.sourceOther ?? null,
   };
 }
 

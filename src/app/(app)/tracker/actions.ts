@@ -62,12 +62,22 @@ export async function deleteFixedCost(id: string, clientId: string | null, leadI
   revalidateOwner(clientId, leadId);
 }
 
+function revalidateTeamMembers() {
+  revalidatePath("/tracker");
+  revalidatePath("/settings/team-members");
+}
+
+function revalidateWorkCategories() {
+  revalidatePath("/tracker");
+  revalidatePath("/settings/work-categories");
+}
+
 export async function createTeamMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
   await teamMembers.createTeamMember({ name, defaultHourlyRate });
-  revalidatePath("/tracker");
+  revalidateTeamMembers();
 }
 
 export async function updateTeamMember(id: string, formData: FormData) {
@@ -75,17 +85,17 @@ export async function updateTeamMember(id: string, formData: FormData) {
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
   await teamMembers.updateTeamMember(id, { name, defaultHourlyRate });
-  revalidatePath("/tracker");
+  revalidateTeamMembers();
 }
 
 export async function activateTeamMember(id: string) {
   await teamMembers.setTeamMemberActive(id, true);
-  revalidatePath("/tracker");
+  revalidateTeamMembers();
 }
 
 export async function deactivateTeamMember(id: string) {
   await teamMembers.setTeamMemberActive(id, false);
-  revalidatePath("/tracker");
+  revalidateTeamMembers();
 }
 
 export async function createWorkCategory(formData: FormData) {
@@ -93,7 +103,7 @@ export async function createWorkCategory(formData: FormData) {
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
   await workCategories.createWorkCategory({ name, defaultHourlyRate });
-  revalidatePath("/tracker");
+  revalidateWorkCategories();
 }
 
 export async function updateWorkCategory(id: string, formData: FormData) {
@@ -101,15 +111,15 @@ export async function updateWorkCategory(id: string, formData: FormData) {
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
   await workCategories.updateWorkCategory(id, { name, defaultHourlyRate });
-  revalidatePath("/tracker");
+  revalidateWorkCategories();
 }
 
 export async function activateWorkCategory(id: string) {
   await workCategories.setWorkCategoryActive(id, true);
-  revalidatePath("/tracker");
+  revalidateWorkCategories();
 }
 
 export async function deactivateWorkCategory(id: string) {
   await workCategories.setWorkCategoryActive(id, false);
-  revalidatePath("/tracker");
+  revalidateWorkCategories();
 }

@@ -18,7 +18,8 @@ export interface InvoiceAgingFilters {
 }
 
 export async function listOutstandingInvoices(
-  filters: InvoiceAgingFilters = {}
+  filters: InvoiceAgingFilters = {},
+  thresholds: { underDays: number; overDays: number }
 ): Promise<OutstandingInvoice[]> {
   const rows = await sql`
     select
@@ -32,8 +33,8 @@ export async function listOutstandingInvoices(
       and (
         ${filters.bracket ?? null}::text is null or
         case
-          when (current_date - coalesce(i.invoiced_date, current_date)) >= 30 then 'OVER_30'
-          when (current_date - coalesce(i.invoiced_date, current_date)) >= 15 then 'DAYS_15_30'
+          when (current_date - coalesce(i.invoiced_date, current_date)) >= ${thresholds.overDays} then 'OVER_30'
+          when (current_date - coalesce(i.invoiced_date, current_date)) >= ${thresholds.underDays} then 'DAYS_15_30'
           else 'UNDER_15'
         end = ${filters.bracket ?? null}
       )
@@ -54,16 +55,52 @@ export async function listOutstandingInvoices(
   });
 }
 
+export interface InvoiceExportRow {
+  id: string;
+  clientName: string;
+  label: string;
+  amount: string;
+  status: string;
+  invoicedDate: string | null;
+  paidDate: string | null;
+  periodMonth: number | null;
+  periodYear: number | null;
+}
+
+/** All invoices regardless of status, for the Settings → Data Export CSV. */
+export async function listAllInvoicesForExport(): Promise<InvoiceExportRow[]> {
+  const rows = await sql`
+    select i.*, c.company_name as client_name
+    from invoices i
+    join clients c on c.id = i.client_id
+    order by c.company_name asc, i.period_year desc nulls last, i.period_month desc nulls last, i.created_at desc
+  `;
+  return rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    return {
+      id: row.id as string,
+      clientName: row.client_name as string,
+      label: row.label as string,
+      amount: row.amount as string,
+      status: row.status as string,
+      invoicedDate: row.invoiced_date as string | null,
+      paidDate: row.paid_date as string | null,
+      periodMonth: row.period_month as number | null,
+      periodYear: row.period_year as number | null,
+    };
+  });
+}
+
 export interface InvoiceAgingSummary {
   totalOutstanding: number;
   overdueCount: number;
 }
 
-export async function getInvoiceAgingSummary(): Promise<InvoiceAgingSummary> {
+export async function getInvoiceAgingSummary(overDays: number): Promise<InvoiceAgingSummary> {
   const rows = await sql`
     select
       coalesce(sum(i.amount), 0) as total_outstanding,
-      count(*) filter (where (current_date - coalesce(i.invoiced_date, current_date)) >= 30) as overdue_count
+      count(*) filter (where (current_date - coalesce(i.invoiced_date, current_date)) >= ${overDays}) as overdue_count
     from invoices i
     where i.status = 'INVOICED'
   `;

@@ -8,7 +8,7 @@ import type {
   TaskStatus,
   TaskType,
 } from "@/lib/types";
-import { INVOICE_AGE_BRACKET_LABELS, TASK_STATUS_LABELS, TASK_TYPE_LABELS } from "@/lib/types";
+import { TASK_STATUS_LABELS, FIXED_TASK_TYPE_LABELS } from "@/lib/types";
 
 type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue";
 
@@ -113,15 +113,12 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 const TASK_TYPE_TONE: Record<TaskType, Tone> = {
   CLIENT: "navy",
   LEAD: "burnt",
-  GENERAL: "slate",
-  PERSONAL: "gold",
-  AUDAX_VENTURES: "sage",
-  H2MB: "brick",
-  OTHER: "slate",
+  CUSTOM: "slate",
 };
 
-export function TaskTypeBadge({ type }: { type: TaskType }) {
-  return <Badge tone={TASK_TYPE_TONE[type]}>{TASK_TYPE_LABELS[type]}</Badge>;
+export function TaskTypeBadge({ type, todoTypeName }: { type: TaskType; todoTypeName?: string | null }) {
+  const label = type === "CUSTOM" ? todoTypeName ?? "Other" : FIXED_TASK_TYPE_LABELS[type];
+  return <Badge tone={TASK_TYPE_TONE[type]}>{label}</Badge>;
 }
 
 export function FollowUpStatusBadge({ status }: { status: FollowUpStatus }) {
@@ -138,6 +135,6 @@ const INVOICE_AGE_BRACKET_TONE: Record<InvoiceAgeBracket, Tone> = {
   OVER_30: "brick",
 };
 
-export function InvoiceAgeBracketBadge({ bracket }: { bracket: InvoiceAgeBracket }) {
-  return <Badge tone={INVOICE_AGE_BRACKET_TONE[bracket]}>{INVOICE_AGE_BRACKET_LABELS[bracket]}</Badge>;
+export function InvoiceAgeBracketBadge({ bracket, label }: { bracket: InvoiceAgeBracket; label: string }) {
+  return <Badge tone={INVOICE_AGE_BRACKET_TONE[bracket]}>{label}</Badge>;
 }

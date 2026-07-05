@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import {
-  CLIENT_TYPE_LABELS,
-  CLIENT_TYPE_ORDER,
-  INVOICE_AGE_BRACKET_LABELS,
-  INVOICE_AGE_BRACKET_ORDER,
-} from "@/lib/types";
+import { CLIENT_TYPE_LABELS, CLIENT_TYPE_ORDER, INVOICE_AGE_BRACKET_ORDER } from "@/lib/types";
+import type { InvoiceAgeBracket } from "@/lib/types";
 
 interface CurrentFilters {
   clientType?: string;
@@ -41,9 +37,11 @@ function FilterPill({ href, active, children }: { href: string; active: boolean;
 export function InvoiceAgingFilterBar({
   clientType,
   bracket,
+  bracketLabels,
 }: {
   clientType?: string;
   bracket?: string;
+  bracketLabels: Record<InvoiceAgeBracket, string>;
 }) {
   const current = { clientType, bracket };
 
@@ -65,7 +63,7 @@ export function InvoiceAgingFilterBar({
         </FilterPill>
         {INVOICE_AGE_BRACKET_ORDER.map((b) => (
           <FilterPill key={b} href={buildHref(current, "bracket", b)} active={bracket === b}>
-            {INVOICE_AGE_BRACKET_LABELS[b]}
+            {bracketLabels[b]}
           </FilterPill>
         ))}
       </div>

@@ -15,7 +15,7 @@ export async function login(
   const passcode = String(formData.get("passcode") ?? "");
   const next = String(formData.get("next") ?? "/");
 
-  if (!passcode || !isCorrectPasscode(passcode)) {
+  if (!passcode || !(await isCorrectPasscode(passcode))) {
     return { error: "That passcode isn't right. Try again." };
   }
 

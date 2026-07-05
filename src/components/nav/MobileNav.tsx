@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { NAV_LINKS } from "@/components/nav/nav-links";
 import { NavLink } from "@/components/nav/NavLink";
 
@@ -10,15 +11,24 @@ export function MobileTopBar() {
         <img src="/logo.white.png" alt="Audax Ventures" className="h-6 w-auto" />
         <p className="font-heading text-lg font-medium text-burnt-400">Audax HQ</p>
       </div>
-      <form action="/api/logout" method="post">
-        <button
-          type="submit"
-          aria-label="Sign out"
-          className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
+      <div className="flex items-center gap-1">
+        <Link
+          href="/settings"
+          aria-label="Settings"
+          className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
         >
-          <LogOut size={18} strokeWidth={1.75} />
-        </button>
-      </form>
+          <Settings size={18} strokeWidth={1.75} />
+        </Link>
+        <form action="/api/logout" method="post">
+          <button
+            type="submit"
+            aria-label="Sign out"
+            className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
+          >
+            <LogOut size={18} strokeWidth={1.75} />
+          </button>
+        </form>
+      </div>
     </header>
   );
 }

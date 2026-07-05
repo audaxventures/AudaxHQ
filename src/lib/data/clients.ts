@@ -10,7 +10,6 @@ import type {
   ClientWithRelations,
   Invoice,
   InvoiceStatus,
-  WorkType,
 } from "@/lib/types";
 import { listFollowUpsForClient } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
@@ -26,7 +25,8 @@ function mapClient(row: Record<string, unknown>): Client {
     type: row.type as ClientType,
     status: row.status as ClientStatus,
     rate: row.rate as string,
-    workType: row.work_type as WorkType | null,
+    workTypeId: row.work_type_id as string | null,
+    workTypeName: (row.work_type_name as string | null) ?? null,
     workTypeOther: row.work_type_other as string | null,
     startDate: row.start_date as string | null,
     budgetedHours: row.budgeted_hours !== null ? Number(row.budgeted_hours) : null,
@@ -79,9 +79,11 @@ export async function listClients(filters: ClientFilters = {}): Promise<
   const rows = await sql`
     select
       c.*,
+      wt.name as work_type_name,
       coalesce(inv.unpaid_count, 0) as unpaid_invoice_count,
       coalesce(inv.total_count, 0) as invoice_count
     from clients c
+    left join work_types wt on wt.id = c.work_type_id
     left join (
       select
         client_id,
@@ -104,7 +106,7 @@ export async function listClients(filters: ClientFilters = {}): Promise<
 export async function getClient(id: string): Promise<ClientWithRelations | null> {
   const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes, documents] =
     await Promise.all([
-      sql`select * from clients where id = ${id}`,
+      sql`select c.*, wt.name as work_type_name from clients c left join work_types wt on wt.id = c.work_type_id where c.id = ${id}`,
       sql`select * from client_notes where client_id = ${id} order by created_at desc`,
       sql`select * from client_links where client_id = ${id} order by created_at asc`,
       sql`select * from invoices where client_id = ${id} order by period_year desc nulls last, period_month desc nulls last, created_at desc`,
@@ -136,7 +138,7 @@ export interface ClientInput {
   type: ClientType;
   status: ClientStatus;
   rate: number;
-  workType?: WorkType | null;
+  workTypeId?: string | null;
   workTypeOther?: string | null;
   startDate?: string | null;
   budgetedHours?: number | null;
@@ -144,10 +146,10 @@ export interface ClientInput {
 
 export async function createClient(input: ClientInput): Promise<Client> {
   const rows = await sql`
-    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type, work_type_other, start_date, budgeted_hours)
+    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours)
     values (
       ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
-      ${input.type}, ${input.status}, ${input.rate}, ${input.workType ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
+      ${input.type}, ${input.status}, ${input.rate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
       ${input.budgetedHours ?? null}
     )
     returning *
@@ -171,7 +173,7 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
       type = ${input.type},
       status = ${input.status},
       rate = ${input.rate},
-      work_type = ${input.workType ?? null},
+      work_type_id = ${input.workTypeId ?? null},
       work_type_other = ${input.workTypeOther ?? null},
       start_date = ${input.startDate ?? null},
       budgeted_hours = ${input.budgetedHours ?? null},

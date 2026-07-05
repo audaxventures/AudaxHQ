@@ -15,7 +15,7 @@ import { CostSummarySection } from "@/components/CostSummarySection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency, isDateInRange } from "@/lib/format";
-import { WORK_TYPE_LABELS } from "@/lib/types";
+import { listWorkTypes } from "@/lib/data/workTypes";
 import { Button } from "@/components/ui/Button";
 
 export default async function ClientDetailPage({
@@ -27,9 +27,10 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { costFrom, costTo } = await searchParams;
-  const [client, costEntries] = await Promise.all([
+  const [client, costEntries, workTypes] = await Promise.all([
     getClient(id),
     listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }),
+    listWorkTypes({ includeInactive: true }),
   ]);
   if (!client) notFound();
 
@@ -52,10 +53,8 @@ export default async function ClientDetailPage({
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <ClientStatusBadge status={client.status} />
             <Badge tone="navy">{client.type === "PROJECT" ? "Project-based" : "Recurring"}</Badge>
-            {client.workType && (
-              <Badge tone="burnt">
-                {client.workType === "OTHER" ? client.workTypeOther || "Other" : WORK_TYPE_LABELS[client.workType]}
-              </Badge>
+            {(client.workTypeName || client.workTypeOther) && (
+              <Badge tone="burnt">{client.workTypeOther || client.workTypeName}</Badge>
             )}
           </div>
         </div>
@@ -70,7 +69,7 @@ export default async function ClientDetailPage({
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Core info</h3>
-            <ClientForm key={client.updatedAt} client={client} submitLabel="Save changes" />
+            <ClientForm key={client.updatedAt} client={client} workTypes={workTypes} submitLabel="Save changes" />
           </Card>
 
           <Card className="p-6">

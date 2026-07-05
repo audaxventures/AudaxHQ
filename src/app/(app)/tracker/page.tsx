@@ -1,11 +1,10 @@
-import { Clock } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Clock } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { TrackerFilters } from "@/components/tracker/TrackerFilters";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
 import { AddEntryForm } from "@/components/tracker/AddEntryForm";
-import { TeamMembersPanel } from "@/components/tracker/TeamMembersPanel";
-import { WorkCategoriesPanel } from "@/components/tracker/WorkCategoriesPanel";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
@@ -107,13 +106,16 @@ export default async function TrackerPage({
           </Card>
 
           <Card className="p-6">
-            <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Team members</h3>
-            <TeamMembersPanel teamMembers={teamMembers} />
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Work categories</h3>
-            <WorkCategoriesPanel categories={workCategories} />
+            <h3 className="mb-2 font-heading text-lg font-medium text-navy-900">Team &amp; categories</h3>
+            <p className="mb-3 text-sm text-navy-500">
+              Add, edit, or archive team members and work categories from Settings.
+            </p>
+            <Link
+              href="/settings/team-members"
+              className="flex items-center gap-1.5 text-sm font-medium text-burnt-600 hover:text-burnt-700"
+            >
+              Go to Settings <ArrowRight size={14} />
+            </Link>
           </Card>
         </div>
       </div>

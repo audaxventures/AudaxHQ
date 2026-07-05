@@ -10,9 +10,17 @@ const taskSchema = z.object({
   description: z.string().optional(),
   dueDate: z.string().optional(),
   tags: z.string().optional(),
-  type: z.enum(["CLIENT", "LEAD", "GENERAL", "PERSONAL", "AUDAX_VENTURES", "H2MB", "OTHER"]),
+  // "CLIENT", "LEAD", or a todo_types row id — see resolveTypeSelection.
+  typeSelection: z.string().min(1, "Type is required"),
   status: z.enum(["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK", "COMPLETED"]).optional(),
 });
+
+/** The type <select> submits "CLIENT"/"LEAD" literally, or a todo_types row id for everything else. */
+function resolveTypeSelection(typeSelection: string): { type: TaskType; todoTypeId: string | null } {
+  if (typeSelection === "CLIENT") return { type: "CLIENT", todoTypeId: null };
+  if (typeSelection === "LEAD") return { type: "LEAD", todoTypeId: null };
+  return { type: "CUSTOM", todoTypeId: typeSelection };
+}
 
 function parseTaskForm(formData: FormData) {
   const parsed = taskSchema.parse({
@@ -20,19 +28,21 @@ function parseTaskForm(formData: FormData) {
     description: formData.get("description") || undefined,
     dueDate: formData.get("dueDate") || undefined,
     tags: formData.get("tags") || undefined,
-    type: formData.get("type") || "GENERAL",
+    typeSelection: formData.get("typeSelection") || "",
     status: formData.get("status") || undefined,
   });
   const tagList = (parsed.tags ?? "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+  const { type, todoTypeId } = resolveTypeSelection(parsed.typeSelection);
   return {
     title: parsed.title,
     description: parsed.description ?? null,
     dueDate: parsed.dueDate ?? null,
     tags: tagList,
-    type: parsed.type as TaskType,
+    type,
+    todoTypeId,
     status: parsed.status as TaskStatus | undefined,
   };
 }

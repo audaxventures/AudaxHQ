@@ -38,7 +38,11 @@ export function TodoItem({ task, allTags }: { task: Task; allTags: string[] }) {
           }}
           className="space-y-3"
         >
-          <input type="hidden" name="type" value={task.type} />
+          <input
+            type="hidden"
+            name="typeSelection"
+            value={task.type === "CUSTOM" ? task.todoTypeId ?? "" : task.type}
+          />
           <FieldGroup>
             <Label htmlFor={`title-${task.id}`}>Title</Label>
             <Input id={`title-${task.id}`} name="title" defaultValue={task.title} required />
@@ -102,7 +106,7 @@ export function TodoItem({ task, allTags }: { task: Task; allTags: string[] }) {
           <p className="mt-0.5 text-sm text-navy-500 whitespace-pre-wrap">{task.description}</p>
         )}
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <TaskTypeBadge type={task.type} />
+          <TaskTypeBadge type={task.type} todoTypeName={task.todoTypeName} />
           {ownerHref && ownerName && (
             <Link href={ownerHref} className="text-xs font-medium text-burnt-600 hover:underline underline-offset-2">
               {ownerName}

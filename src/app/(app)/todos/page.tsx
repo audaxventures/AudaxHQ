@@ -9,23 +9,26 @@ import { TodoItem } from "@/components/todos/TodoItem";
 import { listAllTags, listTasks } from "@/lib/data/todos";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
+import { listTodoTypes } from "@/lib/data/todoTypes";
 import type { TaskStatus, TaskType } from "@/lib/types";
 
 export default async function TodosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string; type?: string; status?: string }>;
+  searchParams: Promise<{ tag?: string; type?: string; todoTypeId?: string; status?: string }>;
 }) {
-  const { tag, type, status } = await searchParams;
-  const [tasks, allTags, clients, leads] = await Promise.all([
+  const { tag, type, todoTypeId, status } = await searchParams;
+  const [tasks, allTags, clients, leads, todoTypes] = await Promise.all([
     listTasks({
       tag,
       type: type as TaskType | undefined,
+      todoTypeId,
       status: status as TaskStatus | undefined,
     }),
     listAllTags(),
     listClients(),
     listLeads(),
+    listTodoTypes({ includeInactive: true }),
   ]);
 
   const open = tasks.filter((t) => t.status !== "COMPLETED");
@@ -43,8 +46,16 @@ export default async function TodosPage({
       <NewTodoForm
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
+        todoTypes={todoTypes}
       />
-      <TaskFilterBar type={type} status={status} tag={tag} allTags={allTags} />
+      <TaskFilterBar
+        type={type}
+        todoTypeId={todoTypeId}
+        status={status}
+        tag={tag}
+        allTags={allTags}
+        todoTypes={todoTypes}
+      />
 
       {tasks.length === 0 ? (
         <EmptyState title="Nothing here" description="Add a to-do above to get started." />

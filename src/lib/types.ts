@@ -13,30 +13,14 @@ export type TaskStatus =
   | "IN_PROGRESS"
   | "AWAITING_CLIENT_FEEDBACK"
   | "COMPLETED";
-export type TaskType =
-  | "CLIENT"
-  | "LEAD"
-  | "GENERAL"
-  | "PERSONAL"
-  | "AUDAX_VENTURES"
-  | "H2MB"
-  | "OTHER";
-export type WorkType =
-  | "SOFTWARE_DEVELOPMENT"
-  | "FRACTIONAL_CAIO"
-  | "FRACTIONAL_COO"
-  | "FRACTIONAL_CMO"
-  | "MARKETING_SERVICES"
-  | "WEBSITE_DEVELOPMENT"
-  | "ADVISORY"
-  | "OTHER";
-export type LeadSource =
-  | "REFERRAL"
-  | "COLD_OUTREACH"
-  | "RILEY_OUTREACH"
-  | "AD"
-  | "INBOUND"
-  | "OTHER";
+/**
+ * CLIENT/LEAD are fixed system types tied structurally to an actual
+ * client_id/lead_id (enforced by a DB check constraint) — not editable
+ * or archivable. CUSTOM covers everything else (General, Personal,
+ * Audax Ventures, H2MB, Other, and anything added later), whose actual
+ * category lives in the editable `todo_types` table — see Task.todoTypeId.
+ */
+export type TaskType = "CLIENT" | "LEAD" | "CUSTOM";
 export type FollowUpStatus = "UPCOMING" | "COMPLETED";
 export type InvoiceAgeBracket = "UNDER_15" | "DAYS_15_30" | "OVER_30";
 
@@ -116,6 +100,9 @@ export interface Task {
   dueDate: string | null;
   status: TaskStatus;
   type: TaskType;
+  /** Set (and meaningful) only when type === "CUSTOM". */
+  todoTypeId: string | null;
+  todoTypeName: string | null;
   clientId: string | null;
   leadId: string | null;
   createdAt: string;
@@ -135,7 +122,9 @@ export interface Client {
   type: ClientType;
   status: ClientStatus;
   rate: string;
-  workType: WorkType | null;
+  workTypeId: string | null;
+  workTypeName: string | null;
+  /** Free text, used only when the selected work type is the "Other" fallback row. */
   workTypeOther: string | null;
   startDate: string | null;
   budgetedHours: number | null;
@@ -161,9 +150,12 @@ export interface Lead {
   contactPhone: string | null;
   status: LeadStatus;
   estimatedValue: string | null;
-  workType: WorkType | null;
+  workTypeId: string | null;
+  workTypeName: string | null;
   workTypeOther: string | null;
-  source: LeadSource | null;
+  sourceId: string | null;
+  sourceName: string | null;
+  /** Free text, used only when the selected source is the "Other" fallback row. */
   sourceOther: string | null;
   createdAt: string;
   updatedAt: string;
@@ -191,6 +183,55 @@ export interface WorkCategory {
   defaultHourlyRate: string;
   active: boolean;
   createdAt: string;
+}
+
+/** Editable list backing Client/Lead "work type" dropdowns (Settings → Client & Lead Work Types). */
+export interface WorkType {
+  id: string;
+  name: string;
+  /** The one row that shows the "please specify" free-text field when selected. */
+  isFallback: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+/** Editable list backing the Lead "source" dropdown (Settings → Lead Sources). */
+export interface LeadSource {
+  id: string;
+  name: string;
+  isFallback: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+/** Editable list backing the to-do "type" dropdown for non-Client/Lead tasks (Settings → To-Do Types). */
+export interface TodoType {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface Profile {
+  name: string;
+  email: string;
+  updatedAt: string;
+}
+
+export interface BusinessEntity {
+  id: string;
+  name: string;
+  address: string | null;
+  contactInfo: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+/** Non-sensitive app settings safe to pass to client components — never includes the passcode hash/salt. */
+export interface AppSettings {
+  invoiceAgingUnderDays: number;
+  invoiceAgingOverDays: number;
+  hasCustomPasscode: boolean;
 }
 
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";
@@ -302,46 +343,6 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "LOST",
 ];
 
-export const WORK_TYPE_LABELS: Record<WorkType, string> = {
-  SOFTWARE_DEVELOPMENT: "Software Development",
-  FRACTIONAL_CAIO: "Fractional CAIO",
-  FRACTIONAL_COO: "Fractional COO",
-  FRACTIONAL_CMO: "Fractional CMO",
-  MARKETING_SERVICES: "Marketing Services",
-  WEBSITE_DEVELOPMENT: "Website Development",
-  ADVISORY: "Advisory",
-  OTHER: "Other",
-};
-
-export const WORK_TYPE_ORDER: WorkType[] = [
-  "SOFTWARE_DEVELOPMENT",
-  "FRACTIONAL_CAIO",
-  "FRACTIONAL_COO",
-  "FRACTIONAL_CMO",
-  "MARKETING_SERVICES",
-  "WEBSITE_DEVELOPMENT",
-  "ADVISORY",
-  "OTHER",
-];
-
-export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
-  REFERRAL: "Referral",
-  COLD_OUTREACH: "Cold Outreach",
-  RILEY_OUTREACH: "Riley Outreach",
-  AD: "Ad",
-  INBOUND: "Inbound",
-  OTHER: "Other",
-};
-
-export const LEAD_SOURCE_ORDER: LeadSource[] = [
-  "REFERRAL",
-  "COLD_OUTREACH",
-  "RILEY_OUTREACH",
-  "AD",
-  "INBOUND",
-  "OTHER",
-];
-
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   TO_BE_DONE: "To Be Done",
   IN_PROGRESS: "In Progress",
@@ -356,35 +357,15 @@ export const TASK_STATUS_ORDER: TaskStatus[] = [
   "COMPLETED",
 ];
 
-export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+/** Labels for the two fixed system types; CUSTOM tasks use their joined todoTypeName instead. */
+export const FIXED_TASK_TYPE_LABELS: Record<"CLIENT" | "LEAD", string> = {
   CLIENT: "Client",
   LEAD: "Lead",
-  GENERAL: "General",
-  PERSONAL: "Personal",
-  AUDAX_VENTURES: "Audax Ventures",
-  H2MB: "H2MB",
-  OTHER: "Other",
 };
-
-export const TASK_TYPE_ORDER: TaskType[] = [
-  "CLIENT",
-  "LEAD",
-  "GENERAL",
-  "PERSONAL",
-  "AUDAX_VENTURES",
-  "H2MB",
-  "OTHER",
-];
 
 export const FOLLOWUP_STATUS_LABELS: Record<FollowUpStatus, string> = {
   UPCOMING: "Upcoming",
   COMPLETED: "Completed",
-};
-
-export const INVOICE_AGE_BRACKET_LABELS: Record<InvoiceAgeBracket, string> = {
-  UNDER_15: "0–14 days",
-  DAYS_15_30: "15–30 days",
-  OVER_30: "30+ days",
 };
 
 export const INVOICE_AGE_BRACKET_ORDER: InvoiceAgeBracket[] = [
@@ -393,8 +374,21 @@ export const INVOICE_AGE_BRACKET_ORDER: InvoiceAgeBracket[] = [
   "OVER_30",
 ];
 
-export function invoiceAgeBracket(daysOutstanding: number): InvoiceAgeBracket {
-  if (daysOutstanding >= 30) return "OVER_30";
-  if (daysOutstanding >= 15) return "DAYS_15_30";
+export function invoiceAgeBracket(
+  daysOutstanding: number,
+  underDays: number,
+  overDays: number
+): InvoiceAgeBracket {
+  if (daysOutstanding >= overDays) return "OVER_30";
+  if (daysOutstanding >= underDays) return "DAYS_15_30";
   return "UNDER_15";
+}
+
+/** Bracket labels reflect the currently configured thresholds (Settings → Invoice Aging), not fixed 15/30 text. */
+export function invoiceAgeBracketLabels(underDays: number, overDays: number): Record<InvoiceAgeBracket, string> {
+  return {
+    UNDER_15: `0–${underDays - 1} days`,
+    DAYS_15_30: `${underDays}–${overDays} days`,
+    OVER_30: `${overDays}+ days`,
+  };
 }

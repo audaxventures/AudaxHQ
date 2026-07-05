@@ -6,18 +6,28 @@ import { Input, Textarea, Select, Label, FieldGroup } from "@/components/ui/Fiel
 import { Button } from "@/components/ui/Button";
 import { createTask } from "@/lib/actions/tasks";
 import { cn } from "@/lib/cn";
-import type { TaskType } from "@/lib/types";
-import { TASK_TYPE_LABELS, TASK_TYPE_ORDER } from "@/lib/types";
+import type { TodoType } from "@/lib/types";
 
 interface Option {
   id: string;
   companyName: string;
 }
 
-export function NewTodoForm({ clients, leads }: { clients: Option[]; leads: Option[] }) {
+export function NewTodoForm({
+  clients,
+  leads,
+  todoTypes,
+}: {
+  clients: Option[];
+  leads: Option[];
+  todoTypes: TodoType[];
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [expanded, setExpanded] = useState(false);
-  const [type, setType] = useState<TaskType>("GENERAL");
+  const activeTodoTypes = todoTypes.filter((t) => t.active);
+  const defaultTypeSelection =
+    activeTodoTypes.find((t) => t.name === "General")?.id ?? activeTodoTypes[0]?.id ?? "CLIENT";
+  const [typeSelection, setTypeSelection] = useState(defaultTypeSelection);
   const [, startTransition] = useTransition();
 
   return (
@@ -28,7 +38,7 @@ export function NewTodoForm({ clients, leads }: { clients: Option[]; leads: Opti
           void createTask(formData);
         });
         formRef.current?.reset();
-        setType("GENERAL");
+        setTypeSelection(defaultTypeSelection);
       }}
       className="rounded-2xl border border-navy-100 bg-white/70 p-4 sm:p-5 mb-6"
     >
@@ -49,21 +59,23 @@ export function NewTodoForm({ clients, leads }: { clients: Option[]; leads: Opti
       {expanded && (
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FieldGroup>
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="typeSelection">Type</Label>
             <Select
-              id="type"
-              name="type"
-              value={type}
-              onChange={(e) => setType(e.target.value as TaskType)}
+              id="typeSelection"
+              name="typeSelection"
+              value={typeSelection}
+              onChange={(e) => setTypeSelection(e.target.value)}
             >
-              {TASK_TYPE_ORDER.map((t) => (
-                <option key={t} value={t}>
-                  {TASK_TYPE_LABELS[t]}
+              <option value="CLIENT">Client</option>
+              <option value="LEAD">Lead</option>
+              {activeTodoTypes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </Select>
           </FieldGroup>
-          {type === "CLIENT" && (
+          {typeSelection === "CLIENT" && (
             <FieldGroup>
               <Label htmlFor="clientId">Client</Label>
               <Select id="clientId" name="clientId" required defaultValue="">
@@ -78,7 +90,7 @@ export function NewTodoForm({ clients, leads }: { clients: Option[]; leads: Opti
               </Select>
             </FieldGroup>
           )}
-          {type === "LEAD" && (
+          {typeSelection === "LEAD" && (
             <FieldGroup>
               <Label htmlFor="leadId">Lead</Label>
               <Select id="leadId" name="leadId" required defaultValue="">

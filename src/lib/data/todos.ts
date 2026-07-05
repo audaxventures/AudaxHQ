@@ -8,6 +8,8 @@ interface TaskRow {
   due_date: string | null;
   status: TaskStatus;
   type: TaskType;
+  todo_type_id: string | null;
+  todo_type_name: string | null;
   client_id: string | null;
   lead_id: string | null;
   created_at: string;
@@ -25,6 +27,8 @@ function mapTask(row: TaskRow): Task {
     dueDate: row.due_date,
     status: row.status,
     type: row.type,
+    todoTypeId: row.todo_type_id,
+    todoTypeName: row.todo_type_name,
     clientId: row.client_id,
     leadId: row.lead_id,
     createdAt: row.created_at,
@@ -38,7 +42,9 @@ function mapTask(row: TaskRow): Task {
 export interface TaskFilters {
   tag?: string;
   status?: TaskStatus;
+  /** CLIENT or LEAD — the two fixed system types. Use todoTypeId to filter by a specific custom category. */
   type?: TaskType;
+  todoTypeId?: string;
   clientId?: string;
   leadId?: string;
 }
@@ -46,18 +52,21 @@ export interface TaskFilters {
 export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   const rows = (await sql`
     select
-      t.id, t.title, t.description, t.due_date, t.status, t.type, t.client_id, t.lead_id,
+      t.id, t.title, t.description, t.due_date, t.status, t.type, t.todo_type_id, t.client_id, t.lead_id,
       t.created_at, t.updated_at,
+      tt_lookup.name as todo_type_name,
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
       c.company_name as client_name,
       l.company_name as lead_name
     from todos t
+    left join todo_types tt_lookup on tt_lookup.id = t.todo_type_id
     left join todo_tags tt on tt.todo_id = t.id
     left join tags tg on tg.id = tt.tag_id
     left join clients c on c.id = t.client_id
     left join leads l on l.id = t.lead_id
     where (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
-      and (${filters.type ?? null}::task_type is null or t.type = ${filters.type ?? null})
+      and (${filters.type ?? null}::text is null or t.type = ${filters.type ?? null})
+      and (${filters.todoTypeId ?? null}::uuid is null or t.todo_type_id = ${filters.todoTypeId ?? null})
       and (${filters.clientId ?? null}::uuid is null or t.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or t.lead_id = ${filters.leadId ?? null})
       and (
@@ -68,7 +77,7 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
           where tt2.todo_id = t.id and tg2.name = ${filters.tag ?? null}
         )
       )
-    group by t.id, c.company_name, l.company_name
+    group by t.id, tt_lookup.name, c.company_name, l.company_name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc
   `) as unknown as TaskRow[];
   return rows.map(mapTask);
@@ -116,6 +125,8 @@ export interface TaskInput {
   dueDate?: string | null;
   tags: string[];
   type: TaskType;
+  /** Required when type === "CUSTOM"; must be null for CLIENT/LEAD (enforced by a DB check constraint). */
+  todoTypeId?: string | null;
   clientId?: string | null;
   leadId?: string | null;
   status?: TaskStatus;
@@ -123,10 +134,10 @@ export interface TaskInput {
 
 export async function createTask(input: TaskInput): Promise<string> {
   const rows = await sql`
-    insert into todos (title, description, due_date, type, client_id, lead_id, status)
+    insert into todos (title, description, due_date, type, todo_type_id, client_id, lead_id, status)
     values (
       ${input.title}, ${input.description ?? null}, ${input.dueDate ?? null},
-      ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null},
+      ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null},
       ${input.status ?? "TO_BE_DONE"}
     )
     returning id
