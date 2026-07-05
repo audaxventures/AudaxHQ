@@ -39,7 +39,22 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
       <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-cream-50 px-8 py-16 sm:px-16 md:w-[58%] md:flex-none">
-        <div className="relative z-10 max-w-md">
+        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded photo, dimensions unknown */}
+        <img
+          src="/login.png"
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(253,251,246,0.1) 0%, rgba(253,251,246,0.55) 55%, rgba(253,251,246,0.8) 100%)",
+          }}
+        />
+        <div className="relative z-10 max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
           <img src="/logo.png" alt="Audax Ventures" className="mb-10 h-12 w-auto" />
           <h1 className="text-balance font-heading text-4xl font-medium leading-tight text-navy-900 sm:text-5xl">
@@ -66,44 +81,9 @@ export default async function LoginPage({
             ))}
           </div>
         </div>
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 overflow-hidden" aria-hidden>
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(180deg, transparent, rgba(230,162,107,0.35) 55%, rgba(190,90,30,0.25))",
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-28 bg-navy-300/40"
-            style={{
-              clipPath:
-                "polygon(0% 100%, 0% 55%, 15% 70%, 30% 40%, 45% 65%, 60% 35%, 75% 60%, 90% 45%, 100% 65%, 100% 100%)",
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-20 bg-navy-500/30"
-            style={{
-              clipPath: "polygon(0% 100%, 0% 70%, 20% 50%, 35% 75%, 50% 45%, 65% 70%, 80% 50%, 100% 75%, 100% 100%)",
-            }}
-          />
-        </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-navy-900 to-navy-950 px-6 py-16 md:w-[42%] md:flex-none">
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: "radial-gradient(120% 60% at 50% 0%, rgba(214,122,60,0.16), transparent 60%)",
-          }}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element -- decorative watermark, dimensions unknown */}
-        <img
-          src="/logo.white.png"
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 opacity-[0.06]"
-        />
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-navy-950 px-6 py-16 md:w-[42%] md:flex-none">
         <div className="relative w-full max-w-md rounded-2xl border border-navy-700/60 bg-navy-800/60 p-8 shadow-xl backdrop-blur">
           <div className="mb-8 flex flex-col items-center text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2 border-burnt-500 text-burnt-500">
