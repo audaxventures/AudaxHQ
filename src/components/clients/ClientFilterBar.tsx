@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { List, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 
 function buildHref(current: Record<string, string | undefined>, key: string, value: string | undefined) {
   const params = new URLSearchParams();
@@ -21,31 +21,6 @@ function FilterPill({ href, active, children }: { href: string; active: boolean;
         active
           ? "bg-navy-900 text-cream-50 border-navy-900"
           : "bg-transparent text-navy-600 border-navy-200 hover:border-navy-400"
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function ViewToggleButton({
-  href,
-  active,
-  label,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-        active ? "bg-navy-900 text-cream-50" : "text-navy-400 hover:bg-navy-100"
       )}
     >
       {children}
@@ -92,14 +67,11 @@ export function ClientFilterBar({
           Recurring
         </FilterPill>
       </div>
-      <div className="ml-auto flex items-center gap-1 rounded-xl border border-navy-200 bg-white p-1">
-        <ViewToggleButton href={buildHref(current, "view", undefined)} active={!isGrid} label="List view">
-          <List size={16} />
-        </ViewToggleButton>
-        <ViewToggleButton href={buildHref(current, "view", "grid")} active={isGrid} label="Grid view">
-          <LayoutGrid size={16} />
-        </ViewToggleButton>
-      </div>
+      <ViewToggle
+        isGrid={isGrid}
+        listHref={buildHref(current, "view", undefined)}
+        gridHref={buildHref(current, "view", "grid")}
+      />
     </div>
   );
 }

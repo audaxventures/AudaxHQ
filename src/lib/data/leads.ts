@@ -37,6 +37,8 @@ function mapNote(row: Record<string, unknown>): LeadNote {
 
 export interface LeadFilters {
   status?: LeadStatus;
+  limit?: number;
+  offset?: number;
 }
 
 export async function listLeads(
@@ -58,11 +60,22 @@ export async function listLeads(
       case when f.next_date is null then 1 else 0 end asc,
       f.next_date asc,
       l.created_at desc
+    limit ${filters.limit ?? null}
+    offset ${filters.offset ?? 0}
   `;
   return rows.map((row) => ({
     ...mapLead(row as Record<string, unknown>),
     nextFollowUpDate: (row as Record<string, unknown>).next_follow_up_date as string | null,
   }));
+}
+
+export async function countLeads(filters: Pick<LeadFilters, "status"> = {}): Promise<number> {
+  const rows = await sql`
+    select count(*) as count
+    from leads l
+    where (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
+  `;
+  return Number((rows[0] as Record<string, unknown>).count);
 }
 
 export async function getLead(id: string): Promise<LeadWithRelations | null> {
