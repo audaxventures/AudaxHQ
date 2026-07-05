@@ -8,7 +8,6 @@ import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { listTodoTypes } from "@/lib/data/todoTypes";
 import { formatDateInput } from "@/lib/format";
-import { TASK_STATUS_ORDER } from "@/lib/types";
 import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 function matchesDuePreset(task: Task, due: string | undefined, today: string): boolean {
@@ -73,7 +72,7 @@ export default async function TodosPage({
   );
 
   const showAllCompleted = sp.completed === "all";
-  const visibleStatuses: TaskStatus[] = sp.status ? [sp.status as TaskStatus] : TASK_STATUS_ORDER;
+  const filterStatus = sp.status as TaskStatus | undefined;
 
   const filterParams = {
     q: sp.q,
@@ -122,7 +121,7 @@ export default async function TodosPage({
         tasks={tasks}
         showAllCompleted={showAllCompleted}
         completedHref={buildCompletedHref(!showAllCompleted)}
-        visibleStatuses={visibleStatuses}
+        filterStatus={filterStatus}
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
         todoTypes={todoTypes}

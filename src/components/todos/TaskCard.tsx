@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Check, Flag } from "lucide-react";
+import { Check, Flag, Hourglass } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Badge, TaskTypeBadge } from "@/components/ui/Badge";
 import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
@@ -84,6 +84,11 @@ export function TaskCard({
           >
             {ownerName}
           </Link>
+        )}
+        {task.status === "AWAITING_CLIENT_FEEDBACK" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-600">
+            <Hourglass size={11} /> Waiting on client
+          </span>
         )}
         {task.tags.map((tag) => (
           <Badge key={tag} tone="slate">

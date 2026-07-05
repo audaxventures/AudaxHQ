@@ -2,7 +2,7 @@
 
 import { useOptimistic, useRef, useState, useTransition } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Circle, GripVertical, Hourglass, ListTodo, Plus } from "lucide-react";
+import { CheckCircle2, Circle, GripVertical, ListTodo, Plus } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -19,12 +19,32 @@ interface OwnerOption {
 
 type DrawerState = { mode: "create"; defaultStatus: TaskStatus } | { mode: "edit"; task: Task } | null;
 
-const COLUMN_CONFIG: Record<TaskStatus, { icon: LucideIcon; iconClasses: string }> = {
-  TO_BE_DONE: { icon: ListTodo, iconClasses: "bg-burnt-100 text-burnt-600" },
-  IN_PROGRESS: { icon: Circle, iconClasses: "bg-blue-100 text-blue-600" },
-  AWAITING_CLIENT_FEEDBACK: { icon: Hourglass, iconClasses: "bg-gold-100 text-gold-600" },
-  COMPLETED: { icon: CheckCircle2, iconClasses: "bg-sage-100 text-sage-600" },
-};
+interface BoardColumn {
+  key: string;
+  label: string;
+  /** Every underlying TaskStatus that lands in this column. */
+  statuses: TaskStatus[];
+  /** Status assigned when a task is dropped in from a different column. */
+  primaryStatus: TaskStatus;
+  icon: LucideIcon;
+  iconClasses: string;
+}
+
+// "Waiting on Client" isn't its own column — those tasks live in In
+// Progress (see TaskCard's own badge for that status) so the board stays
+// three columns wide, but the underlying status is untouched.
+const BOARD_COLUMNS: BoardColumn[] = [
+  { key: "TO_BE_DONE", label: TASK_STATUS_LABELS.TO_BE_DONE, statuses: ["TO_BE_DONE"], primaryStatus: "TO_BE_DONE", icon: ListTodo, iconClasses: "bg-burnt-100 text-burnt-600" },
+  {
+    key: "IN_PROGRESS",
+    label: TASK_STATUS_LABELS.IN_PROGRESS,
+    statuses: ["IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK"],
+    primaryStatus: "IN_PROGRESS",
+    icon: Circle,
+    iconClasses: "bg-blue-100 text-blue-600",
+  },
+  { key: "COMPLETED", label: TASK_STATUS_LABELS.COMPLETED, statuses: ["COMPLETED"], primaryStatus: "COMPLETED", icon: CheckCircle2, iconClasses: "bg-sage-100 text-sage-600" },
+];
 
 const COMPLETED_PREVIEW_COUNT = 3;
 
@@ -32,7 +52,7 @@ export function TodoWorkspace({
   tasks,
   showAllCompleted,
   completedHref,
-  visibleStatuses,
+  filterStatus,
   clients,
   leads,
   todoTypes,
@@ -41,7 +61,8 @@ export function TodoWorkspace({
   tasks: Task[];
   showAllCompleted: boolean;
   completedHref: string;
-  visibleStatuses: TaskStatus[];
+  /** Set when the Status filter narrows to one status — shows only the matching column. */
+  filterStatus?: TaskStatus;
   clients: OwnerOption[];
   leads: OwnerOption[];
   todoTypes: TodoType[];
@@ -54,16 +75,23 @@ export function TodoWorkspace({
   );
   const [, startTransition] = useTransition();
   const [drawerState, setDrawerState] = useState<DrawerState>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const quickAddRef = useRef<HTMLFormElement>(null);
   const [quickAddPending, startQuickAdd] = useTransition();
 
-  function handleDrop(status: TaskStatus, e: React.DragEvent) {
+  const visibleColumns = filterStatus
+    ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus))
+    : BOARD_COLUMNS;
+
+  function handleDrop(column: BoardColumn, e: React.DragEvent) {
     e.preventDefault();
-    setDragOverStatus(null);
+    setDragOverColumn(null);
     const taskId = e.dataTransfer.getData("text/plain");
     const task = optimisticTasks.find((t) => t.id === taskId);
-    if (!task || task.status === status) return;
+    // Already belongs in this column (e.g. a Waiting-on-Client task dropped
+    // back into In Progress) — leave its actual status alone.
+    if (!task || column.statuses.includes(task.status)) return;
+    const status = column.primaryStatus;
     startTransition(async () => {
       applyStatusChange({ id: taskId, status });
       await setTaskStatus(taskId, task.clientId, task.leadId, status);
@@ -107,35 +135,34 @@ export function TodoWorkspace({
       <div
         className={cn(
           "grid grid-cols-1 gap-4",
-          visibleStatuses.length > 1 ? "lg:grid-cols-4" : "lg:grid-cols-1"
+          visibleColumns.length > 1 ? "lg:grid-cols-3" : "lg:grid-cols-1"
         )}
       >
-        {visibleStatuses.map((status) => {
-          const items = optimisticTasks.filter((t) => t.status === status);
-          const isCompleted = status === "COMPLETED";
+        {visibleColumns.map((column) => {
+          const items = optimisticTasks.filter((t) => column.statuses.includes(t.status));
+          const isCompleted = column.key === "COMPLETED";
           const visibleItems = isCompleted && !showAllCompleted ? items.slice(0, COMPLETED_PREVIEW_COUNT) : items;
-          const config = COLUMN_CONFIG[status];
-          const Icon = config.icon;
+          const Icon = column.icon;
 
           return (
             <div
-              key={status}
+              key={column.key}
               onDragOver={(e) => {
                 e.preventDefault();
-                setDragOverStatus(status);
+                setDragOverColumn(column.key);
               }}
-              onDragLeave={() => setDragOverStatus((s) => (s === status ? null : s))}
-              onDrop={(e) => handleDrop(status, e)}
+              onDragLeave={() => setDragOverColumn((c) => (c === column.key ? null : c))}
+              onDrop={(e) => handleDrop(column, e)}
               className={cn(
                 "flex flex-col rounded-2xl border p-3 transition-colors",
-                dragOverStatus === status ? "border-burnt-300 bg-burnt-100/30" : "border-navy-100 bg-cream-100/40"
+                dragOverColumn === column.key ? "border-burnt-300 bg-burnt-100/30" : "border-navy-100 bg-cream-100/40"
               )}
             >
               <div className="mb-3 flex items-center gap-2 px-1">
-                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", config.iconClasses)}>
+                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", column.iconClasses)}>
                   <Icon size={15} />
                 </div>
-                <h3 className="text-sm font-semibold text-navy-900">{TASK_STATUS_LABELS[status]}</h3>
+                <h3 className="text-sm font-semibold text-navy-900">{column.label}</h3>
                 <span className="rounded-full bg-navy-100 px-2 py-0.5 text-xs font-semibold text-navy-500">
                   {items.length}
                 </span>
@@ -171,7 +198,7 @@ export function TodoWorkspace({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setDrawerState({ mode: "create", defaultStatus: status })}
+                  onClick={() => setDrawerState({ mode: "create", defaultStatus: column.primaryStatus })}
                   className="mt-3 flex items-center gap-1.5 px-1 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
                 >
                   <Plus size={14} /> Add task
