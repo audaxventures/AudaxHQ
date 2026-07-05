@@ -1,5 +1,6 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, PieChart } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { PanelHeading } from "@/components/ui/PanelHeading";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
 import { CostDateRangeFilter } from "@/components/CostDateRangeFilter";
 import { cn } from "@/lib/cn";
@@ -42,12 +43,16 @@ export function CostSummarySection({
 
   return (
     <Card className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-heading text-lg font-medium text-navy-900">Cost &amp; profitability</h3>
-        <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-          Download report
-        </a>
-      </div>
+      <PanelHeading
+        icon={PieChart}
+        tone="slate"
+        title="Cost & profitability"
+        action={
+          <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+            Download report
+          </a>
+        }
+      />
 
       <CostDateRangeFilter dateFrom={dateFrom} dateTo={dateTo} />
 

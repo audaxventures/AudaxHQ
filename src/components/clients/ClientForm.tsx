@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   User,
@@ -23,12 +24,12 @@ import type { Client, ClientStatus, ClientType, WorkType } from "@/lib/types";
 import { formatDateInput } from "@/lib/format";
 import { createClient, updateClient } from "@/app/(app)/clients/actions";
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, compact }: { label: string; compact: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" size={compact ? "sm" : "md"} disabled={pending}>
       {pending ? "Saving…" : label}
-      {!pending && <ArrowRight size={16} />}
+      {!pending && !compact && <ArrowRight size={16} />}
     </Button>
   );
 }
@@ -38,11 +39,14 @@ export function ClientForm({
   workTypes,
   submitLabel = "Save client",
   cancelHref,
+  variant = "full",
 }: {
   client?: Client;
   workTypes: WorkType[];
   submitLabel?: string;
   cancelHref?: string;
+  /** "compact" drops the icons/uppercase labels/required-asterisks for the in-place edit panel on the client detail page; "full" (default) is the fuller treatment used by the standalone New Client page. */
+  variant?: "full" | "compact";
 }) {
   const [type, setType] = useState<ClientType>(client?.type ?? "PROJECT");
   const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === client?.workTypeId);
@@ -50,12 +54,14 @@ export function ClientForm({
   const fallbackWorkTypeId = selectableWorkTypes.find((w) => w.isFallback)?.id;
 
   const action = client?.id ? updateClient.bind(null, client.id) : createClient;
+  const compact = variant === "compact";
+  const fieldIcon = (icon: LucideIcon) => (compact ? undefined : icon);
 
   return (
     <form action={action} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
-          <Label htmlFor="companyName" required>
+          <Label htmlFor="companyName" required={!compact} compact={compact}>
             Company name
           </Label>
           <Input
@@ -64,11 +70,11 @@ export function ClientForm({
             required
             defaultValue={client?.companyName}
             placeholder="e.g. Acme Inc."
-            icon={Building2}
+            icon={fieldIcon(Building2)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactName" required>
+          <Label htmlFor="contactName" required={!compact} compact={compact}>
             Contact name
           </Label>
           <Input
@@ -76,11 +82,11 @@ export function ClientForm({
             name="contactName"
             defaultValue={client?.contactName ?? ""}
             placeholder="e.g. Jane Doe"
-            icon={User}
+            icon={fieldIcon(User)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactEmail" required>
+          <Label htmlFor="contactEmail" required={!compact} compact={compact}>
             Email
           </Label>
           <Input
@@ -89,21 +95,23 @@ export function ClientForm({
             type="email"
             defaultValue={client?.contactEmail ?? ""}
             placeholder="e.g. jane@acme.com"
-            icon={Mail}
+            icon={fieldIcon(Mail)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactPhone">Phone</Label>
+          <Label htmlFor="contactPhone" compact={compact}>
+            Phone
+          </Label>
           <Input
             id="contactPhone"
             name="contactPhone"
             defaultValue={client?.contactPhone ?? ""}
             placeholder="e.g. (555) 555-5555"
-            icon={Phone}
+            icon={fieldIcon(Phone)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="type" required>
+          <Label htmlFor="type" required={!compact} compact={compact}>
             Type
           </Label>
           <Select
@@ -111,21 +119,21 @@ export function ClientForm({
             name="type"
             value={type}
             onChange={(e) => setType(e.target.value as ClientType)}
-            icon={Briefcase}
+            icon={fieldIcon(Briefcase)}
           >
             <option value="PROJECT">Project-based</option>
             <option value="RECURRING">Recurring (monthly)</option>
           </Select>
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="status" required>
+          <Label htmlFor="status" required={!compact} compact={compact}>
             Status
           </Label>
           <Select
             id="status"
             name="status"
             defaultValue={client?.status ?? ("ACTIVE" as ClientStatus)}
-            icon={Activity}
+            icon={fieldIcon(Activity)}
           >
             <option value="ACTIVE">Active</option>
             <option value="PAUSED">Paused</option>
@@ -133,7 +141,9 @@ export function ClientForm({
           </Select>
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="rate">{type === "RECURRING" ? "Monthly fee ($)" : "Project total ($)"}</Label>
+          <Label htmlFor="rate" compact={compact}>
+            {type === "RECURRING" ? "Monthly fee ($)" : "Project total ($)"}
+          </Label>
           <Input
             id="rate"
             name="rate"
@@ -142,21 +152,25 @@ export function ClientForm({
             min="0"
             defaultValue={client?.rate ?? ""}
             placeholder="e.g. 0.00"
-            icon={DollarSign}
+            icon={fieldIcon(DollarSign)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="startDate">Start date</Label>
+          <Label htmlFor="startDate" compact={compact}>
+            Start date
+          </Label>
           <Input
             id="startDate"
             name="startDate"
             type="date"
             defaultValue={formatDateInput(client?.startDate)}
-            icon={Calendar}
+            icon={fieldIcon(Calendar)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="budgetedHours">Budgeted hours (optional)</Label>
+          <Label htmlFor="budgetedHours" compact={compact}>
+            Budgeted hours (optional)
+          </Label>
           <Input
             id="budgetedHours"
             name="budgetedHours"
@@ -165,7 +179,7 @@ export function ClientForm({
             min="0"
             defaultValue={client?.budgetedHours ?? ""}
             placeholder="e.g. 40"
-            icon={Clock}
+            icon={fieldIcon(Clock)}
           />
         </FieldGroup>
         <SelectWithOther
@@ -176,22 +190,27 @@ export function ClientForm({
           defaultValue={client?.workTypeId}
           defaultOtherValue={client?.workTypeOther}
           otherValue={fallbackWorkTypeId}
-          icon={List}
+          icon={fieldIcon(List)}
+          compact={compact}
         />
       </div>
-      <div className="flex items-center justify-between border-t border-navy-100 pt-5">
-        {cancelHref ? (
-          <Link
-            href={cancelHref}
-            className="text-sm font-medium text-navy-500 transition-colors hover:text-navy-800"
-          >
-            Cancel
-          </Link>
-        ) : (
-          <span />
-        )}
-        <SubmitButton label={submitLabel} />
-      </div>
+      {compact ? (
+        <SubmitButton label={submitLabel} compact />
+      ) : (
+        <div className="flex items-center justify-between border-t border-navy-100 pt-5">
+          {cancelHref ? (
+            <Link
+              href={cancelHref}
+              className="text-sm font-medium text-navy-500 transition-colors hover:text-navy-800"
+            >
+              Cancel
+            </Link>
+          ) : (
+            <span />
+          )}
+          <SubmitButton label={submitLabel} compact={false} />
+        </div>
+      )}
     </form>
   );
 }

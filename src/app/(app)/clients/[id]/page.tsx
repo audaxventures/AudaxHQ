@@ -1,8 +1,21 @@
 import { notFound } from "next/navigation";
+import {
+  IdCard,
+  Receipt,
+  CalendarClock,
+  NotebookPen,
+  FileText,
+  StickyNote,
+  CheckSquare,
+  Link2,
+  DollarSign,
+} from "lucide-react";
 import { getClient } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { activateClient, archiveClient } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
+import { PanelHeading } from "@/components/ui/PanelHeading";
+import { BackLink } from "@/components/ui/BackLink";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { ClientLinks } from "@/components/clients/ClientLinks";
@@ -41,6 +54,7 @@ export default async function ClientDetailPage({
 
   return (
     <div>
+      <BackLink href="/clients" label="Back to clients" />
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.15em] text-burnt-500 mb-2">
@@ -68,12 +82,18 @@ export default async function ClientDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Core info</h3>
-            <ClientForm key={client.updatedAt} client={client} workTypes={workTypes} submitLabel="Save changes" />
+            <PanelHeading icon={IdCard} tone="slate" title="Core information" />
+            <ClientForm
+              key={client.updatedAt}
+              client={client}
+              workTypes={workTypes}
+              submitLabel="Save changes"
+              variant="compact"
+            />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-1">Invoices</h3>
+            <PanelHeading icon={Receipt} tone="slate" title="Invoices" />
             <p className="text-sm text-navy-500 mb-4">
               {client.type === "RECURRING"
                 ? "One entry per month, created automatically — add one-off invoices any time."
@@ -100,34 +120,35 @@ export default async function ClientDetailPage({
           />
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Follow-ups</h3>
+            <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
             <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Meeting notes</h3>
+            <PanelHeading icon={NotebookPen} tone="slate" title="Meeting notes" />
             <MeetingNotesSection owner={owner} notes={client.meetingNotes} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Documents</h3>
+            <PanelHeading icon={FileText} tone="slate" title="Documents" />
             <DocumentsSection clientId={id} documents={client.documents} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">
-              Activity &amp; notes
-            </h3>
+            <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
             <NotesLog notes={client.notes} kind="client" entityId={id} />
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-1">
-              {client.type === "RECURRING" ? "Monthly fee" : "Project total"}
-            </h3>
+          <Card tone="burnt" variant="solid" className="p-6">
+            <PanelHeading
+              icon={DollarSign}
+              tone="burnt"
+              title={client.type === "RECURRING" ? "Monthly fee" : "Project total"}
+            />
             <p className="font-heading text-2xl text-navy-900">{formatCurrency(client.rate)}</p>
+            {client.type === "RECURRING" && <p className="text-xs text-navy-500">/ month</p>}
           </Card>
 
           <EmailSection
@@ -137,12 +158,12 @@ export default async function ClientDetailPage({
           />
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">Tasks</h3>
+            <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
             <ScopedTaskList owner={owner} tasks={client.tasks} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">Links</h3>
+            <PanelHeading icon={Link2} tone="slate" title="Links" />
             <ClientLinks clientId={id} links={client.links} />
           </Card>
         </div>

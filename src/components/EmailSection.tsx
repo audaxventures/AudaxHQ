@@ -1,5 +1,6 @@
 import { Mail } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { PanelHeading } from "@/components/ui/PanelHeading";
 import { LinkButton } from "@/components/ui/Button";
 
 // Phase 1: a mailto: shortcut, pre-filled with the contact's address and a
@@ -17,7 +18,7 @@ export function EmailSection({
 }) {
   return (
     <Card className="p-6">
-      <h3 className="font-heading text-lg font-medium text-navy-900 mb-1">Email</h3>
+      <PanelHeading icon={Mail} tone="navy" title="Email" />
       {contactEmail ? (
         <>
           <p className="text-sm text-navy-500 mb-4 truncate">

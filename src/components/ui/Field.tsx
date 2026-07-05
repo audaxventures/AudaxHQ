@@ -52,14 +52,17 @@ export function Select({
 export function Label({
   children,
   required,
+  compact,
   className,
   ...props
-}: React.LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }) {
+}: React.LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean; compact?: boolean }) {
   return (
     <label
       {...props}
       className={cn(
-        "block text-xs font-medium uppercase tracking-wide text-navy-500 mb-1.5",
+        compact
+          ? "block text-sm font-medium text-navy-600 mb-1.5"
+          : "block text-xs font-medium uppercase tracking-wide text-navy-500 mb-1.5",
         className
       )}
     >

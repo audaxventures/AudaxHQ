@@ -14,6 +14,7 @@ export function SelectWithOther({
   otherValue = "OTHER",
   otherPlaceholder = "Please specify",
   icon,
+  compact,
 }: {
   label: string;
   name: string;
@@ -25,11 +26,14 @@ export function SelectWithOther({
   otherValue?: string;
   otherPlaceholder?: string;
   icon?: LucideIcon;
+  compact?: boolean;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
   return (
     <FieldGroup>
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} compact={compact}>
+        {label}
+      </Label>
       <Select id={name} name={name} value={value} onChange={(e) => setValue(e.target.value)} icon={icon}>
         <option value="">—</option>
         {options.map((o) => (
