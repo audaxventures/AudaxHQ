@@ -22,7 +22,7 @@ export function Sidebar() {
           <NavLink key={link.href} {...link} />
         ))}
       </nav>
-      <div className="relative mt-1 border-t border-navy-800/60 pt-1">
+      <div className="relative mt-1 border-t border-navy-300/20 pt-1">
         <NavLink href="/settings" label="Settings" icon="settings" />
       </div>
       <form action="/api/logout" method="post" className="relative mt-1">

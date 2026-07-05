@@ -66,7 +66,7 @@ export function NavLink({
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+        "relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
         active
           ? "bg-navy-800 text-cream-50"
           : "text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
@@ -74,6 +74,7 @@ export function NavLink({
     >
       <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
       {label}
+      {active && <span className="absolute inset-y-2 right-0 w-[3px] rounded-full bg-burnt-500" />}
     </Link>
   );
 }
