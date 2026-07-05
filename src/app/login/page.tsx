@@ -54,7 +54,7 @@ export default async function LoginPage({
               "linear-gradient(180deg, rgba(253,251,246,0.1) 0%, rgba(253,251,246,0.55) 55%, rgba(253,251,246,0.8) 100%)",
           }}
         />
-        <div className="relative z-10 max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
+        <div className="relative z-10 mx-auto max-w-md text-center lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
           <img src="/logo.png" alt="Audax Ventures" className="mb-10 h-12 w-auto" />
           <h1 className="text-balance font-heading text-4xl font-medium leading-tight text-navy-900 sm:text-5xl">
@@ -63,11 +63,11 @@ export default async function LoginPage({
             <span className="font-bold text-burnt-500">Audax HQ</span>
           </h1>
           <p className="mt-4 text-lg font-medium text-navy-600">Your business command center.</p>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-navy-500">
-            Manage clients, projects, tasks, and financials in one centralized workspace. Sign in to access your
-            data and keep your business moving forward.
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-navy-500">
+            Manage clients, projects, tasks, and more in one centralized platform. Sign in to access your workspace
+            and continue where you left off.
           </p>
-          <div className="mt-9 space-y-5">
+          <div className="mt-9 space-y-5 text-left">
             {FEATURES.map((feature) => (
               <div key={feature.title} className="flex items-start gap-3.5">
                 <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", feature.toneClasses)}>
