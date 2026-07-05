@@ -2,6 +2,7 @@ import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getInvoiceAgingSummary, type InvoiceAgingSummary } from "@/lib/data/invoicing";
+import { getAppSettings } from "@/lib/data/appSettings";
 import type { Client, ClientType, Task, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
@@ -34,7 +35,9 @@ function mapClient(row: Record<string, unknown>): Client {
     type: row.type as ClientType,
     status: row.status as Client["status"],
     rate: row.rate as string,
-    workType: row.work_type as Client["workType"],
+    // Not surfaced on the dashboard (no work-type badges here), so skip the join.
+    workTypeId: row.work_type_id as string | null,
+    workTypeName: null,
     workTypeOther: row.work_type_other as string | null,
     startDate: row.start_date as string | null,
     budgetedHours: row.budgeted_hours !== null ? Number(row.budgeted_hours) : null,
@@ -46,7 +49,7 @@ function mapClient(row: Record<string, unknown>): Client {
 export async function getDashboardData(): Promise<DashboardData> {
   // Lazily create this month's recurring invoice rows for active recurring
   // clients so the dashboard/invoicing views always reflect the current month.
-  await ensureRecurringInvoicesForAllActiveClients();
+  const [, appSettings] = await Promise.all([ensureRecurringInvoicesForAllActiveClients(), getAppSettings()]);
 
   const [
     activeRows,
@@ -94,7 +97,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       order by (t.due_date is null), t.due_date asc, t.created_at desc
     `,
     sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < current_date`,
-    getInvoiceAgingSummary(),
+    getInvoiceAgingSummary(appSettings.invoiceAgingOverDays),
     sql`
       select coalesce(sum(i.amount), 0) as total
       from generate_series(
@@ -149,6 +152,9 @@ export async function getDashboardData(): Promise<DashboardData> {
       dueDate: row.due_date as string | null,
       status: row.status as TaskStatus,
       type: row.type as TaskType,
+      // Not surfaced on the dashboard (no type badges here), so skip the join.
+      todoTypeId: row.todo_type_id as string | null,
+      todoTypeName: null,
       clientId: row.client_id as string | null,
       leadId: row.lead_id as string | null,
       createdAt: row.created_at as string,

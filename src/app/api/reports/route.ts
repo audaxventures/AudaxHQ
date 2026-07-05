@@ -3,16 +3,8 @@ import { listCostEntries, buildCostSummary } from "@/lib/data/costEntries";
 import { getClient } from "@/lib/data/clients";
 import { getLead } from "@/lib/data/leads";
 import { formatDateInput, isDateInRange } from "@/lib/format";
+import { csvRow, csvResponseHeaders } from "@/lib/csv";
 import type { CostEntry } from "@/lib/types";
-
-function csvField(value: string | number): string {
-  const str = String(value);
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-}
-
-function csvRow(fields: (string | number)[]): string {
-  return fields.map(csvField).join(",");
-}
 
 function entryRow(e: CostEntry): string {
   return csvRow([
@@ -112,10 +104,5 @@ export async function GET(request: Request) {
   const csv = lines.join("\r\n");
   const filename = `audax-hq-report-${new Date().toISOString().slice(0, 10)}.csv`;
 
-  return new NextResponse(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
+  return new NextResponse(csv, { headers: csvResponseHeaders(filename) });
 }

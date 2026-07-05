@@ -5,12 +5,9 @@ import { useFormStatus } from "react-dom";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { Button } from "@/components/ui/Button";
-import type { Client, ClientStatus, ClientType } from "@/lib/types";
-import { WORK_TYPE_LABELS, WORK_TYPE_ORDER } from "@/lib/types";
+import type { Client, ClientStatus, ClientType, WorkType } from "@/lib/types";
 import { formatDateInput } from "@/lib/format";
 import { createClient, updateClient } from "@/app/(app)/clients/actions";
-
-const WORK_TYPE_OPTIONS = WORK_TYPE_ORDER.map((v) => ({ value: v, label: WORK_TYPE_LABELS[v] }));
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -23,12 +20,17 @@ function SubmitButton({ label }: { label: string }) {
 
 export function ClientForm({
   client,
+  workTypes,
   submitLabel = "Save client",
 }: {
   client?: Client;
+  workTypes: WorkType[];
   submitLabel?: string;
 }) {
   const [type, setType] = useState<ClientType>(client?.type ?? "PROJECT");
+  const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === client?.workTypeId);
+  const workTypeOptions = selectableWorkTypes.map((w) => ({ value: w.id, label: w.name }));
+  const fallbackWorkTypeId = selectableWorkTypes.find((w) => w.isFallback)?.id;
 
   const action = client?.id ? updateClient.bind(null, client.id) : createClient;
 
@@ -118,11 +120,12 @@ export function ClientForm({
         </FieldGroup>
         <SelectWithOther
           label="Work type"
-          name="workType"
+          name="workTypeId"
           otherName="workTypeOther"
-          options={WORK_TYPE_OPTIONS}
-          defaultValue={client?.workType}
+          options={workTypeOptions}
+          defaultValue={client?.workTypeId}
           defaultOtherValue={client?.workTypeOther}
+          otherValue={fallbackWorkTypeId}
         />
       </div>
       <SubmitButton label={submitLabel} />

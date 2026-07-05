@@ -15,7 +15,8 @@ import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { SuccessBanner } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { LEAD_SOURCE_LABELS, WORK_TYPE_LABELS } from "@/lib/types";
+import { listWorkTypes } from "@/lib/data/workTypes";
+import { listLeadSources } from "@/lib/data/leadSources";
 import Link from "next/link";
 
 export default async function LeadDetailPage({
@@ -27,9 +28,11 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { converted, costFrom, costTo } = await searchParams;
-  const [lead, costEntries] = await Promise.all([
+  const [lead, costEntries, workTypes, leadSources] = await Promise.all([
     getLead(id),
     listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }),
+    listWorkTypes({ includeInactive: true }),
+    listLeadSources({ includeInactive: true }),
   ]);
   if (!lead) notFound();
 
@@ -58,10 +61,8 @@ export default async function LeadDetailPage({
           {lead.contactName && <p className="mt-1 text-navy-500">{lead.contactName}</p>}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <LeadStatusBadge status={lead.status} />
-            {lead.workType && (
-              <Badge tone="burnt">
-                {lead.workType === "OTHER" ? lead.workTypeOther || "Other" : WORK_TYPE_LABELS[lead.workType]}
-              </Badge>
+            {(lead.workTypeName || lead.workTypeOther) && (
+              <Badge tone="burnt">{lead.workTypeOther || lead.workTypeName}</Badge>
             )}
             {lead.estimatedValue && (
               <span className="text-sm text-navy-500">
@@ -95,7 +96,13 @@ export default async function LeadDetailPage({
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
             <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Core info</h3>
-            <LeadForm key={lead.updatedAt} lead={lead} submitLabel="Save changes" />
+            <LeadForm
+              key={lead.updatedAt}
+              lead={lead}
+              workTypes={workTypes}
+              leadSources={leadSources}
+              submitLabel="Save changes"
+            />
           </Card>
 
           <CostSummarySection
@@ -143,11 +150,7 @@ export default async function LeadDetailPage({
               <div className="flex justify-between">
                 <dt className="text-navy-500">Source</dt>
                 <dd className="text-navy-800 font-medium">
-                  {lead.source
-                    ? lead.source === "OTHER"
-                      ? lead.sourceOther || "Other"
-                      : LEAD_SOURCE_LABELS[lead.source]
-                    : "—"}
+                  {lead.sourceName || lead.sourceOther ? lead.sourceOther || lead.sourceName : "—"}
                 </dd>
               </div>
               <div className="flex justify-between">

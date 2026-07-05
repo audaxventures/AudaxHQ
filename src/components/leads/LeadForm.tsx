@@ -4,12 +4,8 @@ import { useFormStatus } from "react-dom";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { Button } from "@/components/ui/Button";
-import type { Lead } from "@/lib/types";
-import { WORK_TYPE_LABELS, WORK_TYPE_ORDER, LEAD_SOURCE_LABELS, LEAD_SOURCE_ORDER } from "@/lib/types";
+import type { Lead, LeadSource, WorkType } from "@/lib/types";
 import { createLead, updateLead } from "@/app/(app)/leads/actions";
-
-const WORK_TYPE_OPTIONS = WORK_TYPE_ORDER.map((v) => ({ value: v, label: WORK_TYPE_LABELS[v] }));
-const SOURCE_OPTIONS = LEAD_SOURCE_ORDER.map((v) => ({ value: v, label: LEAD_SOURCE_LABELS[v] }));
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -22,12 +18,22 @@ function SubmitButton({ label }: { label: string }) {
 
 export function LeadForm({
   lead,
+  workTypes,
+  leadSources,
   submitLabel = "Save lead",
 }: {
   lead?: Lead;
+  workTypes: WorkType[];
+  leadSources: LeadSource[];
   submitLabel?: string;
 }) {
   const action = lead?.id ? updateLead.bind(null, lead.id) : createLead;
+  const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === lead?.workTypeId);
+  const workTypeOptions = selectableWorkTypes.map((w) => ({ value: w.id, label: w.name }));
+  const fallbackWorkTypeId = selectableWorkTypes.find((w) => w.isFallback)?.id;
+  const selectableSources = leadSources.filter((s) => s.active || s.id === lead?.sourceId);
+  const sourceOptions = selectableSources.map((s) => ({ value: s.id, label: s.name }));
+  const fallbackSourceId = selectableSources.find((s) => s.isFallback)?.id;
 
   return (
     <form action={action} className="space-y-5">
@@ -90,19 +96,21 @@ export function LeadForm({
         </FieldGroup>
         <SelectWithOther
           label="Work type / service interested in"
-          name="workType"
+          name="workTypeId"
           otherName="workTypeOther"
-          options={WORK_TYPE_OPTIONS}
-          defaultValue={lead?.workType}
+          options={workTypeOptions}
+          defaultValue={lead?.workTypeId}
           defaultOtherValue={lead?.workTypeOther}
+          otherValue={fallbackWorkTypeId}
         />
         <SelectWithOther
           label="Lead source"
-          name="source"
+          name="sourceId"
           otherName="sourceOther"
-          options={SOURCE_OPTIONS}
-          defaultValue={lead?.source}
+          options={sourceOptions}
+          defaultValue={lead?.sourceId}
           defaultOtherValue={lead?.sourceOther}
+          otherValue={fallbackSourceId}
         />
       </div>
       <SubmitButton label={submitLabel} />

@@ -10,6 +10,7 @@ export function SelectWithOther({
   options,
   defaultValue,
   defaultOtherValue,
+  otherValue = "OTHER",
   otherPlaceholder = "Please specify",
 }: {
   label: string;
@@ -18,6 +19,8 @@ export function SelectWithOther({
   options: { value: string; label: string }[];
   defaultValue?: string | null;
   defaultOtherValue?: string | null;
+  /** The option value that reveals the free-text field — defaults to the literal "OTHER" for fixed enums, but callers backed by a DB lookup table pass the id of whichever row is flagged as the fallback. */
+  otherValue?: string;
   otherPlaceholder?: string;
 }) {
   const [value, setValue] = useState(defaultValue ?? "");
@@ -32,7 +35,7 @@ export function SelectWithOther({
           </option>
         ))}
       </Select>
-      {value === "OTHER" && (
+      {value === otherValue && (
         <Input
           name={otherName}
           placeholder={otherPlaceholder}

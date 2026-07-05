@@ -6,9 +6,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge, InvoiceAgeBracketBadge } from "@/components/ui/Badge";
 import { InvoiceAgingFilterBar } from "@/components/invoicing/InvoiceAgingFilterBar";
 import { listOutstandingInvoices } from "@/lib/data/invoicing";
+import { getAppSettings } from "@/lib/data/appSettings";
 import { markInvoicePaid } from "@/lib/actions/invoicing";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { CLIENT_TYPE_LABELS, invoiceAgeBracket } from "@/lib/types";
+import { CLIENT_TYPE_LABELS, invoiceAgeBracket, invoiceAgeBracketLabels } from "@/lib/types";
 import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
 
 export default async function InvoiceAgingPage({
@@ -17,10 +18,16 @@ export default async function InvoiceAgingPage({
   searchParams: Promise<{ clientType?: string; bracket?: string }>;
 }) {
   const { clientType, bracket } = await searchParams;
-  const invoices = await listOutstandingInvoices({
-    clientType: clientType as ClientType | undefined,
-    bracket: bracket as InvoiceAgeBracket | undefined,
-  });
+  const settings = await getAppSettings();
+  const thresholds = { underDays: settings.invoiceAgingUnderDays, overDays: settings.invoiceAgingOverDays };
+  const bracketLabels = invoiceAgeBracketLabels(thresholds.underDays, thresholds.overDays);
+  const invoices = await listOutstandingInvoices(
+    {
+      clientType: clientType as ClientType | undefined,
+      bracket: bracket as InvoiceAgeBracket | undefined,
+    },
+    thresholds
+  );
 
   const totalOutstanding = invoices.reduce((sum, i) => sum + Number(i.amount), 0);
 
@@ -59,7 +66,7 @@ export default async function InvoiceAgingPage({
         </Card>
       </div>
 
-      <InvoiceAgingFilterBar clientType={clientType} bracket={bracket} />
+      <InvoiceAgingFilterBar clientType={clientType} bracket={bracket} bracketLabels={bracketLabels} />
 
       {invoices.length === 0 ? (
         <EmptyState
@@ -68,7 +75,9 @@ export default async function InvoiceAgingPage({
         />
       ) : (
         <Card tone="burnt" className="divide-y divide-navy-100 overflow-hidden">
-          {invoices.map((inv) => (
+          {invoices.map((inv) => {
+            const bracket = invoiceAgeBracket(inv.daysOutstanding, thresholds.underDays, thresholds.overDays);
+            return (
             <div
               key={inv.id}
               className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4"
@@ -84,7 +93,7 @@ export default async function InvoiceAgingPage({
                   <Badge tone={inv.clientType === "PROJECT" ? "navy" : "slate"}>
                     {CLIENT_TYPE_LABELS[inv.clientType]}
                   </Badge>
-                  <InvoiceAgeBracketBadge bracket={invoiceAgeBracket(inv.daysOutstanding)} />
+                  <InvoiceAgeBracketBadge bracket={bracket} label={bracketLabels[bracket]} />
                 </div>
                 <p className="text-sm text-navy-600">{inv.label}</p>
                 <p className="mt-0.5 text-xs text-navy-400">
@@ -108,7 +117,8 @@ export default async function InvoiceAgingPage({
                 </form>
               </div>
             </div>
-          ))}
+            );
+          })}
         </Card>
       )}
     </div>
