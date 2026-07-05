@@ -55,8 +55,17 @@ export default async function LoginPage({
           }}
         />
         <div className="relative z-10 mx-auto max-w-md text-center lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-          <img src="/logo.png" alt="Audax Ventures" className="mb-10 h-12 w-auto" />
+          {/* The source file has uneven transparent margins (much wider on the right than the
+              left), so centering the <img> itself still looks off-center above the title. This
+              wrapper clips to the logo's actual content box, measured from the source PNG. */}
+          <div className="mx-auto mb-10 overflow-hidden" style={{ width: 180, height: 56 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
+            <img
+              src="/logo.png"
+              alt="Audax Ventures"
+              style={{ width: 211, maxWidth: "none", position: "relative", left: -9.7, top: -7 }}
+            />
+          </div>
           <h1 className="text-balance font-heading text-4xl font-medium leading-tight text-navy-900 sm:text-5xl">
             Welcome to
             <br />
