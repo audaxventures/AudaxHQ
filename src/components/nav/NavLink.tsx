@@ -74,7 +74,7 @@ export function NavLink({
     >
       <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
       {label}
-      {active && <span className="absolute inset-y-2 right-0 w-[3px] rounded-full bg-burnt-500" />}
+      {active && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-burnt-500" />}
     </Link>
   );
 }
