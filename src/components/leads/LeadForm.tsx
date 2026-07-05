@@ -1,6 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
+import { Building2, User, Mail, Phone, Target, DollarSign, List, Megaphone, ArrowRight } from "lucide-react";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +14,7 @@ function SubmitButton({ label }: { label: string }) {
   return (
     <Button type="submit" disabled={pending}>
       {pending ? "Saving…" : label}
+      {!pending && <ArrowRight size={16} />}
     </Button>
   );
 }
@@ -21,11 +24,13 @@ export function LeadForm({
   workTypes,
   leadSources,
   submitLabel = "Save lead",
+  cancelHref,
 }: {
   lead?: Lead;
   workTypes: WorkType[];
   leadSources: LeadSource[];
   submitLabel?: string;
+  cancelHref?: string;
 }) {
   const action = lead?.id ? updateLead.bind(null, lead.id) : createLead;
   const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === lead?.workTypeId);
@@ -39,41 +44,58 @@ export function LeadForm({
     <form action={action} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
-          <Label htmlFor="companyName">Company name</Label>
+          <Label htmlFor="companyName" required>
+            Company name
+          </Label>
           <Input
             id="companyName"
             name="companyName"
             required
             defaultValue={lead?.companyName}
-            placeholder="Acme Inc."
+            placeholder="e.g. Acme Inc."
+            icon={Building2}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactName">Contact name</Label>
+          <Label htmlFor="contactName" required>
+            Contact name
+          </Label>
           <Input
             id="contactName"
             name="contactName"
             defaultValue={lead?.contactName ?? ""}
-            placeholder="Jane Doe"
+            placeholder="e.g. Jane Doe"
+            icon={User}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactEmail">Email</Label>
+          <Label htmlFor="contactEmail" required>
+            Email
+          </Label>
           <Input
             id="contactEmail"
             name="contactEmail"
             type="email"
             defaultValue={lead?.contactEmail ?? ""}
-            placeholder="jane@acme.com"
+            placeholder="e.g. jane@acme.com"
+            icon={Mail}
           />
         </FieldGroup>
         <FieldGroup>
           <Label htmlFor="contactPhone">Phone</Label>
-          <Input id="contactPhone" name="contactPhone" defaultValue={lead?.contactPhone ?? ""} placeholder="(555) 555-5555" />
+          <Input
+            id="contactPhone"
+            name="contactPhone"
+            defaultValue={lead?.contactPhone ?? ""}
+            placeholder="e.g. (555) 555-5555"
+            icon={Phone}
+          />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="status">Status</Label>
-          <Select id="status" name="status" defaultValue={lead?.status ?? "NEW"}>
+          <Label htmlFor="status" required>
+            Status
+          </Label>
+          <Select id="status" name="status" defaultValue={lead?.status ?? "NEW"} icon={Target}>
             <option value="NEW">New</option>
             <option value="CONTACTED">Contacted</option>
             <option value="PROPOSAL_SENT">Proposal sent</option>
@@ -91,7 +113,8 @@ export function LeadForm({
             step="0.01"
             min="0"
             defaultValue={lead?.estimatedValue ?? ""}
-            placeholder="0.00"
+            placeholder="e.g. 0.00"
+            icon={DollarSign}
           />
         </FieldGroup>
         <SelectWithOther
@@ -102,6 +125,7 @@ export function LeadForm({
           defaultValue={lead?.workTypeId}
           defaultOtherValue={lead?.workTypeOther}
           otherValue={fallbackWorkTypeId}
+          icon={List}
         />
         <SelectWithOther
           label="Lead source"
@@ -111,9 +135,22 @@ export function LeadForm({
           defaultValue={lead?.sourceId}
           defaultOtherValue={lead?.sourceOther}
           otherValue={fallbackSourceId}
+          icon={Megaphone}
         />
       </div>
-      <SubmitButton label={submitLabel} />
+      <div className="flex items-center justify-between border-t border-navy-100 pt-5">
+        {cancelHref ? (
+          <Link
+            href={cancelHref}
+            className="text-sm font-medium text-navy-500 transition-colors hover:text-navy-800"
+          >
+            Cancel
+          </Link>
+        ) : (
+          <span />
+        )}
+        <SubmitButton label={submitLabel} />
+      </div>
     </form>
   );
 }
