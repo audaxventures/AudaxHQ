@@ -12,9 +12,9 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-burnt-500 px-4 py-3 text-sm font-medium text-cream-50 transition-colors hover:bg-burnt-600 disabled:opacity-50"
+      className="w-full rounded-xl bg-burnt-500 px-4 py-3.5 text-base font-semibold text-cream-50 transition-colors hover:bg-burnt-600 disabled:opacity-50"
     >
-      {pending ? "Checking…" : "Enter"}
+      {pending ? "Checking…" : "Sign In"}
     </button>
   );
 }
@@ -28,7 +28,7 @@ export function LoginForm({ next }: { next: string }) {
       <div>
         <label
           htmlFor="passcode"
-          className="block text-xs font-medium uppercase tracking-wide text-navy-500 mb-2"
+          className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
         >
           Passcode
         </label>
@@ -38,12 +38,12 @@ export function LoginForm({ next }: { next: string }) {
           type="password"
           autoFocus
           autoComplete="off"
-          className="w-full rounded-xl border border-navy-200 bg-cream-50 px-4 py-3 text-navy-900 placeholder:text-navy-400 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100"
+          className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
           placeholder="••••••••"
         />
       </div>
       {state.error && (
-        <p className="text-sm text-brick-600" role="alert">
+        <p className="text-sm text-brick-100" role="alert">
           {state.error}
         </p>
       )}

@@ -18,9 +18,9 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // logo.png and favicon.png must stay excluded: they're requested by the
-  // login page itself, before the visitor has a valid session cookie.
-  // favicon.ico stays excluded too since some browsers probe for it
-  // regardless of the declared <link rel="icon">.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|login).*)"],
+  // logo.png, logo.white.png, and favicon.png must stay excluded: they're
+  // requested by the login page itself, before the visitor has a valid
+  // session cookie. favicon.ico stays excluded too since some browsers
+  // probe for it regardless of the declared <link rel="icon">.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|logo.white.png|login).*)"],
 };
