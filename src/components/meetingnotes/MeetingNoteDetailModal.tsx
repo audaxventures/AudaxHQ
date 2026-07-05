@@ -14,29 +14,34 @@ import type { MeetingNote } from "@/lib/types";
 export function MeetingNoteDetailModal({
   note,
   onClose,
+  showOwner = true,
 }: {
   note: MeetingNote;
   onClose: () => void;
+  /** Hide the owner name/link header when the modal is already opened from that client/lead's own page. */
+  showOwner?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const ownerHref = note.clientId ? `/clients/${note.clientId}` : `/leads/${note.leadId}`;
 
   return (
     <Modal title="Meeting note" onClose={onClose}>
-      <div className="mb-5 flex items-center gap-3">
-        <AvatarChip name={note.ownerName ?? "?"} />
-        <div className="min-w-0">
-          <Link
-            href={ownerHref}
-            className="font-heading text-base font-medium text-navy-900 hover:underline truncate"
-          >
-            {note.ownerName}
-          </Link>
-          <div className="mt-0.5">
-            <Badge tone={note.clientId ? "navy" : "burnt"}>{note.clientId ? "Client" : "Lead"}</Badge>
+      {showOwner && (
+        <div className="mb-5 flex items-center gap-3">
+          <AvatarChip name={note.ownerName ?? "?"} />
+          <div className="min-w-0">
+            <Link
+              href={ownerHref}
+              className="font-heading text-base font-medium text-navy-900 hover:underline truncate"
+            >
+              {note.ownerName}
+            </Link>
+            <div className="mt-0.5">
+              <Badge tone={note.clientId ? "navy" : "burnt"}>{note.clientId ? "Client" : "Lead"}</Badge>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <form
         action={(formData) => {

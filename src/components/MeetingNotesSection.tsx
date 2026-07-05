@@ -1,17 +1,20 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Users } from "lucide-react";
 import { Input, Textarea, Label, FieldGroup } from "@/components/ui/Field";
 import { formatDate } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
 import { createScopedMeetingNote } from "@/lib/actions/meetingnotes";
+import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
 
 type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string };
 
 export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: MeetingNote[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
 
   return (
     <div>
@@ -50,21 +53,35 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
       {notes.length === 0 ? (
         <p className="text-sm text-navy-400">No meeting notes yet.</p>
       ) : (
-        <ol className="space-y-4">
+        <ol className="space-y-2">
           {notes.map((note) => (
-            <li key={note.id} className="border-l-2 border-burnt-200 pl-4">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <p className="text-xs font-medium text-navy-500">{formatDate(note.meetingDate)}</p>
-                {note.attendees && (
-                  <span className="inline-flex items-center gap-1 text-xs text-navy-400">
-                    <Users size={12} /> {note.attendees}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-navy-800 whitespace-pre-wrap">{note.notes}</p>
+            <li key={note.id}>
+              <button
+                type="button"
+                onClick={() => setSelectedId(note.id)}
+                className="w-full border-l-2 border-burnt-200 pl-4 py-1 text-left hover:bg-cream-100/60 transition-colors cursor-pointer rounded-r-md"
+              >
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <p className="text-xs font-medium text-navy-500">{formatDate(note.meetingDate)}</p>
+                  {note.attendees && (
+                    <span className="inline-flex items-center gap-1 text-xs text-navy-400">
+                      <Users size={12} /> {note.attendees}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-navy-800 whitespace-pre-wrap line-clamp-3">{note.notes}</p>
+              </button>
             </li>
           ))}
         </ol>
+      )}
+
+      {selectedNote && (
+        <MeetingNoteDetailModal
+          note={selectedNote}
+          onClose={() => setSelectedId(null)}
+          showOwner={false}
+        />
       )}
     </div>
   );
