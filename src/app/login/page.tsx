@@ -38,7 +38,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
-      <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-cream-50 px-8 py-16 sm:px-16">
+      <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-cream-50 px-8 py-16 sm:px-16 md:w-[58%] md:flex-none">
         <div className="relative z-10 max-w-md">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
           <img src="/logo.png" alt="Audax Ventures" className="mb-10 h-12 w-auto" />
@@ -90,7 +90,7 @@ export default async function LoginPage({
         </div>
       </div>
 
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-navy-900 to-navy-950 px-8 py-16">
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-navy-900 to-navy-950 px-6 py-16 md:w-[42%] md:flex-none">
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -104,7 +104,7 @@ export default async function LoginPage({
           aria-hidden
           className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 opacity-[0.06]"
         />
-        <div className="relative w-full max-w-sm rounded-2xl border border-navy-700/60 bg-navy-800/60 p-8 shadow-xl backdrop-blur">
+        <div className="relative w-full max-w-md rounded-2xl border border-navy-700/60 bg-navy-800/60 p-8 shadow-xl backdrop-blur">
           <div className="mb-8 flex flex-col items-center text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2 border-burnt-500 text-burnt-500">
               <Lock size={22} />
