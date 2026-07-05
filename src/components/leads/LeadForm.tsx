@@ -2,6 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import { Building2, User, Mail, Phone, Target, DollarSign, List, Megaphone, ArrowRight } from "lucide-react";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
@@ -9,12 +10,12 @@ import { Button } from "@/components/ui/Button";
 import type { Lead, LeadSource, WorkType } from "@/lib/types";
 import { createLead, updateLead } from "@/app/(app)/leads/actions";
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, compact }: { label: string; compact: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" size={compact ? "sm" : "md"} disabled={pending}>
       {pending ? "Saving…" : label}
-      {!pending && <ArrowRight size={16} />}
+      {!pending && !compact && <ArrowRight size={16} />}
     </Button>
   );
 }
@@ -25,12 +26,15 @@ export function LeadForm({
   leadSources,
   submitLabel = "Save lead",
   cancelHref,
+  variant = "full",
 }: {
   lead?: Lead;
   workTypes: WorkType[];
   leadSources: LeadSource[];
   submitLabel?: string;
   cancelHref?: string;
+  /** "compact" drops the icons/uppercase labels/required-asterisks for the in-place edit panel on the lead detail page; "full" (default) is the fuller treatment used by the standalone New Lead page. */
+  variant?: "full" | "compact";
 }) {
   const action = lead?.id ? updateLead.bind(null, lead.id) : createLead;
   const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === lead?.workTypeId);
@@ -39,12 +43,14 @@ export function LeadForm({
   const selectableSources = leadSources.filter((s) => s.active || s.id === lead?.sourceId);
   const sourceOptions = selectableSources.map((s) => ({ value: s.id, label: s.name }));
   const fallbackSourceId = selectableSources.find((s) => s.isFallback)?.id;
+  const compact = variant === "compact";
+  const fieldIcon = (icon: LucideIcon) => (compact ? undefined : icon);
 
   return (
     <form action={action} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
-          <Label htmlFor="companyName" required>
+          <Label htmlFor="companyName" required={!compact} compact={compact}>
             Company name
           </Label>
           <Input
@@ -53,11 +59,11 @@ export function LeadForm({
             required
             defaultValue={lead?.companyName}
             placeholder="e.g. Acme Inc."
-            icon={Building2}
+            icon={fieldIcon(Building2)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactName" required>
+          <Label htmlFor="contactName" required={!compact} compact={compact}>
             Contact name
           </Label>
           <Input
@@ -65,11 +71,11 @@ export function LeadForm({
             name="contactName"
             defaultValue={lead?.contactName ?? ""}
             placeholder="e.g. Jane Doe"
-            icon={User}
+            icon={fieldIcon(User)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactEmail" required>
+          <Label htmlFor="contactEmail" required={!compact} compact={compact}>
             Email
           </Label>
           <Input
@@ -78,24 +84,26 @@ export function LeadForm({
             type="email"
             defaultValue={lead?.contactEmail ?? ""}
             placeholder="e.g. jane@acme.com"
-            icon={Mail}
+            icon={fieldIcon(Mail)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="contactPhone">Phone</Label>
+          <Label htmlFor="contactPhone" compact={compact}>
+            Phone
+          </Label>
           <Input
             id="contactPhone"
             name="contactPhone"
             defaultValue={lead?.contactPhone ?? ""}
             placeholder="e.g. (555) 555-5555"
-            icon={Phone}
+            icon={fieldIcon(Phone)}
           />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="status" required>
+          <Label htmlFor="status" required={!compact} compact={compact}>
             Status
           </Label>
-          <Select id="status" name="status" defaultValue={lead?.status ?? "NEW"} icon={Target}>
+          <Select id="status" name="status" defaultValue={lead?.status ?? "NEW"} icon={fieldIcon(Target)}>
             <option value="NEW">New</option>
             <option value="CONTACTED">Contacted</option>
             <option value="PROPOSAL_SENT">Proposal sent</option>
@@ -105,7 +113,9 @@ export function LeadForm({
           </Select>
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="estimatedValue">Estimated value ($)</Label>
+          <Label htmlFor="estimatedValue" compact={compact}>
+            Estimated value ($)
+          </Label>
           <Input
             id="estimatedValue"
             name="estimatedValue"
@@ -114,7 +124,7 @@ export function LeadForm({
             min="0"
             defaultValue={lead?.estimatedValue ?? ""}
             placeholder="e.g. 0.00"
-            icon={DollarSign}
+            icon={fieldIcon(DollarSign)}
           />
         </FieldGroup>
         <SelectWithOther
@@ -125,7 +135,8 @@ export function LeadForm({
           defaultValue={lead?.workTypeId}
           defaultOtherValue={lead?.workTypeOther}
           otherValue={fallbackWorkTypeId}
-          icon={List}
+          icon={fieldIcon(List)}
+          compact={compact}
         />
         <SelectWithOther
           label="Lead source"
@@ -135,22 +146,27 @@ export function LeadForm({
           defaultValue={lead?.sourceId}
           defaultOtherValue={lead?.sourceOther}
           otherValue={fallbackSourceId}
-          icon={Megaphone}
+          icon={fieldIcon(Megaphone)}
+          compact={compact}
         />
       </div>
-      <div className="flex items-center justify-between border-t border-navy-100 pt-5">
-        {cancelHref ? (
-          <Link
-            href={cancelHref}
-            className="text-sm font-medium text-navy-500 transition-colors hover:text-navy-800"
-          >
-            Cancel
-          </Link>
-        ) : (
-          <span />
-        )}
-        <SubmitButton label={submitLabel} />
-      </div>
+      {compact ? (
+        <SubmitButton label={submitLabel} compact />
+      ) : (
+        <div className="flex items-center justify-between border-t border-navy-100 pt-5">
+          {cancelHref ? (
+            <Link
+              href={cancelHref}
+              className="text-sm font-medium text-navy-500 transition-colors hover:text-navy-800"
+            >
+              Cancel
+            </Link>
+          ) : (
+            <span />
+          )}
+          <SubmitButton label={submitLabel} compact={false} />
+        </div>
+      )}
     </form>
   );
 }

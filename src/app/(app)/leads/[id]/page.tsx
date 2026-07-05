@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, IdCard, CalendarClock, NotebookPen, StickyNote, BarChart3, CheckSquare } from "lucide-react";
 import { getLead } from "@/lib/data/leads";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { deleteLead, convertLeadToClient } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
+import { PanelHeading } from "@/components/ui/PanelHeading";
+import { BackLink } from "@/components/ui/BackLink";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { EmailSection } from "@/components/EmailSection";
@@ -42,6 +44,7 @@ export default async function LeadDetailPage({
 
   return (
     <div>
+      <BackLink href="/leads" label="Back to leads" />
       {converted && (
         <SuccessBanner>
           Status set to Won — a new client was created.{" "}
@@ -95,13 +98,14 @@ export default async function LeadDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Core info</h3>
+            <PanelHeading icon={IdCard} tone="slate" title="Core information" />
             <LeadForm
               key={lead.updatedAt}
               lead={lead}
               workTypes={workTypes}
               leadSources={leadSources}
               submitLabel="Save changes"
+              variant="compact"
             />
           </Card>
 
@@ -120,26 +124,24 @@ export default async function LeadDetailPage({
           />
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Follow-ups</h3>
+            <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
             <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">Meeting notes</h3>
+            <PanelHeading icon={NotebookPen} tone="slate" title="Meeting notes" />
             <MeetingNotesSection owner={owner} notes={lead.meetingNotes} />
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-4">
-              Activity &amp; notes
-            </h3>
+            <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
             <NotesLog notes={lead.notes} kind="lead" entityId={id} />
           </Card>
         </div>
 
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">At a glance</h3>
+            <PanelHeading icon={BarChart3} tone="slate" title="At a glance" />
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-navy-500">Estimated value</dt>
@@ -167,7 +169,7 @@ export default async function LeadDetailPage({
           />
 
           <Card className="p-6">
-            <h3 className="font-heading text-lg font-medium text-navy-900 mb-3">Tasks</h3>
+            <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
             <ScopedTaskList owner={owner} tasks={lead.tasks} />
           </Card>
         </div>
