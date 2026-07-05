@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 
 const EXPORTS: { entity: string; label: string; description: string }[] = [
   { entity: "clients", label: "Clients", description: "Every client record" },
@@ -13,10 +14,10 @@ const EXPORTS: { entity: string; label: string; description: string }[] = [
 export default function DataExportSettingsPage() {
   return (
     <Card className="p-6">
-      <h3 className="mb-1 font-heading text-lg font-medium text-navy-900">Data Export</h3>
-      <p className="mb-4 text-sm text-navy-500">
-        Download your core data as CSV — for backup or peace of mind, independent of the database.
-      </p>
+      <SettingsPanelHeader
+        title="Data Export"
+        description="Download your core data as CSV — for backup or peace of mind, independent of the database."
+      />
       <div className="space-y-2">
         {EXPORTS.map((e) => (
           <div key={e.entity} className="flex items-center justify-between gap-3 rounded-lg border border-navy-100 px-4 py-3">

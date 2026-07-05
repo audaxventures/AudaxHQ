@@ -12,8 +12,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         title="Settings"
         description="Configuration that used to be scattered across the app (or hardcoded), all in one place."
       />
-      <SettingsSubNav />
-      {children}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
+        <SettingsSubNav />
+        <div>{children}</div>
+      </div>
     </div>
   );
 }
