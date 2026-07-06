@@ -15,20 +15,25 @@ export function ClientListRow({
   return (
     <Link
       href={`/clients/${client.id}`}
-      className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-white py-4 pl-6 pr-5 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] transition-colors hover:bg-cream-100/60"
+      className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl bg-white py-4 pl-6 pr-5 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] transition-colors hover:bg-cream-100/60 sm:flex-row sm:items-center sm:gap-4"
     >
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", avatarColorClass(client.companyName))}
       />
-      <AvatarChip name={client.companyName} />
-      <div className="min-w-0 flex-1">
-        <p className="font-heading text-base font-medium text-navy-900 truncate">
-          {client.companyName}
-        </p>
-        {client.contactName && (
-          <p className="text-sm text-navy-400 truncate">{client.contactName}</p>
-        )}
-        <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-4">
+        <AvatarChip name={client.companyName} />
+        <div className="min-w-0 flex-1">
+          <p className="font-heading text-base font-medium text-navy-900 truncate">
+            {client.companyName}
+          </p>
+          {client.contactName && (
+            <p className="text-sm text-navy-400 truncate">{client.contactName}</p>
+          )}
+        </div>
+        <ChevronRight size={18} className="shrink-0 text-navy-300 group-hover:text-navy-500 transition-colors sm:hidden" />
+      </div>
+      <div className="flex items-center justify-between gap-3 sm:ml-auto sm:justify-end sm:gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           <ClientStatusBadge status={client.status} />
           <Badge tone="navy">{client.type === "PROJECT" ? "Project" : "Recurring"}</Badge>
           {client.invoiceCount > 0 && (
@@ -39,14 +44,14 @@ export function ClientListRow({
             </Badge>
           )}
         </div>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="font-heading text-base text-navy-900">{formatCurrency(client.rate)}</p>
-        <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
+        <div className="text-right shrink-0">
+          <p className="font-heading text-base text-navy-900">{formatCurrency(client.rate)}</p>
+          <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
+        </div>
       </div>
       <ChevronRight
         size={18}
-        className="text-navy-300 group-hover:text-navy-500 transition-colors shrink-0"
+        className="hidden shrink-0 text-navy-300 group-hover:text-navy-500 transition-colors sm:block"
       />
     </Link>
   );

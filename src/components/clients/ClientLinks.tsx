@@ -2,6 +2,7 @@
 
 import { useRef, useTransition } from "react";
 import { ExternalLink, Plus, X } from "lucide-react";
+import { Input } from "@/components/ui/Field";
 import type { ClientLink } from "@/lib/types";
 import { addClientLink, deleteClientLink } from "@/app/(app)/clients/actions";
 
@@ -48,28 +49,19 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
           });
           formRef.current?.reset();
         }}
-        className="flex items-center gap-2"
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
       >
-        <input
-          name="label"
-          placeholder="Label"
-          required
-          className="w-24 rounded-lg border border-navy-200 bg-cream-50 px-2.5 py-1.5 text-sm placeholder:text-navy-400 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100"
-        />
-        <input
-          name="url"
-          placeholder="https://…"
-          required
-          type="url"
-          className="flex-1 rounded-lg border border-navy-200 bg-cream-50 px-2.5 py-1.5 text-sm placeholder:text-navy-400 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100"
-        />
-        <button
-          type="submit"
-          className="flex items-center justify-center rounded-lg bg-navy-100 p-1.5 text-navy-600 hover:bg-navy-200 transition-colors cursor-pointer"
-          aria-label="Add link"
-        >
-          <Plus size={16} />
-        </button>
+        <Input name="label" placeholder="Label" required className="sm:w-24" />
+        <div className="flex items-center gap-2">
+          <Input name="url" placeholder="https://…" required type="url" className="flex-1" />
+          <button
+            type="submit"
+            className="flex shrink-0 items-center justify-center rounded-lg bg-navy-100 p-2 text-navy-600 hover:bg-navy-200 transition-colors cursor-pointer"
+            aria-label="Add link"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
       </form>
     </div>
   );
