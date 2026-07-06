@@ -5,10 +5,11 @@ import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Client } from "@/lib/types";
+
+const MAX_VISIBLE_CLIENTS = 3;
 
 function TabPill({
   active,
@@ -45,6 +46,8 @@ export function ClientsPanel({
   const [tab, setTab] = useState<"RECURRING" | "PROJECT">("RECURRING");
   const clients = tab === "RECURRING" ? recurringClients : projectClients;
   const totalActive = recurringClients.length + projectClients.length;
+  const visibleClients = clients.slice(0, MAX_VISIBLE_CLIENTS);
+  const emptySlots = MAX_VISIBLE_CLIENTS - visibleClients.length;
 
   return (
     <Card tone="slate" className="p-5">
@@ -67,27 +70,40 @@ export function ClientsPanel({
         </div>
       </div>
 
-      {clients.length === 0 ? (
-        <EmptyState title={`No active ${tab === "RECURRING" ? "recurring" : "project"} clients`} />
-      ) : (
+      <div>
         <ul className="divide-y divide-navy-100 -mx-1">
-          {clients.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/clients/${c.id}`}
-                className="flex items-center gap-3 rounded-lg px-1 py-2.5 transition-colors hover:bg-cream-100/60"
-              >
-                <AvatarChip name={c.companyName} color={c.color} />
-                <p className="min-w-0 flex-1 truncate text-sm font-medium text-navy-900">{c.companyName}</p>
-                <span className="shrink-0 text-xs font-medium text-navy-500">
-                  {formatCurrency(c.rate)}
-                  {tab === "RECURRING" ? "/mo" : ""}
-                </span>
-              </Link>
+          {visibleClients.length === 0 ? (
+            <li className="flex items-center gap-3 rounded-lg px-1 py-2.5">
+              <p className="text-sm text-navy-400">
+                No active {tab === "RECURRING" ? "recurring" : "project"} clients
+              </p>
             </li>
-          ))}
+          ) : (
+            visibleClients.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/clients/${c.id}`}
+                  className="flex items-center gap-3 rounded-lg px-1 py-2.5 transition-colors hover:bg-cream-100/60"
+                >
+                  <AvatarChip name={c.companyName} color={c.color} />
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-navy-900">{c.companyName}</p>
+                  <span className="shrink-0 text-xs font-medium text-navy-500">
+                    {formatCurrency(c.rate)}
+                    {tab === "RECURRING" ? "/mo" : ""}
+                  </span>
+                </Link>
+              </li>
+            ))
+          )}
         </ul>
-      )}
+        {/* Invisible filler rows (outside the divide-y list, so no stray divider lines) so the card doesn't resize when a tab has fewer than MAX_VISIBLE_CLIENTS clients. */}
+        {Array.from({ length: emptySlots }).map((_, i) => (
+          <div key={`filler-${i}`} aria-hidden className="invisible flex items-center gap-3 rounded-lg px-1 py-2.5">
+            <span className="h-8 w-8 shrink-0 rounded-[10px]" />
+            <span className="min-w-0 flex-1 text-sm">filler</span>
+          </div>
+        ))}
+      </div>
 
       <Link
         href="/clients"
