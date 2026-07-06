@@ -64,12 +64,7 @@ export default async function DashboardPage() {
             backgroundImage="/revenuebackground-card.png"
             label="Projected revenue this month"
             value={formatCurrency(data.projectedRevenue)}
-            caption={
-              <span className="text-navy-500">
-                Recurring fees plus unpaid project work across {data.activeClientCount} active client
-                {data.activeClientCount === 1 ? "" : "s"}
-              </span>
-            }
+            caption={<span className="text-navy-500">Recurring fees & project work</span>}
           />
           <StatCard
             backgroundImage="/todobackground-card.png"

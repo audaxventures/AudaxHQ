@@ -47,7 +47,7 @@ export default async function InvoiceAgingPage({
         icon={Receipt}
         tone="burnt"
         eyebrow="Invoicing"
-        title="Invoice Aging"
+        title="Revenue Tracking"
         description="Every invoice that's been sent but not yet paid, oldest first."
       />
 
@@ -66,8 +66,8 @@ export default async function InvoiceAgingPage({
             <ChevronRight size={16} />
           </div>
         </Card>
-        <Card tone="burnt" variant="solid" className="p-5 flex items-center gap-3.5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-burnt-600 shadow-sm">
+        <Card tone="slate" variant="solid" className="p-5 flex items-center gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-slate-600 shadow-sm">
             <FileStack size={20} />
           </div>
           <div className="min-w-0 flex-1">
@@ -76,7 +76,7 @@ export default async function InvoiceAgingPage({
             </p>
             <p className="text-xs font-semibold text-navy-600">Invoices shown</p>
           </div>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-burnt-600 shadow-sm">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-slate-600 shadow-sm">
             <ChevronRight size={16} />
           </div>
         </Card>

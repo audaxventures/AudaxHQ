@@ -80,7 +80,7 @@ export function InvoiceAgingFilterBar({
         <span className="mt-6 hidden h-8 w-px bg-navy-200 sm:block" />
         <FilterGroup label="Age">
           <FilterPill href={buildHref(current, "bracket", undefined)} active={!bracket}>
-            All ages
+            All
           </FilterPill>
           {INVOICE_AGE_BRACKET_ORDER.map((b) => (
             <FilterPill key={b} href={buildHref(current, "bracket", b)} active={bracket === b}>

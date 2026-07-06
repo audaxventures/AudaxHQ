@@ -14,7 +14,6 @@ export interface AttentionFlag {
 export interface DashboardData {
   projectClients: Client[];
   recurringClients: Client[];
-  activeClientCount: number;
   /** Recurring monthly fees plus unpaid project-invoice work across active clients. */
   projectedRevenue: number;
   hotFollowUps: HotFollowUp[];
@@ -156,7 +155,6 @@ export async function getDashboardData(): Promise<DashboardData> {
   return {
     projectClients,
     recurringClients,
-    activeClientCount: activeClients.length,
     projectedRevenue,
     hotFollowUps,
     attentionFlags,
