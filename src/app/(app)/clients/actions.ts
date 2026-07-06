@@ -8,6 +8,7 @@ import * as documents from "@/lib/data/documents";
 import { getToday } from "@/lib/data/profile";
 import { supabase, DOCUMENTS_BUCKET } from "@/lib/storage";
 import { MAX_DOCUMENT_SIZE_BYTES, getFileExtension, isAllowedDocumentExtension } from "@/lib/documents";
+import type { EntityColor } from "@/lib/types";
 
 const clientSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -21,6 +22,7 @@ const clientSchema = z.object({
   workTypeOther: z.string().optional(),
   startDate: z.string().optional(),
   budgetedHours: z.coerce.number().min(0).optional(),
+  color: z.enum(["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "violet"]).optional(),
 });
 
 function parseClientForm(formData: FormData) {
@@ -37,6 +39,7 @@ function parseClientForm(formData: FormData) {
     workTypeOther: formData.get("workTypeOther") || undefined,
     startDate: formData.get("startDate") || undefined,
     budgetedHours: formData.get("budgetedHours") || undefined,
+    color: formData.get("color") || undefined,
   });
   return {
     ...parsed,
@@ -47,6 +50,7 @@ function parseClientForm(formData: FormData) {
     workTypeOther: parsed.workTypeOther ?? null,
     startDate: parsed.startDate ?? null,
     budgetedHours: parsed.budgetedHours ?? null,
+    color: parsed.color ?? null,
   };
 }
 
@@ -76,6 +80,13 @@ export async function archiveClient(id: string) {
 
 export async function activateClient(id: string) {
   await clients.setClientStatus(id, "ACTIVE");
+  revalidatePath(`/clients/${id}`);
+  revalidatePath("/clients");
+  revalidatePath("/");
+}
+
+export async function setClientColor(id: string, color: EntityColor | null) {
+  await clients.setClientColor(id, color);
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");

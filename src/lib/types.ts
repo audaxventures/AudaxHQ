@@ -24,6 +24,8 @@ export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 export type TaskType = "CLIENT" | "LEAD" | "CUSTOM";
 export type FollowUpStatus = "UPCOMING" | "COMPLETED";
 export type InvoiceAgeBracket = "UNDER_15" | "DAYS_15_30" | "OVER_30";
+/** An operator-assignable accent color for a client or lead, used for avatars and accent bars across the app. */
+export type EntityColor = "navy" | "slate" | "blue" | "sage" | "burnt" | "gold" | "brick" | "violet";
 
 export interface ClientLink {
   id: string;
@@ -78,8 +80,9 @@ export interface MeetingNote {
   attendees: string | null;
   notes: string;
   createdAt: string;
-  // present when returned from a query that joins in the owner's name
+  // present when returned from a query that joins in the owner's name/color
   ownerName?: string;
+  ownerColor?: EntityColor | null;
 }
 
 export interface ClientDocument {
@@ -130,6 +133,7 @@ export interface Client {
   workTypeOther: string | null;
   startDate: string | null;
   budgetedHours: number | null;
+  color: EntityColor | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -159,6 +163,7 @@ export interface Lead {
   sourceName: string | null;
   /** Free text, used only when the selected source is the "Other" fallback row. */
   sourceOther: string | null;
+  color: EntityColor | null;
   createdAt: string;
   updatedAt: string;
   convertedClientId: string | null;
@@ -379,6 +384,28 @@ export const FIXED_TASK_TYPE_LABELS: Record<"CLIENT" | "LEAD", string> = {
 export const FOLLOWUP_STATUS_LABELS: Record<FollowUpStatus, string> = {
   UPCOMING: "Upcoming",
   COMPLETED: "Completed",
+};
+
+export const ENTITY_COLOR_ORDER: EntityColor[] = [
+  "navy",
+  "slate",
+  "blue",
+  "sage",
+  "burnt",
+  "gold",
+  "brick",
+  "violet",
+];
+
+export const ENTITY_COLOR_LABELS: Record<EntityColor, string> = {
+  navy: "Navy",
+  slate: "Slate",
+  blue: "Blue",
+  sage: "Sage",
+  burnt: "Burnt orange",
+  gold: "Gold",
+  brick: "Brick",
+  violet: "Violet",
 };
 
 export const INVOICE_AGE_BRACKET_ORDER: InvoiceAgeBracket[] = [

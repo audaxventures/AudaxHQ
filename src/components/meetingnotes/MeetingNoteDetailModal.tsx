@@ -28,7 +28,7 @@ export function MeetingNoteDetailModal({
     <Modal title="Meeting note" onClose={onClose}>
       {showOwner && (
         <div className="mb-5 flex items-center gap-3">
-          <AvatarChip name={note.ownerName ?? "?"} />
+          <AvatarChip name={note.ownerName ?? "?"} color={note.ownerColor} />
           <div className="min-w-0">
             <Link
               href={ownerHref}

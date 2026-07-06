@@ -1,11 +1,12 @@
 import { sql } from "@/lib/db";
-import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
+import type { ClientType, EntityColor, InvoiceAgeBracket } from "@/lib/types";
 
 export interface OutstandingInvoice {
   id: string;
   clientId: string;
   clientName: string;
   clientType: ClientType;
+  clientColor: EntityColor | null;
   label: string;
   amount: string;
   invoicedDate: string | null;
@@ -25,7 +26,7 @@ export async function listOutstandingInvoices(
   const rows = await sql`
     select
       i.id, i.client_id, i.label, i.amount, i.invoiced_date,
-      c.company_name as client_name, c.type as client_type,
+      c.company_name as client_name, c.type as client_type, c.color as client_color,
       (${today}::date - coalesce(i.invoiced_date, ${today}::date))::int as days_outstanding
     from invoices i
     join clients c on c.id = i.client_id
@@ -48,6 +49,7 @@ export async function listOutstandingInvoices(
       clientId: row.client_id as string,
       clientName: row.client_name as string,
       clientType: row.client_type as ClientType,
+      clientColor: row.client_color as EntityColor | null,
       label: row.label as string,
       amount: row.amount as string,
       invoicedDate: row.invoiced_date as string | null,

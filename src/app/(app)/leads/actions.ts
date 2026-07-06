@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as leads from "@/lib/data/leads";
 import { getToday } from "@/lib/data/profile";
+import type { EntityColor } from "@/lib/types";
 
 const leadSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -17,6 +18,7 @@ const leadSchema = z.object({
   workTypeOther: z.string().optional(),
   sourceId: z.string().optional(),
   sourceOther: z.string().optional(),
+  color: z.enum(["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "violet"]).optional(),
 });
 
 function parseLeadForm(formData: FormData) {
@@ -32,6 +34,7 @@ function parseLeadForm(formData: FormData) {
     workTypeOther: formData.get("workTypeOther") || undefined,
     sourceId: formData.get("sourceId") || undefined,
     sourceOther: formData.get("sourceOther") || undefined,
+    color: formData.get("color") || undefined,
   });
   return {
     companyName: parsed.companyName,
@@ -44,6 +47,7 @@ function parseLeadForm(formData: FormData) {
     workTypeOther: parsed.workTypeOther ?? null,
     sourceId: parsed.sourceId ?? null,
     sourceOther: parsed.sourceOther ?? null,
+    color: parsed.color ?? null,
   };
 }
 
@@ -71,6 +75,13 @@ export async function updateLead(id: string, formData: FormData) {
     // transient in-form confirmation state before the user sees it.
     redirect(`/leads/${id}?converted=${result.convertedClientId}`);
   }
+}
+
+export async function setLeadColor(id: string, color: EntityColor | null) {
+  await leads.setLeadColor(id, color);
+  revalidatePath(`/leads/${id}`);
+  revalidatePath("/leads");
+  revalidatePath("/");
 }
 
 export async function deleteLead(id: string) {

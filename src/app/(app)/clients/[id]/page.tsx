@@ -12,11 +12,12 @@ import {
 } from "lucide-react";
 import { getClient } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
-import { activateClient, archiveClient } from "@/app/(app)/clients/actions";
+import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { BackLink } from "@/components/ui/BackLink";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
+import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { ClientLinks } from "@/components/clients/ClientLinks";
 import { InvoicesList } from "@/components/clients/InvoicesList";
@@ -67,6 +68,7 @@ export default async function ClientDetailPage({
           </h1>
           {client.contactName && <p className="mt-1 text-navy-500">{client.contactName}</p>}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <EntityColorPicker color={client.color} onSelect={setClientColor.bind(null, id)} />
             <ClientStatusBadge status={client.status} />
             <Badge tone="navy">{client.type === "PROJECT" ? "Project-based" : "Recurring"}</Badge>
             {(client.workTypeName || client.workTypeOther) && (

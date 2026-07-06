@@ -77,7 +77,7 @@ export function ClientsPanel({
                 href={`/clients/${c.id}`}
                 className="flex items-center gap-3 rounded-lg px-1 py-2.5 transition-colors hover:bg-cream-100/60"
               >
-                <AvatarChip name={c.companyName} />
+                <AvatarChip name={c.companyName} color={c.color} />
                 <p className="min-w-0 flex-1 truncate text-sm font-medium text-navy-900">{c.companyName}</p>
                 <span className="shrink-0 text-xs font-medium text-navy-500">
                   {formatCurrency(c.rate)}

@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { MeetingNote } from "@/lib/types";
+import type { EntityColor, MeetingNote } from "@/lib/types";
 
 interface MeetingNoteRow {
   id: string;
@@ -10,6 +10,7 @@ interface MeetingNoteRow {
   notes: string;
   created_at: string;
   owner_name?: string;
+  owner_color?: EntityColor | null;
 }
 
 function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
@@ -22,6 +23,7 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
     notes: row.notes,
     createdAt: row.created_at,
     ownerName: row.owner_name,
+    ownerColor: row.owner_color,
   };
 }
 
@@ -34,7 +36,8 @@ export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promis
   const rows = await sql`
     select
       m.id, m.client_id, m.lead_id, m.meeting_date, m.attendees, m.notes, m.created_at,
-      coalesce(c.company_name, l.company_name) as owner_name
+      coalesce(c.company_name, l.company_name) as owner_name,
+      coalesce(c.color, l.color) as owner_color
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id

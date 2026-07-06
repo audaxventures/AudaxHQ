@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import { ArrowRight, IdCard, CalendarClock, NotebookPen, StickyNote, BarChart3, CheckSquare } from "lucide-react";
 import { getLead } from "@/lib/data/leads";
 import { listCostEntries } from "@/lib/data/costEntries";
-import { deleteLead, convertLeadToClient } from "@/app/(app)/leads/actions";
+import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { BackLink } from "@/components/ui/BackLink";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
+import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { EmailSection } from "@/components/EmailSection";
 import { CostSummarySection } from "@/components/CostSummarySection";
@@ -65,6 +66,7 @@ export default async function LeadDetailPage({
           </h1>
           {lead.contactName && <p className="mt-1 text-navy-500">{lead.contactName}</p>}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <EntityColorPicker color={lead.color} onSelect={setLeadColor.bind(null, id)} />
             <LeadStatusBadge status={lead.status} />
             {(lead.workTypeName || lead.workTypeOther) && (
               <Badge tone="burnt">{lead.workTypeOther || lead.workTypeName}</Badge>

@@ -3,7 +3,7 @@ import { listTasks } from "@/lib/data/todos";
 import { listFollowUpsForLead } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { createClient } from "@/lib/data/clients";
-import type { Lead, LeadNote, LeadStatus, LeadWithRelations } from "@/lib/types";
+import type { EntityColor, Lead, LeadNote, LeadStatus, LeadWithRelations } from "@/lib/types";
 
 function mapLead(row: Record<string, unknown>): Lead {
   return {
@@ -20,6 +20,7 @@ function mapLead(row: Record<string, unknown>): Lead {
     sourceId: row.source_id as string | null,
     sourceName: (row.source_name as string | null) ?? null,
     sourceOther: row.source_other as string | null,
+    color: row.color as EntityColor | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     convertedClientId: row.converted_client_id as string | null,
@@ -146,15 +147,16 @@ export interface LeadInput {
   workTypeOther?: string | null;
   sourceId?: string | null;
   sourceOther?: string | null;
+  color?: EntityColor | null;
 }
 
 export async function createLead(input: LeadInput): Promise<Lead> {
   const rows = await sql`
-    insert into leads (company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other)
+    insert into leads (company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color)
     values (
       ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.status}, ${input.estimatedValue ?? null}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null},
-      ${input.sourceId ?? null}, ${input.sourceOther ?? null}
+      ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}
     )
     returning *
   `;
@@ -189,6 +191,7 @@ export async function updateLead(
       work_type_other = ${input.workTypeOther ?? null},
       source_id = ${input.sourceId ?? null},
       source_other = ${input.sourceOther ?? null},
+      color = ${input.color ?? null},
       updated_at = now()
     where id = ${id}
   `;
@@ -199,6 +202,10 @@ export async function updateLead(
   }
 
   return { convertedClientId: null };
+}
+
+export async function setLeadColor(id: string, color: EntityColor | null): Promise<void> {
+  await sql`update leads set color = ${color}, updated_at = now() where id = ${id}`;
 }
 
 /** Creates a Client from a lead's current data, copies its notes, and links the two. */
@@ -218,6 +225,7 @@ export async function convertLeadToClient(leadId: string, today: string): Promis
       rate: lead.estimatedValue ? Number(lead.estimatedValue) : 0,
       workTypeId: lead.workTypeId,
       workTypeOther: lead.workTypeOther,
+      color: lead.color,
     },
     today
   );

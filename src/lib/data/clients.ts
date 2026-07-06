@@ -8,6 +8,7 @@ import type {
   ClientStatus,
   ClientType,
   ClientWithRelations,
+  EntityColor,
   Invoice,
   InvoiceStatus,
 } from "@/lib/types";
@@ -30,6 +31,7 @@ function mapClient(row: Record<string, unknown>): Client {
     workTypeOther: row.work_type_other as string | null,
     startDate: row.start_date as string | null,
     budgetedHours: row.budgeted_hours !== null ? Number(row.budgeted_hours) : null,
+    color: row.color as EntityColor | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -158,15 +160,16 @@ export interface ClientInput {
   workTypeOther?: string | null;
   startDate?: string | null;
   budgetedHours?: number | null;
+  color?: EntityColor | null;
 }
 
 export async function createClient(input: ClientInput, today: string): Promise<Client> {
   const rows = await sql`
-    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours)
+    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours, color)
     values (
       ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.type}, ${input.status}, ${input.rate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
-      ${input.budgetedHours ?? null}
+      ${input.budgetedHours ?? null}, ${input.color ?? null}
     )
     returning *
   `;
@@ -193,6 +196,7 @@ export async function updateClient(id: string, input: ClientInput, today: string
       work_type_other = ${input.workTypeOther ?? null},
       start_date = ${input.startDate ?? null},
       budgeted_hours = ${input.budgetedHours ?? null},
+      color = ${input.color ?? null},
       updated_at = now()
     where id = ${id}
   `;
@@ -204,6 +208,10 @@ export async function updateClient(id: string, input: ClientInput, today: string
 
 export async function setClientStatus(id: string, status: ClientStatus): Promise<void> {
   await sql`update clients set status = ${status}, updated_at = now() where id = ${id}`;
+}
+
+export async function setClientColor(id: string, color: EntityColor | null): Promise<void> {
+  await sql`update clients set color = ${color}, updated_at = now() where id = ${id}`;
 }
 
 // --- Notes ---

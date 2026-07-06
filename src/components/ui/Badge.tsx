@@ -10,9 +10,9 @@ import type {
 } from "@/lib/types";
 import { TASK_STATUS_LABELS, FIXED_TASK_TYPE_LABELS } from "@/lib/types";
 
-type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue";
+export type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue";
 
-const TONE_CLASSES: Record<Tone, string> = {
+export const TONE_CLASSES: Record<Tone, string> = {
   sage: "bg-sage-100 text-sage-600",
   gold: "bg-gold-100 text-gold-600",
   brick: "bg-brick-100 text-brick-600",
@@ -99,7 +99,7 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Badge>;
 }
 
-const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
+export const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
   TO_BE_DONE: "burnt",
   IN_PROGRESS: "blue",
   AWAITING_CLIENT_FEEDBACK: "gold",

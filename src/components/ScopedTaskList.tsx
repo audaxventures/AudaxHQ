@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { Trash2, Plus } from "lucide-react";
-import { Input, Select } from "@/components/ui/Field";
+import { ChevronDown, Trash2, Plus } from "lucide-react";
+import { Input } from "@/components/ui/Field";
+import { TONE_CLASSES, TASK_STATUS_TONE } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { formatDate, isOverdue } from "@/lib/format";
 import type { Task, TaskStatus } from "@/lib/types";
@@ -46,22 +47,31 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
         <span className={cn("flex-1 text-xs min-w-0", overdue ? "text-brick-600 font-medium" : "text-navy-400")}>
           {task.dueDate ? `${overdue ? "Overdue: " : "Due "}${formatDate(task.dueDate)}` : ""}
         </span>
-        <Select
-          value={task.status}
-          onChange={(e) =>
-            startTransition(async () => {
-              await setTaskStatus(task.id, clientId, leadId, e.target.value as TaskStatus);
-            })
-          }
-          className="w-auto text-base sm:text-xs py-1 pl-2 pr-7 shrink-0"
-          aria-label="Task status"
+        <div
+          className={cn(
+            "relative inline-flex shrink-0 items-center gap-1 rounded-full pl-2.5 pr-6 py-1 text-xs font-medium tracking-wide",
+            TONE_CLASSES[TASK_STATUS_TONE[task.status]]
+          )}
         >
-          {TASK_STATUS_ORDER.map((s) => (
-            <option key={s} value={s}>
-              {TASK_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </Select>
+          <span className="pointer-events-none whitespace-nowrap">{TASK_STATUS_LABELS[task.status]}</span>
+          <ChevronDown size={12} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 opacity-60" />
+          <select
+            value={task.status}
+            onChange={(e) =>
+              startTransition(async () => {
+                await setTaskStatus(task.id, clientId, leadId, e.target.value as TaskStatus);
+              })
+            }
+            className="absolute inset-0 cursor-pointer appearance-none bg-transparent text-transparent focus:outline-none"
+            aria-label="Task status"
+          >
+            {TASK_STATUS_ORDER.map((s) => (
+              <option key={s} value={s}>
+                {TASK_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </li>
   );

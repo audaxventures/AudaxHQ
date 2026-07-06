@@ -112,7 +112,7 @@ export default async function InvoiceAgingPage({
                   className="flex flex-col gap-3 rounded-2xl bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] sm:flex-row sm:items-center"
                 >
                   <div className="flex flex-1 items-start gap-3.5 min-w-0">
-                    <AvatarChip name={inv.clientName} />
+                    <AvatarChip name={inv.clientName} color={inv.clientColor} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <Link

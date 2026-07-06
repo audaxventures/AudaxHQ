@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { Building2, User, Mail, Phone, Target, DollarSign, List, Megaphone, ArrowRight } from "lucide-react";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { Button } from "@/components/ui/Button";
 import type { Lead, LeadSource, WorkType } from "@/lib/types";
 import { createLead, updateLead } from "@/app/(app)/leads/actions";
@@ -149,6 +150,12 @@ export function LeadForm({
           icon={fieldIcon(Megaphone)}
           compact={compact}
         />
+        {!compact && (
+          <FieldGroup>
+            <Label compact={compact}>Color</Label>
+            <ColorPicker name="color" defaultValue={lead?.color} />
+          </FieldGroup>
+        )}
       </div>
       {compact ? (
         <SubmitButton label={submitLabel} compact />
