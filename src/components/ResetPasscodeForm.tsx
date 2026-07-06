@@ -2,10 +2,9 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
-import { login, type LoginState } from "@/app/login/actions";
+import { resetPasscode, type ResetPasscodeState } from "@/app/login/actions";
 
-const initialState: LoginState = { error: null };
+const initialState: ResetPasscodeState = { error: null };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -15,56 +14,48 @@ function SubmitButton() {
       disabled={pending}
       className="w-full rounded-xl bg-burnt-500 px-4 py-3.5 text-base font-semibold text-cream-50 transition-colors hover:bg-burnt-600 disabled:opacity-50"
     >
-      {pending ? "Checking…" : "Sign In"}
+      {pending ? "Saving…" : "Set new passcode"}
     </button>
   );
 }
 
-export function LoginForm({ next }: { next: string }) {
-  const [state, formAction] = useActionState(login, initialState);
+export function ResetPasscodeForm({ token }: { token: string }) {
+  const [state, formAction] = useActionState(resetPasscode, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
-      <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="token" value={token} />
       <div>
-        <label
-          htmlFor="email"
-          className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
-        >
-          Email
+        <label htmlFor="newPasscode" className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2">
+          New passcode
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="newPasscode"
+          name="newPasscode"
+          type="password"
           required
           autoFocus
-          autoComplete="email"
+          autoComplete="new-password"
           className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
-          placeholder="jane@audaxventures.ca"
+          placeholder="••••••••"
         />
       </div>
       <div>
         <label
-          htmlFor="passcode"
+          htmlFor="confirmPasscode"
           className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
         >
-          Passcode
+          Confirm new passcode
         </label>
         <input
-          id="passcode"
-          name="passcode"
+          id="confirmPasscode"
+          name="confirmPasscode"
           type="password"
           required
-          autoComplete="off"
+          autoComplete="new-password"
           className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
           placeholder="••••••••"
         />
-        <div className="mt-2 text-right">
-          <Link href="/login/forgot" className="text-xs font-medium text-navy-300 hover:text-burnt-400">
-            Forgot passcode?
-          </Link>
-        </div>
       </div>
       {state.error && (
         <p className="text-sm text-brick-100" role="alert">

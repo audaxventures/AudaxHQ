@@ -58,3 +58,16 @@ export function hashPasscode(passcode: string): { hash: string; salt: string } {
   const hash = crypto.scryptSync(passcode, salt, 64).toString("hex");
   return { hash, salt };
 }
+
+/** A random, single-use passcode-reset token — sent to the operator via email, never stored raw (see hashResetToken). */
+export function generateResetToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+export function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export function isValidResetToken(candidateTokenHash: string, storedTokenHash: string): boolean {
+  return timingSafeStringEqual(candidateTokenHash, storedTokenHash);
+}

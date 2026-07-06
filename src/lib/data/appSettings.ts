@@ -45,3 +45,28 @@ export async function setPasscodeCredentials(hash: string, salt: string): Promis
     where id = true
   `;
 }
+
+/** Server-only (the forgot/reset-passcode actions) — a single-use, short-lived token, overwritten by each new reset request. */
+export async function setPasscodeResetToken(tokenHash: string, expiresAt: Date): Promise<void> {
+  await sql`
+    update app_settings set passcode_reset_token_hash = ${tokenHash}, passcode_reset_token_expires_at = ${expiresAt.toISOString()}
+    where id = true
+  `;
+}
+
+export async function getPasscodeResetToken(): Promise<{ tokenHash: string; expiresAt: Date } | null> {
+  const rows = await sql`select passcode_reset_token_hash, passcode_reset_token_expires_at from app_settings where id = true`;
+  const row = rows[0] as Record<string, unknown>;
+  if (!row.passcode_reset_token_hash || !row.passcode_reset_token_expires_at) return null;
+  return {
+    tokenHash: row.passcode_reset_token_hash as string,
+    expiresAt: new Date(row.passcode_reset_token_expires_at as string),
+  };
+}
+
+export async function clearPasscodeResetToken(): Promise<void> {
+  await sql`
+    update app_settings set passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
+    where id = true
+  `;
+}

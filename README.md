@@ -6,8 +6,9 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql`; query helpers in `src/lib/data/`
-- **Supabase Storage** — private bucket for client document uploads (`src/lib/storage.ts`); Neon only stores each file's metadata and storage path, never the file itself
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql`; query helpers in `src/lib/data/`
+- **Supabase Storage** — a private bucket for client document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
+- **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
 - A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
 
@@ -37,6 +38,10 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/007_settings.sql
    psql "$DATABASE_URL" -f migrations/008_editable_categories.sql
    psql "$DATABASE_URL" -f migrations/009_todo_priority.sql
+   psql "$DATABASE_URL" -f migrations/010_profile_timezone.sql
+   psql "$DATABASE_URL" -f migrations/011_client_lead_color.sql
+   psql "$DATABASE_URL" -f migrations/012_business_logo.sql
+   psql "$DATABASE_URL" -f migrations/013_passcode_reset.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -58,16 +63,33 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 
 **`009_todo_priority.sql`** adds a `priority` column (`task_priority` enum: LOW/MEDIUM/HIGH, default MEDIUM) to `todos`, for the To-Dos board redesign — not breaking, purely additive.
 
+**`010_profile_timezone.sql`** adds a `timezone` column to `profile`, so "today" is computed against the operator's real clock instead of always UTC — not breaking, purely additive.
+
+**`011_client_lead_color.sql`** adds a `color` column to `clients` and `leads`, letting each be assigned an explicit accent color used for avatars/accent bars — not breaking, purely additive.
+
+**`012_business_logo.sql`** adds a `logo_path` column to `app_settings`, pointing at the uploaded business logo in Supabase Storage — not breaking, purely additive.
+
+**`013_passcode_reset.sql`** adds `passcode_reset_token_hash`/`passcode_reset_token_expires_at` columns to `app_settings`, backing the "Forgot passcode?" email flow — not breaking, purely additive.
+
 ### 2. Document storage setup (Supabase)
 
-Client file uploads (feature: Documents on a client's page) are stored in Supabase Storage, not Neon — Neon only keeps the file name/type/size/path. Set this up once:
+Client file uploads (feature: Documents on a client's page) and the business logo (Settings → Profile) are stored in Supabase Storage, not Neon — Neon only keeps metadata and storage paths. Set this up once:
 
 1. Create a free project at [supabase.com](https://supabase.com) (or use an existing one).
-2. Go to **Storage** and create a new bucket named exactly `client-documents`. Leave **Public bucket** turned **off** — the app reads files through short-lived signed URLs it generates on request, never a public link.
-3. Go to **Project Settings → API** and copy the **Project URL** and the **`service_role` secret key** (not the `anon` key — the service role key is what lets the server upload/delete/sign URLs). Treat it like a password: it has full admin access to the project.
-4. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to those values wherever `DATABASE_URL` is configured (Vercel env vars, and `.env.local` for local dev).
+2. Go to **Storage** and create a bucket named exactly `client-documents`. Leave **Public bucket** turned **off** — the app reads files through short-lived signed URLs it generates on request, never a public link.
+3. Create a second bucket named exactly `business-assets`. This one **should** have **Public bucket** turned **on** — the logo is rendered directly via its public URL on every page load.
+4. Go to **Project Settings → API** and copy the **Project URL** and the **`service_role` secret key** (not the `anon` key — the service role key is what lets the server upload/delete/sign URLs). Treat it like a password: it has full admin access to the project.
+5. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to those values wherever `DATABASE_URL` is configured (Vercel env vars, and `.env.local` for local dev).
 
-### 3. Set environment variables in Vercel
+### 3. Passcode reset emails (Resend)
+
+The "Forgot passcode?" link on the login page emails a time-limited reset link. This step is optional — everything else in the app works without it, the link will just fail to send until it's configured:
+
+1. Create a free account at [resend.com](https://resend.com).
+2. Go to **API Keys** and create a key. Set it as `RESEND_API_KEY`.
+3. By default, emails send from Resend's shared `onboarding@resend.dev` address, which works immediately but has weaker deliverability and looks less trustworthy. When ready, verify your own sending domain in Resend and set `RESEND_FROM_EMAIL` to an address on it (e.g. `Audax HQ <noreply@yourdomain.com>`).
+
+### 4. Set environment variables in Vercel
 
 In the Vercel project's **Settings → Environment Variables**, set:
 
@@ -78,18 +100,20 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `DATABASE_URL` | Your Neon/Vercel Postgres connection string (if you provisioned via Vercel Storage, this is set automatically as `POSTGRES_URL` — copy its value into `DATABASE_URL`, or rename the reference) |
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase project's `service_role` secret key |
+| `RESEND_API_KEY` | (optional) Your Resend API key, enables "Forgot passcode?" emails |
+| `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Audax HQ <noreply@yourdomain.com>` |
 
-### 4. Deploy
+### 5. Deploy
 
 Push to your connected Git branch, or run `vercel --prod`. That's it — no build-time database access is required (every page under `/` is rendered on-demand, not statically prerendered).
 
-### 5. (Optional) Automate monthly recurring invoices
+### 6. (Optional) Automate monthly recurring invoices
 
 Recurring clients get their current month's invoice row created automatically the next time the dashboard or their client page is loaded — so in practice a new month's invoice always appears the first time you open the app that month. If you'd rather have it happen exactly on the 1st regardless of whether anyone opens the app, add a [Vercel Cron Job](https://vercel.com/docs/cron-jobs) that hits a route calling `ensureRecurringInvoicesForAllActiveClients()` (see `src/lib/data/clients.ts`) — not included by default since the lazy approach covers the actual use case.
 
 ## Access model
 
-There are no user accounts. `src/proxy.ts` checks every request (except `/login` and static assets) for a signed session cookie; `/login` posts a passcode to a server action that validates it against `APP_PASSCODE` and sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`.
+There are no user accounts. `src/proxy.ts` checks every request (except `/login*` and static assets) for a signed session cookie; `/login` posts an email + passcode to a server action that validates the email against the Settings → Profile email and the passcode against `APP_PASSCODE` (or the Settings-managed passcode), then sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`. `/login/forgot` and `/login/reset-passcode` implement a self-service passcode reset over email (see "Passcode reset emails" above) for when the passcode is forgotten.
 
 ## Project structure
 
@@ -103,12 +127,17 @@ migrations/006_work_categories.sql  adds work_categories + time_entries.category
 migrations/007_settings.sql    adds the Settings module's tables (profile, business entities, app settings)
 migrations/008_editable_categories.sql  converts work_type/lead_source/task_type enums into editable lookup tables
 migrations/009_todo_priority.sql  adds todos.priority (task_priority enum)
+migrations/010_profile_timezone.sql  adds profile.timezone
+migrations/011_client_lead_color.sql  adds clients.color / leads.color
+migrations/012_business_logo.sql  adds app_settings.logo_path
+migrations/013_passcode_reset.sql  adds app_settings passcode reset token columns
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
-src/lib/storage.ts             Supabase Storage client (private bucket for client documents)
+src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)
+src/lib/email.ts                Resend wrapper for passcode reset emails
 src/lib/data/                  query functions, grouped by domain (clients, leads, todos, followups, meetingnotes, documents, costEntries, teamMembers, workCategories, dashboard)
 src/lib/actions/               shared server actions used across the clients/leads/todos pages (tasks, followups, meetingnotes)
-src/app/login/                 passcode gate UI + server action
+src/app/login/                 passcode gate UI + server action (plus /login/forgot and /login/reset-passcode for passcode reset)
 src/app/(app)/                 everything behind the gate: dashboard, clients, leads, meeting-notes, todos
 src/components/ui/             design-system primitives (Button, Badge, Card, Field, ...)
 ```
