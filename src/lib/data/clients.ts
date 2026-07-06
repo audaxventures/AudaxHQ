@@ -160,7 +160,7 @@ export interface ClientInput {
   budgetedHours?: number | null;
 }
 
-export async function createClient(input: ClientInput): Promise<Client> {
+export async function createClient(input: ClientInput, today: string): Promise<Client> {
   const rows = await sql`
     insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours)
     values (
@@ -173,13 +173,13 @@ export async function createClient(input: ClientInput): Promise<Client> {
   const client = mapClient(rows[0] as Record<string, unknown>);
 
   if (client.type === "RECURRING") {
-    await ensureCurrentMonthRecurringInvoice(client.id, input.rate);
+    await ensureCurrentMonthRecurringInvoice(client.id, input.rate, today);
   }
 
   return client;
 }
 
-export async function updateClient(id: string, input: ClientInput): Promise<void> {
+export async function updateClient(id: string, input: ClientInput, today: string): Promise<void> {
   await sql`
     update clients set
       company_name = ${input.companyName},
@@ -198,7 +198,7 @@ export async function updateClient(id: string, input: ClientInput): Promise<void
   `;
 
   if (input.type === "RECURRING") {
-    await ensureCurrentMonthRecurringInvoice(id, input.rate);
+    await ensureCurrentMonthRecurringInvoice(id, input.rate, today);
   }
 }
 
@@ -259,20 +259,19 @@ export async function deleteInvoice(id: string): Promise<void> {
   await sql`delete from invoices where id = ${id}`;
 }
 
-export async function markInvoicePaid(id: string): Promise<void> {
+export async function markInvoicePaid(id: string, today: string): Promise<void> {
   await sql`
-    update invoices set status = 'PAID', paid_date = coalesce(paid_date, current_date)
+    update invoices set status = 'PAID', paid_date = coalesce(paid_date, ${today}::date)
     where id = ${id}
   `;
 }
 
 export async function ensureCurrentMonthRecurringInvoice(
   clientId: string,
-  rate: number
+  rate: number,
+  today: string
 ): Promise<void> {
-  const now = new Date();
-  const month = now.getUTCMonth() + 1;
-  const year = now.getUTCFullYear();
+  const [year, month] = today.split("-").map(Number);
   const label = `${monthName(month)} ${year}`;
   await sql`
     insert into invoices (client_id, label, amount, status, period_month, period_year)
@@ -281,7 +280,7 @@ export async function ensureCurrentMonthRecurringInvoice(
   `;
 }
 
-export async function ensureRecurringInvoicesForAllActiveClients(): Promise<void> {
+export async function ensureRecurringInvoicesForAllActiveClients(today: string): Promise<void> {
   const clients = await sql`
     select id, rate from clients where type = 'RECURRING' and status = 'ACTIVE'
   `;
@@ -289,7 +288,8 @@ export async function ensureRecurringInvoicesForAllActiveClients(): Promise<void
     clients.map((c) =>
       ensureCurrentMonthRecurringInvoice(
         (c as Record<string, unknown>).id as string,
-        Number((c as Record<string, unknown>).rate)
+        Number((c as Record<string, unknown>).rate),
+        today
       )
     )
   );

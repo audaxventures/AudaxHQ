@@ -16,9 +16,9 @@ const PRIORITY_TONE_CLASSES: Record<TaskPriority, string> = {
   LOW: "text-navy-400",
 };
 
-function isDueToday(dueDate: string | null): boolean {
+function isDueToday(dueDate: string | null, today: string): boolean {
   if (!dueDate) return false;
-  return formatDateInput(dueDate) === formatDateInput(new Date());
+  return formatDateInput(dueDate) === today;
 }
 
 export function TaskCard({
@@ -26,16 +26,18 @@ export function TaskCard({
   onOpen,
   draggable,
   onDragStart,
+  today,
 }: {
   task: Task;
   onOpen: () => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
+  today: string;
 }) {
   const [, startTransition] = useTransition();
   const completed = task.status === "COMPLETED";
-  const overdue = !completed && isOverdue(task.dueDate);
-  const dueToday = !completed && isDueToday(task.dueDate);
+  const overdue = !completed && isOverdue(task.dueDate, today);
+  const dueToday = !completed && isDueToday(task.dueDate, today);
   const ownerHref = task.clientId ? `/clients/${task.clientId}` : task.leadId ? `/leads/${task.leadId}` : null;
   const ownerName = task.clientName ?? task.leadName;
 

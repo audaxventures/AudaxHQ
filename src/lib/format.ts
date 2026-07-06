@@ -58,20 +58,19 @@ export function monthName(month: number): string {
   return MONTH_NAMES[month - 1] ?? "";
 }
 
-export function isOverdue(dateStr: string | null | undefined): boolean {
+/**
+ * `today` is a YYYY-MM-DD string in the operator's configured timezone (see
+ * src/lib/timezone.ts) — callers must supply it rather than letting this
+ * default to UTC, since "today" is a local wall-clock concept.
+ */
+export function isOverdue(dateStr: string | null | undefined, today: string): boolean {
   if (!dateStr) return false;
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  const date = new Date(dateStr);
-  return date.getTime() < today.getTime();
+  return formatDateInput(dateStr) < today;
 }
 
-export function isTodayOrPast(dateStr: string | null | undefined): boolean {
+export function isTodayOrPast(dateStr: string | null | undefined, today: string): boolean {
   if (!dateStr) return false;
-  const today = new Date();
-  today.setUTCHours(23, 59, 59, 999);
-  const date = new Date(dateStr);
-  return date.getTime() <= today.getTime();
+  return formatDateInput(dateStr) <= today;
 }
 
 /** True when value falls within [from, to] (either bound optional/open-ended). False if value is null/unparseable. */

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { monthLabel, monthParam, shiftMonth, todayDateStr } from "@/lib/calendarGrid";
+import { monthLabel, monthParam, shiftMonth } from "@/lib/calendarGrid";
 import { CALENDAR_EVENT_KIND_LABELS, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
 
 function buildHref(month: string, types: Set<CalendarEventKind>) {
@@ -18,15 +18,17 @@ export function CalendarControls({
   year,
   month,
   activeTypes,
+  today,
 }: {
   year: number;
   month: number;
   activeTypes: Set<CalendarEventKind>;
+  today: string;
 }) {
   const prevMonth = shiftMonth(year, month, -1);
   const nextMonth = shiftMonth(year, month, 1);
   const thisMonthParam = monthParam(year, month);
-  const currentMonthOfToday = todayDateStr().slice(0, 7);
+  const currentMonthOfToday = today.slice(0, 7);
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">

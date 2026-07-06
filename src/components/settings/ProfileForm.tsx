@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import type { Profile } from "@/lib/types";
 import { updateProfile } from "@/app/(app)/settings/actions";
+import { listTimezones } from "@/lib/timezone";
+
+const TIMEZONES = listTimezones();
 
 export function ProfileForm({ profile }: { profile: Profile }) {
   const [pending, startTransition] = useTransition();
@@ -28,6 +31,19 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       <FieldGroup>
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" defaultValue={profile.email} placeholder="jane@audaxventures.ca" />
+      </FieldGroup>
+      <FieldGroup>
+        <Label htmlFor="timezone">Timezone</Label>
+        <Select id="timezone" name="timezone" defaultValue={profile.timezone}>
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz.replace(/_/g, " ")}
+            </option>
+          ))}
+        </Select>
+        <p className="mt-1.5 text-xs text-navy-400">
+          Used to work out &ldquo;today&rdquo; for overdue tasks, follow-ups, and the calendar.
+        </p>
       </FieldGroup>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>

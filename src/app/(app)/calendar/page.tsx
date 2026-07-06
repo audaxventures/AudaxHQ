@@ -6,6 +6,7 @@ import { CalendarControls } from "@/components/calendar/CalendarControls";
 import { CalendarPill } from "@/components/calendar/CalendarPill";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
+import { getTimezone } from "@/lib/data/profile";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_PILLS_PER_DAY = 3;
@@ -24,10 +25,11 @@ export default async function CalendarPage({
   searchParams: Promise<{ month?: string; types?: string }>;
 }) {
   const { month: monthParamValue, types: typesParamValue } = await searchParams;
-  const { year, month } = parseMonthParam(monthParamValue);
+  const timezone = await getTimezone();
+  const { year, month } = parseMonthParam(monthParamValue, timezone);
   const activeTypes = parseTypesParam(typesParamValue);
   const grid = buildMonthGrid(year, month);
-  const today = todayDateStr();
+  const today = todayDateStr(timezone);
 
   const allEvents = await listCalendarEvents(grid[0].date, grid[grid.length - 1].date);
   const events = allEvents.filter((e) => activeTypes.has(e.kind));
@@ -49,7 +51,7 @@ export default async function CalendarPage({
         description="Follow-ups, meeting notes, and task due dates, all in one place."
       />
 
-      <CalendarControls year={year} month={month} activeTypes={activeTypes} />
+      <CalendarControls year={year} month={month} activeTypes={activeTypes} today={today} />
 
       <Card tone="navy" className="overflow-hidden">
         <div className="grid grid-cols-7 border-b border-navy-100">

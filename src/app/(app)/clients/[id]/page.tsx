@@ -29,6 +29,7 @@ import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency, isDateInRange } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
+import { getToday } from "@/lib/data/profile";
 import { Button } from "@/components/ui/Button";
 
 export default async function ClientDetailPage({
@@ -40,10 +41,11 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { costFrom, costTo } = await searchParams;
-  const [client, costEntries, workTypes] = await Promise.all([
+  const [client, costEntries, workTypes, today] = await Promise.all([
     getClient(id),
     listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }),
     listWorkTypes({ includeInactive: true }),
+    getToday(),
   ]);
   if (!client) notFound();
 
@@ -121,7 +123,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} />
+            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} today={today} />
           </Card>
 
           <Card className="p-6">
@@ -159,7 +161,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={client.tasks} />
+            <ScopedTaskList owner={owner} tasks={client.tasks} today={today} />
           </Card>
 
           <Card className="p-6">

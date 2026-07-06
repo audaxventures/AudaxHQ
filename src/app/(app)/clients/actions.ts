@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
 import * as documents from "@/lib/data/documents";
+import { getToday } from "@/lib/data/profile";
 import { supabase, DOCUMENTS_BUCKET } from "@/lib/storage";
 import { MAX_DOCUMENT_SIZE_BYTES, getFileExtension, isAllowedDocumentExtension } from "@/lib/documents";
 
@@ -51,7 +52,7 @@ function parseClientForm(formData: FormData) {
 
 export async function createClient(formData: FormData) {
   const input = parseClientForm(formData);
-  const client = await clients.createClient(input);
+  const client = await clients.createClient(input, await getToday());
 
   revalidatePath("/clients");
   revalidatePath("/");
@@ -60,7 +61,7 @@ export async function createClient(formData: FormData) {
 
 export async function updateClient(id: string, formData: FormData) {
   const input = parseClientForm(formData);
-  await clients.updateClient(id, input);
+  await clients.updateClient(id, input, await getToday());
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");

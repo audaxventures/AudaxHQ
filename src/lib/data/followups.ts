@@ -46,17 +46,17 @@ export interface HotFollowUp extends FollowUp {
 }
 
 /** Upcoming/overdue follow-ups (not completed) across all clients and leads, for the dashboard. */
-export async function listHotFollowUps(): Promise<HotFollowUp[]> {
+export async function listHotFollowUps(today: string): Promise<HotFollowUp[]> {
   const rows = await sql`
     select
       f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
       coalesce(c.company_name, l.company_name) as owner_name,
       case when f.client_id is not null then 'client' else 'lead' end as owner_kind,
-      f.date < current_date as is_overdue
+      f.date < ${today}::date as is_overdue
     from follow_ups f
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
-    where f.status = 'UPCOMING' and f.date <= current_date
+    where f.status = 'UPCOMING' and f.date <= ${today}::date
     order by f.date asc
   `;
   return (

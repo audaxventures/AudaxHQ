@@ -4,11 +4,22 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
 
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+// Runs in the visitor's browser, so use its local calendar day/month rather
+// than forcing UTC — otherwise "This month" can be off by a day right at a
+// month boundary for anyone west of UTC.
 function currentMonthBounds(): { from: string; to: string } {
   const now = new Date();
-  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
-  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return {
+    from: `${year}-${pad(month + 1)}-01`,
+    to: `${year}-${pad(month + 1)}-${pad(lastDay)}`,
+  };
 }
 
 function Pill({

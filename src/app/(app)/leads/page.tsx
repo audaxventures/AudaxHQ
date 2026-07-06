@@ -7,6 +7,7 @@ import { LeadFilterBar } from "@/components/leads/LeadFilterBar";
 import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { listLeads, countLeads } from "@/lib/data/leads";
+import { getToday } from "@/lib/data/profile";
 import type { LeadStatus } from "@/lib/types";
 
 const PAGE_SIZE = 10;
@@ -20,13 +21,14 @@ export default async function LeadsPage({
   const page = Math.max(1, Number(pageParam) || 1);
   const isGrid = view === "grid";
 
-  const [leads, total] = await Promise.all([
+  const [leads, total, today] = await Promise.all([
     listLeads({
       status: status as LeadStatus | undefined,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     }),
     countLeads({ status: status as LeadStatus | undefined }),
+    getToday(),
   ]);
 
   const buildPageHref = (targetPage: number) => {
@@ -62,13 +64,13 @@ export default async function LeadsPage({
       ) : isGrid ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {leads.map((lead) => (
-            <LeadGridCard key={lead.id} lead={lead} />
+            <LeadGridCard key={lead.id} lead={lead} today={today} />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
           {leads.map((lead) => (
-            <LeadListRow key={lead.id} lead={lead} />
+            <LeadListRow key={lead.id} lead={lead} today={today} />
           ))}
         </div>
       )}

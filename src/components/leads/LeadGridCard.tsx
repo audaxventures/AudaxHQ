@@ -7,8 +7,14 @@ import { avatarColorClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
 import type { Lead } from "@/lib/types";
 
-export function LeadGridCard({ lead }: { lead: Lead & { nextFollowUpDate: string | null } }) {
-  const overdue = isOverdue(lead.nextFollowUpDate) && lead.status !== "WON" && lead.status !== "LOST";
+export function LeadGridCard({
+  lead,
+  today,
+}: {
+  lead: Lead & { nextFollowUpDate: string | null };
+  today: string;
+}) {
+  const overdue = isOverdue(lead.nextFollowUpDate, today) && lead.status !== "WON" && lead.status !== "LOST";
 
   return (
     <Link

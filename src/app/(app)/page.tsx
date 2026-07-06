@@ -17,34 +17,32 @@ import { RevenueHero } from "@/components/dashboard/RevenueHero";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateInput, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
-function todayLabel() {
+/** `today` is a YYYY-MM-DD string already resolved in the operator's timezone, so format it as UTC to avoid re-shifting the calendar day. */
+function todayLabel(today: string) {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  }).format(new Date());
+    timeZone: "UTC",
+  }).format(new Date(`${today}T00:00:00Z`));
 }
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
 
-  const now = new Date();
   const newClientsThisMonth = data.activeClients.filter((c) => {
     if (!c.startDate) return false;
-    const start = new Date(c.startDate);
-    return (
-      start.getUTCFullYear() === now.getUTCFullYear() && start.getUTCMonth() === now.getUTCMonth()
-    );
+    return formatDateInput(c.startDate).slice(0, 7) === data.today.slice(0, 7);
   }).length;
 
   return (
     <div>
       <div className="mb-8">
         <p className="text-xs font-medium uppercase tracking-[0.15em] text-burnt-500 mb-2">
-          {todayLabel()}
+          {todayLabel(data.today)}
         </p>
         <h1 className="font-heading text-3xl sm:text-4xl font-medium text-navy-900 leading-tight text-balance">
           Welcome to your <span className="font-semibold italic text-burnt-500">Audax HQ</span> Dashboard
@@ -224,7 +222,7 @@ export default async function DashboardPage() {
                         "h-1.5 w-1.5 shrink-0 rounded-full",
                         !task.dueDate
                           ? "bg-navy-200"
-                          : isOverdue(task.dueDate)
+                          : isOverdue(task.dueDate, data.today)
                             ? "bg-brick-600"
                             : "bg-gold-600"
                       )}
@@ -236,7 +234,7 @@ export default async function DashboardPage() {
                       <span
                         className={cn(
                           "text-xs font-medium shrink-0",
-                          isOverdue(task.dueDate) ? "text-brick-600" : "text-navy-500"
+                          isOverdue(task.dueDate, data.today) ? "text-brick-600" : "text-navy-500"
                         )}
                       >
                         {formatDate(task.dueDate)}

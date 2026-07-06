@@ -17,10 +17,10 @@ function ownerIds(owner: Owner) {
     : { clientId: null, leadId: owner.leadId };
 }
 
-function TaskRow({ task, owner }: { task: Task; owner: Owner }) {
+function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: string }) {
   const [, startTransition] = useTransition();
   const { clientId, leadId } = ownerIds(owner);
-  const overdue = task.status !== "COMPLETED" && isOverdue(task.dueDate);
+  const overdue = task.status !== "COMPLETED" && isOverdue(task.dueDate, today);
 
   return (
     <li className="group rounded-lg px-2 py-2 -mx-2 hover:bg-cream-100/60">
@@ -67,7 +67,7 @@ function TaskRow({ task, owner }: { task: Task; owner: Owner }) {
   );
 }
 
-export function ScopedTaskList({ owner, tasks }: { owner: Owner; tasks: Task[] }) {
+export function ScopedTaskList({ owner, tasks, today }: { owner: Owner; tasks: Task[]; today: string }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
 
@@ -78,7 +78,7 @@ export function ScopedTaskList({ owner, tasks }: { owner: Owner; tasks: Task[] }
       ) : (
         <ul className="space-y-1 mb-3 divide-y divide-navy-100">
           {tasks.map((task) => (
-            <TaskRow key={task.id} task={task} owner={owner} />
+            <TaskRow key={task.id} task={task} owner={owner} today={today} />
           ))}
         </ul>
       )}

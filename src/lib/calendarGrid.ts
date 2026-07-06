@@ -1,3 +1,5 @@
+import { todayInTimezone } from "@/lib/timezone";
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -21,13 +23,13 @@ export function monthParam(year: number, month: number): string {
   return `${year}-${pad(month)}`;
 }
 
-export function parseMonthParam(param: string | undefined): { year: number; month: number } {
+export function parseMonthParam(param: string | undefined, timezone: string): { year: number; month: number } {
   if (param && /^\d{4}-\d{2}$/.test(param)) {
     const [y, m] = param.split("-").map(Number);
     if (m >= 1 && m <= 12) return { year: y, month: m };
   }
-  const now = new Date();
-  return { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 };
+  const [y, m] = todayInTimezone(timezone).split("-").map(Number);
+  return { year: y, month: m };
 }
 
 export function monthLabel(year: number, month: number): string {
@@ -36,9 +38,8 @@ export function monthLabel(year: number, month: number): string {
   );
 }
 
-export function todayDateStr(): string {
-  const now = new Date();
-  return toDateStr(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
+export function todayDateStr(timezone: string): string {
+  return todayInTimezone(timezone);
 }
 
 export interface CalendarGridDay {

@@ -100,8 +100,11 @@ export async function deactivateTodoType(id: string) {
 export async function updateProfile(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
-  await profile.updateProfile({ name, email });
-  revalidatePath("/settings/profile");
+  const timezone = String(formData.get("timezone") ?? "").trim() || "UTC";
+  await profile.updateProfile({ name, email, timezone });
+  // Timezone changes what "today" is computed as almost everywhere in the
+  // app, not just this settings page — revalidate the whole (app) section.
+  revalidatePath("/", "layout");
 }
 
 export async function createBusinessEntity(formData: FormData) {

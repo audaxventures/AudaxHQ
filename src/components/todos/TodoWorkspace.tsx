@@ -57,6 +57,7 @@ export function TodoWorkspace({
   leads,
   todoTypes,
   defaultTypeSelection,
+  today,
 }: {
   tasks: Task[];
   showAllCompleted: boolean;
@@ -67,6 +68,7 @@ export function TodoWorkspace({
   leads: OwnerOption[];
   todoTypes: TodoType[];
   defaultTypeSelection: string;
+  today: string;
 }) {
   const [optimisticTasks, applyStatusChange] = useOptimistic(
     tasks,
@@ -173,6 +175,7 @@ export function TodoWorkspace({
                   <TaskCard
                     key={task.id}
                     task={task}
+                    today={today}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", task.id);

@@ -7,6 +7,7 @@ import { listAllTags, listTasks } from "@/lib/data/todos";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { listTodoTypes } from "@/lib/data/todoTypes";
+import { getToday } from "@/lib/data/profile";
 import { formatDateInput } from "@/lib/format";
 import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
@@ -18,8 +19,10 @@ function matchesDuePreset(task: Task, due: string | undefined, today: string): b
   if (due === "overdue") return dueStr < today && task.status !== "COMPLETED";
   if (due === "today") return dueStr === today;
   if (due === "week") {
-    const weekAhead = new Date();
-    weekAhead.setDate(weekAhead.getDate() + 7);
+    // Pure calendar-day arithmetic on the already-tz-resolved `today` string —
+    // safe to do in UTC since there's no wall-clock/DST involved here.
+    const weekAhead = new Date(`${today}T00:00:00Z`);
+    weekAhead.setUTCDate(weekAhead.getUTCDate() + 7);
     return dueStr >= today && dueStr <= formatDateInput(weekAhead);
   }
   return true;
@@ -50,7 +53,7 @@ export default async function TodosPage({
   }>;
 }) {
   const sp = await searchParams;
-  const [allTasks, allTags, clients, leads, todoTypes] = await Promise.all([
+  const [allTasks, allTags, clients, leads, todoTypes, today] = await Promise.all([
     listTasks({
       search: sp.q,
       tag: sp.tag,
@@ -63,9 +66,9 @@ export default async function TodosPage({
     listClients(),
     listLeads(),
     listTodoTypes({ includeInactive: true }),
+    getToday(),
   ]);
 
-  const today = formatDateInput(new Date());
   const tasks = sortTasks(
     allTasks.filter((t) => matchesDuePreset(t, sp.due, today)),
     sp.sort
@@ -126,6 +129,7 @@ export default async function TodosPage({
         leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
         todoTypes={todoTypes}
         defaultTypeSelection={defaultTypeSelection}
+        today={today}
       />
     </div>
   );

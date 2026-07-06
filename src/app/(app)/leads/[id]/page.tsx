@@ -19,6 +19,7 @@ import { SuccessBanner } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
+import { getToday } from "@/lib/data/profile";
 import Link from "next/link";
 
 export default async function LeadDetailPage({
@@ -30,11 +31,12 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { converted, costFrom, costTo } = await searchParams;
-  const [lead, costEntries, workTypes, leadSources] = await Promise.all([
+  const [lead, costEntries, workTypes, leadSources, today] = await Promise.all([
     getLead(id),
     listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }),
     listWorkTypes({ includeInactive: true }),
     listLeadSources({ includeInactive: true }),
+    getToday(),
   ]);
   if (!lead) notFound();
 
@@ -125,7 +127,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} />
+            <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} today={today} />
           </Card>
 
           <Card className="p-6">
@@ -170,7 +172,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={lead.tasks} />
+            <ScopedTaskList owner={owner} tasks={lead.tasks} today={today} />
           </Card>
         </div>
       </div>

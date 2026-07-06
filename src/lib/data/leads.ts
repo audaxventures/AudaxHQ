@@ -137,7 +137,8 @@ export async function createLead(input: LeadInput): Promise<Lead> {
  */
 export async function updateLead(
   id: string,
-  input: LeadInput
+  input: LeadInput,
+  today: string
 ): Promise<{ convertedClientId: string | null }> {
   const existingRows = await sql`select status, converted_client_id from leads where id = ${id}`;
   const existing = existingRows[0] as Record<string, unknown> | undefined;
@@ -160,7 +161,7 @@ export async function updateLead(
   `;
 
   if (input.status === "WON" && !wasAlreadyConverted) {
-    const clientId = await convertLeadToClient(id);
+    const clientId = await convertLeadToClient(id, today);
     return { convertedClientId: clientId };
   }
 
@@ -168,22 +169,25 @@ export async function updateLead(
 }
 
 /** Creates a Client from a lead's current data, copies its notes, and links the two. */
-export async function convertLeadToClient(leadId: string): Promise<string> {
+export async function convertLeadToClient(leadId: string, today: string): Promise<string> {
   const leadRows = await sql`select * from leads where id = ${leadId}`;
   if (leadRows.length === 0) throw new Error("Lead not found");
   const lead = mapLead(leadRows[0] as Record<string, unknown>);
 
-  const client = await createClient({
-    companyName: lead.companyName,
-    contactName: lead.contactName,
-    contactEmail: lead.contactEmail,
-    contactPhone: lead.contactPhone,
-    type: "PROJECT",
-    status: "ACTIVE",
-    rate: lead.estimatedValue ? Number(lead.estimatedValue) : 0,
-    workTypeId: lead.workTypeId,
-    workTypeOther: lead.workTypeOther,
-  });
+  const client = await createClient(
+    {
+      companyName: lead.companyName,
+      contactName: lead.contactName,
+      contactEmail: lead.contactEmail,
+      contactPhone: lead.contactPhone,
+      type: "PROJECT",
+      status: "ACTIVE",
+      rate: lead.estimatedValue ? Number(lead.estimatedValue) : 0,
+      workTypeId: lead.workTypeId,
+      workTypeOther: lead.workTypeOther,
+    },
+    today
+  );
 
   await sql`update leads set converted_client_id = ${client.id}, updated_at = now() where id = ${leadId}`;
 

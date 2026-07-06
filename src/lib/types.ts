@@ -217,6 +217,7 @@ export interface TodoType {
 export interface Profile {
   name: string;
   email: string;
+  timezone: string;
   updatedAt: string;
 }
 

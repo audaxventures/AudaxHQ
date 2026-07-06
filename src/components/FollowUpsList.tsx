@@ -10,9 +10,9 @@ import { addFollowUp, deleteFollowUp, setFollowUpStatus } from "@/lib/actions/fo
 
 type Owner = { clientId: string } | { leadId: string };
 
-function FollowUpRow({ followUp, owner }: { followUp: FollowUp; owner: Owner }) {
+function FollowUpRow({ followUp, owner, today }: { followUp: FollowUp; owner: Owner; today: string }) {
   const [, startTransition] = useTransition();
-  const overdue = followUp.status === "UPCOMING" && isOverdue(followUp.date);
+  const overdue = followUp.status === "UPCOMING" && isOverdue(followUp.date, today);
   const completed = followUp.status === "COMPLETED";
 
   return (
@@ -60,7 +60,15 @@ function FollowUpRow({ followUp, owner }: { followUp: FollowUp; owner: Owner }) 
   );
 }
 
-export function FollowUpsList({ owner, followUps }: { owner: Owner; followUps: FollowUp[] }) {
+export function FollowUpsList({
+  owner,
+  followUps,
+  today,
+}: {
+  owner: Owner;
+  followUps: FollowUp[];
+  today: string;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   const upcoming = followUps.filter((f) => f.status === "UPCOMING");
@@ -73,10 +81,10 @@ export function FollowUpsList({ owner, followUps }: { owner: Owner; followUps: F
       ) : (
         <ul className="space-y-0.5 mb-3">
           {upcoming.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} />
+            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} />
           ))}
           {completed.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} />
+            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} />
           ))}
         </ul>
       )}

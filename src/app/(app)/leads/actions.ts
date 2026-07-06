@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as leads from "@/lib/data/leads";
+import { getToday } from "@/lib/data/profile";
 
 const leadSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -56,7 +57,7 @@ export async function createLead(formData: FormData) {
 
 export async function updateLead(id: string, formData: FormData) {
   const input = parseLeadForm(formData);
-  const result = await leads.updateLead(id, input);
+  const result = await leads.updateLead(id, input, await getToday());
   revalidatePath(`/leads/${id}`);
   revalidatePath("/leads");
   revalidatePath("/");
@@ -87,7 +88,7 @@ export async function addLeadNote(leadId: string, formData: FormData) {
 }
 
 export async function convertLeadToClient(leadId: string) {
-  const clientId = await leads.convertLeadToClient(leadId);
+  const clientId = await leads.convertLeadToClient(leadId, await getToday());
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/leads");
   revalidatePath("/clients");

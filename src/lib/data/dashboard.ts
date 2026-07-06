@@ -3,6 +3,7 @@ import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getInvoiceAgingSummary, type InvoiceAgingSummary } from "@/lib/data/invoicing";
 import { getAppSettings } from "@/lib/data/appSettings";
+import { getToday } from "@/lib/data/profile";
 import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
@@ -23,6 +24,8 @@ export interface DashboardData {
   invoiceAging: InvoiceAgingSummary;
   /** Revenue collected (paid invoices) per week, oldest to newest, trailing 8 weeks. */
   weeklyRevenueCollected: number[];
+  /** "Today" in the operator's configured timezone (see src/lib/timezone.ts) — YYYY-MM-DD. */
+  today: string;
 }
 
 function mapClient(row: Record<string, unknown>): Client {
@@ -47,9 +50,14 @@ function mapClient(row: Record<string, unknown>): Client {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
+  const today = await getToday();
+
   // Lazily create this month's recurring invoice rows for active recurring
   // clients so the dashboard/invoicing views always reflect the current month.
-  const [, appSettings] = await Promise.all([ensureRecurringInvoicesForAllActiveClients(), getAppSettings()]);
+  const [, appSettings] = await Promise.all([
+    ensureRecurringInvoicesForAllActiveClients(today),
+    getAppSettings(),
+  ]);
 
   const [
     activeRows,
@@ -69,7 +77,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       join clients c on c.id = i.client_id
       where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
     `,
-    listHotFollowUps(),
+    listHotFollowUps(today),
     sql`
       select l.id, l.company_name
       from leads l
@@ -83,26 +91,26 @@ export async function getDashboardData(): Promise<DashboardData> {
       join clients c on c.id = i.client_id
       where c.status = 'ACTIVE'
         and i.status = 'NOT_INVOICED'
-        and i.period_year = extract(year from current_date)
-        and i.period_month = extract(month from current_date)
-        and extract(day from current_date) > 15
+        and i.period_year = extract(year from ${today}::date)
+        and i.period_month = extract(month from ${today}::date)
+        and extract(day from ${today}::date) > 15
     `,
     sql`
       select t.*, coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags
       from todos t
       left join todo_tags tt on tt.todo_id = t.id
       left join tags tg on tg.id = tt.tag_id
-      where t.status <> 'COMPLETED' and (t.due_date is null or t.due_date <= current_date)
+      where t.status <> 'COMPLETED' and (t.due_date is null or t.due_date <= ${today}::date)
       group by t.id
       order by (t.due_date is null), t.due_date asc, t.created_at desc
     `,
-    sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < current_date`,
-    getInvoiceAgingSummary(appSettings.invoiceAgingOverDays),
+    sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < ${today}::date`,
+    getInvoiceAgingSummary(appSettings.invoiceAgingOverDays, today),
     sql`
       select coalesce(sum(i.amount), 0) as total
       from generate_series(
-        date_trunc('week', current_date) - interval '7 weeks',
-        date_trunc('week', current_date),
+        date_trunc('week', ${today}::date) - interval '7 weeks',
+        date_trunc('week', ${today}::date),
         interval '1 week'
       ) as gs(week_start)
       left join invoices i
@@ -176,6 +184,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       (overdueCountRows[0] as Record<string, unknown>).count
     ),
     invoiceAging,
+    today,
     weeklyRevenueCollected: weeklyRevenueRows.map((r) =>
       Number((r as Record<string, unknown>).total)
     ),

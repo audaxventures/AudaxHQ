@@ -19,13 +19,14 @@ export interface InvoiceAgingFilters {
 
 export async function listOutstandingInvoices(
   filters: InvoiceAgingFilters = {},
-  thresholds: { underDays: number; overDays: number }
+  thresholds: { underDays: number; overDays: number },
+  today: string
 ): Promise<OutstandingInvoice[]> {
   const rows = await sql`
     select
       i.id, i.client_id, i.label, i.amount, i.invoiced_date,
       c.company_name as client_name, c.type as client_type,
-      (current_date - coalesce(i.invoiced_date, current_date))::int as days_outstanding
+      (${today}::date - coalesce(i.invoiced_date, ${today}::date))::int as days_outstanding
     from invoices i
     join clients c on c.id = i.client_id
     where i.status = 'INVOICED'
@@ -33,8 +34,8 @@ export async function listOutstandingInvoices(
       and (
         ${filters.bracket ?? null}::text is null or
         case
-          when (current_date - coalesce(i.invoiced_date, current_date)) >= ${thresholds.overDays} then 'OVER_30'
-          when (current_date - coalesce(i.invoiced_date, current_date)) >= ${thresholds.underDays} then 'DAYS_15_30'
+          when (${today}::date - coalesce(i.invoiced_date, ${today}::date)) >= ${thresholds.overDays} then 'OVER_30'
+          when (${today}::date - coalesce(i.invoiced_date, ${today}::date)) >= ${thresholds.underDays} then 'DAYS_15_30'
           else 'UNDER_15'
         end = ${filters.bracket ?? null}
       )
@@ -96,11 +97,11 @@ export interface InvoiceAgingSummary {
   overdueCount: number;
 }
 
-export async function getInvoiceAgingSummary(overDays: number): Promise<InvoiceAgingSummary> {
+export async function getInvoiceAgingSummary(overDays: number, today: string): Promise<InvoiceAgingSummary> {
   const rows = await sql`
     select
       coalesce(sum(i.amount), 0) as total_outstanding,
-      count(*) filter (where (current_date - coalesce(i.invoiced_date, current_date)) >= ${overDays}) as overdue_count
+      count(*) filter (where (${today}::date - coalesce(i.invoiced_date, ${today}::date)) >= ${overDays}) as overdue_count
     from invoices i
     where i.status = 'INVOICED'
   `;
