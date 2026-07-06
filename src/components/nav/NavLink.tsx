@@ -36,12 +36,14 @@ export function NavLink({
   tabLabel,
   icon,
   variant = "sidebar",
+  onClick,
 }: {
   href: string;
   label: string;
   tabLabel?: string;
   icon: NavIconKey;
   variant?: "sidebar" | "tab";
+  onClick?: () => void;
 }) {
   const Icon = ICONS[icon];
   const pathname = usePathname();
@@ -51,6 +53,7 @@ export function NavLink({
     return (
       <Link
         href={href}
+        onClick={onClick}
         className={cn(
           "flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors",
           active ? "text-burnt-500" : "text-navy-400"
@@ -65,6 +68,7 @@ export function NavLink({
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         "relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
         active

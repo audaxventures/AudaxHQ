@@ -55,7 +55,7 @@ export function MobileSidebarDrawer({ onClose }: { onClose: () => void }) {
             <X size={20} />
           </button>
         </div>
-        <SidebarNavList />
+        <SidebarNavList onNavigate={onClose} />
       </div>
     </div>
   );

@@ -3,16 +3,16 @@ import { NAV_LINKS } from "@/components/nav/nav-links";
 import { NavLink } from "@/components/nav/NavLink";
 
 /** The nav-links + Settings + Sign out block shared by the desktop sidebar and the mobile drawer. */
-export function SidebarNavList() {
+export function SidebarNavList({ onNavigate }: { onNavigate?: () => void } = {}) {
   return (
     <>
       <nav className="relative flex flex-col gap-1">
         {NAV_LINKS.map((link) => (
-          <NavLink key={link.href} {...link} />
+          <NavLink key={link.href} {...link} onClick={onNavigate} />
         ))}
       </nav>
       <div className="relative mt-1 border-t border-navy-300/20 pt-1">
-        <NavLink href="/settings" label="Settings" icon="settings" />
+        <NavLink href="/settings" label="Settings" icon="settings" onClick={onNavigate} />
       </div>
       <form action="/api/logout" method="post" className="relative mt-1">
         <button
