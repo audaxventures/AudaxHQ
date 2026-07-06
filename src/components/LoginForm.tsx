@@ -27,6 +27,24 @@ export function LoginForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <div>
         <label
+          htmlFor="email"
+          className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
+        >
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoFocus
+          autoComplete="email"
+          className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
+          placeholder="jane@audaxventures.ca"
+        />
+      </div>
+      <div>
+        <label
           htmlFor="passcode"
           className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
         >
@@ -36,7 +54,7 @@ export function LoginForm({ next }: { next: string }) {
           id="passcode"
           name="passcode"
           type="password"
-          autoFocus
+          required
           autoComplete="off"
           className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
           placeholder="••••••••"

@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/nav/Sidebar";
 import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
 import { PageTransition } from "@/components/PageTransition";
+import { Footer } from "@/components/ui/Footer";
 
 // This app is a live daily-use tool backed by Postgres — every page here
 // needs fresh data on every request, so opt the whole section out of static
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <PageTransition>{children}</PageTransition>
+          <Footer />
         </main>
         <MobileTabBar />
         <QuickActionsFab />

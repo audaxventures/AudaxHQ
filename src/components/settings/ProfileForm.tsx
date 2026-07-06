@@ -29,8 +29,9 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         <Input id="name" name="name" defaultValue={profile.name} placeholder="Jane Doe" />
       </FieldGroup>
       <FieldGroup>
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" defaultValue={profile.email} placeholder="jane@audaxventures.ca" />
+        <Label htmlFor="email" required>Email</Label>
+        <Input id="email" name="email" type="email" required defaultValue={profile.email} placeholder="jane@audaxventures.ca" />
+        <p className="mt-1.5 text-xs text-navy-400">Required to sign in, along with your passcode.</p>
       </FieldGroup>
       <FieldGroup>
         <Label htmlFor="timezone">Timezone</Label>
