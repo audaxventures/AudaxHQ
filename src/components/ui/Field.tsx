@@ -1,8 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
+// text-base (16px) below the sm breakpoint, not text-sm (14px) — iOS Safari
+// auto-zooms the viewport on focus for any input rendering smaller than 16px,
+// and (unlike the initial zoom-in) doesn't zoom back out on blur.
 const fieldBase =
-  "w-full rounded-lg border border-navy-200 bg-cream-50 px-3 py-2 text-sm text-navy-900 placeholder:text-navy-400 transition-colors focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100";
+  "w-full rounded-lg border border-navy-200 bg-cream-50 px-3 py-2 text-base sm:text-sm text-navy-900 placeholder:text-navy-400 transition-colors focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100";
 
 export function Input({
   icon: Icon,

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Download, File as FileIcon, FileSpreadsheet, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/Field";
 import type { ClientDocument } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { ALLOWED_DOCUMENT_EXTENSIONS, MAX_DOCUMENT_SIZE_BYTES, getFileExtension } from "@/lib/documents";
@@ -132,11 +133,7 @@ function UploadForm({ clientId }: { clientId: string }) {
         accept={ALLOWED_DOCUMENT_EXTENSIONS.map((ext) => `.${ext}`).join(",")}
         className="block w-full text-sm text-navy-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-navy-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-navy-700 hover:file:bg-navy-200"
       />
-      <input
-        name="label"
-        placeholder="Label (optional)"
-        className="w-full rounded-lg border border-navy-200 bg-cream-50 px-2.5 py-1.5 text-sm placeholder:text-navy-400 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100"
-      />
+      <Input name="label" placeholder="Label (optional)" />
       {error && <p className="text-xs text-brick-600">{error}</p>}
       <div className="flex gap-2">
         <button

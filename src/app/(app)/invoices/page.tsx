@@ -130,11 +130,11 @@ export default async function InvoiceAgingPage({
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 shrink-0 pl-[52px] sm:pl-0">
-                    <div className="w-28 shrink-0 text-right">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-[52px] sm:flex-nowrap sm:pl-0">
+                    <div className="shrink-0 sm:w-28 sm:text-right">
                       <p className="font-heading text-lg text-navy-900">{formatCurrency(inv.amount)}</p>
                     </div>
-                    <div className="w-36 shrink-0 text-right">
+                    <div className="shrink-0 sm:w-36 sm:text-right">
                       <p className={cn("text-sm font-medium", DAYS_OUTSTANDING_TEXT_TONE[bracket])}>
                         {inv.daysOutstanding} {inv.daysOutstanding === 1 ? "day" : "days"}
                       </p>

@@ -53,7 +53,7 @@ function TaskRow({ task, owner }: { task: Task; owner: Owner }) {
               await setTaskStatus(task.id, clientId, leadId, e.target.value as TaskStatus);
             })
           }
-          className="w-auto text-xs py-1 pl-2 pr-7 shrink-0"
+          className="w-auto text-base sm:text-xs py-1 pl-2 pr-7 shrink-0"
           aria-label="Task status"
         >
           {TASK_STATUS_ORDER.map((s) => (

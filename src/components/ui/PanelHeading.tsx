@@ -14,7 +14,7 @@ export function PanelHeading({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between mb-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 mb-3">
       <div className="flex items-center gap-2.5">
         <div
           className={cn(
@@ -26,7 +26,7 @@ export function PanelHeading({
         </div>
         <h3 className="font-heading text-base font-medium text-navy-900">{title}</h3>
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
