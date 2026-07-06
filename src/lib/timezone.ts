@@ -11,6 +11,13 @@ export function todayInTimezone(timezone: string): string {
   }).format(new Date());
 }
 
+/** The current hour (0-23) of the wall clock in the given IANA timezone — for time-of-day greetings. */
+export function currentHourInTimezone(timezone: string): number {
+  return Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "numeric", hourCycle: "h23" }).format(new Date())
+  );
+}
+
 /** Every IANA timezone identifier the runtime knows about, for a Settings picker. */
 export function listTimezones(): string[] {
   if (typeof Intl.supportedValuesOf === "function") {

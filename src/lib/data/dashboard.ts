@@ -1,7 +1,13 @@
 import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
-import { getInvoiceAgingSummary, type InvoiceAgingSummary } from "@/lib/data/invoicing";
+import {
+  getInvoiceAgingSummary,
+  getMonthlyRevenueComparison,
+  type InvoiceAgingSummary,
+  type MonthlyRevenueComparison,
+} from "@/lib/data/invoicing";
+import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
 import { getAppSettings } from "@/lib/data/appSettings";
 import { getToday } from "@/lib/data/profile";
 import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
@@ -24,6 +30,11 @@ export interface DashboardData {
   invoiceAging: InvoiceAgingSummary;
   /** Revenue collected (paid invoices) per week, oldest to newest, trailing 8 weeks. */
   weeklyRevenueCollected: number[];
+  monthlyRevenue: MonthlyRevenueComparison;
+  pipelineSummary: LeadPipelineSummary;
+  /** Every to-do not yet completed, regardless of due date. */
+  openTodoCount: number;
+  dueTodayCount: number;
   /** "Today" in the operator's configured timezone (see src/lib/timezone.ts) — YYYY-MM-DD. */
   today: string;
 }
@@ -69,6 +80,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     overdueCountRows,
     invoiceAging,
     weeklyRevenueRows,
+    monthlyRevenue,
+    pipelineSummary,
+    openTodoCountRows,
+    dueTodayCountRows,
   ] = await Promise.all([
     sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
     sql`
@@ -118,6 +133,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       group by gs.week_start
       order by gs.week_start
     `,
+    getMonthlyRevenueComparison(today),
+    getLeadPipelineSummary(today),
+    sql`select count(*)::int as count from todos where status <> 'COMPLETED'`,
+    sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date = ${today}::date`,
   ]);
 
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
@@ -188,5 +207,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     weeklyRevenueCollected: weeklyRevenueRows.map((r) =>
       Number((r as Record<string, unknown>).total)
     ),
+    monthlyRevenue,
+    pipelineSummary,
+    openTodoCount: Number((openTodoCountRows[0] as Record<string, unknown>).count),
+    dueTodayCount: Number((dueTodayCountRows[0] as Record<string, unknown>).count),
   };
 }

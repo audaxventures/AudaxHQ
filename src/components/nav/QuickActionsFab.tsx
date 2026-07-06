@@ -2,16 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Clock, NotebookPen, Plus, UserPlus, CheckSquare, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const QUICK_ACTIONS = [
-  { href: "/leads/new", label: "New Lead", icon: UserPlus, iconClasses: "bg-navy-100 text-navy-700" },
-  { href: "/clients/new", label: "New Client", icon: Building2, iconClasses: "bg-sage-100 text-sage-600" },
-  { href: "/todos", label: "Add To-Do", icon: CheckSquare, iconClasses: "bg-burnt-100 text-burnt-600" },
-  { href: "/tracker", label: "Log Time", icon: Clock, iconClasses: "bg-blue-100 text-blue-600" },
-  { href: "/meeting-notes/new", label: "Create Meeting Note", icon: NotebookPen, iconClasses: "bg-gold-100 text-gold-600" },
-];
+import { QUICK_ACTIONS } from "@/lib/quickActions";
 
 /** Only ever rendered while open — the caller conditionally mounts it. */
 function QuickActionsSheet({ onClose }: { onClose: () => void }) {

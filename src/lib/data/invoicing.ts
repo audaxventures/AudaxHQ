@@ -111,3 +111,27 @@ export async function getInvoiceAgingSummary(overDays: number, today: string): P
     overdueCount: Number(row.overdue_count),
   };
 }
+
+export interface MonthlyRevenueComparison {
+  thisMonth: number;
+  lastMonth: number;
+}
+
+/** Paid-invoice revenue for the current calendar month vs the prior one, for the dashboard. */
+export async function getMonthlyRevenueComparison(today: string): Promise<MonthlyRevenueComparison> {
+  const thisMonthStart = `${today.slice(0, 7)}-01`;
+  const rows = await sql`
+    select
+      coalesce(sum(amount) filter (where paid_date >= ${thisMonthStart}::date), 0) as this_month,
+      coalesce(sum(amount) filter (
+        where paid_date >= ${thisMonthStart}::date - interval '1 month' and paid_date < ${thisMonthStart}::date
+      ), 0) as last_month
+    from invoices
+    where status = 'PAID'
+  `;
+  const row = rows[0] as Record<string, unknown>;
+  return {
+    thisMonth: Number(row.this_month),
+    lastMonth: Number(row.last_month),
+  };
+}

@@ -78,6 +78,39 @@ export async function countLeads(filters: Pick<LeadFilters, "status"> = {}): Pro
   return Number((rows[0] as Record<string, unknown>).count);
 }
 
+export interface LeadPipelineSummary {
+  /** NEW + CONTACTED combined — leads not yet actively worked. */
+  newCount: number;
+  proposalCount: number;
+  negotiatingCount: number;
+  /** WON leads whose status changed this calendar month. */
+  wonCount: number;
+  /** Sum of estimated_value across all unresolved (non-WON, non-LOST) leads. */
+  pipelineValue: number;
+}
+
+/** Lead counts by pipeline stage + total active pipeline value, for the dashboard. */
+export async function getLeadPipelineSummary(today: string): Promise<LeadPipelineSummary> {
+  const monthStart = `${today.slice(0, 7)}-01`;
+  const rows = await sql`
+    select
+      count(*) filter (where status in ('NEW', 'CONTACTED')) as new_count,
+      count(*) filter (where status = 'PROPOSAL_SENT') as proposal_count,
+      count(*) filter (where status = 'NEGOTIATING') as negotiating_count,
+      count(*) filter (where status = 'WON' and updated_at >= ${monthStart}::date) as won_count,
+      coalesce(sum(estimated_value) filter (where status in ('NEW', 'CONTACTED', 'PROPOSAL_SENT', 'NEGOTIATING')), 0) as pipeline_value
+    from leads
+  `;
+  const row = rows[0] as Record<string, unknown>;
+  return {
+    newCount: Number(row.new_count),
+    proposalCount: Number(row.proposal_count),
+    negotiatingCount: Number(row.negotiating_count),
+    wonCount: Number(row.won_count),
+    pipelineValue: Number(row.pipeline_value),
+  };
+}
+
 export async function getLead(id: string): Promise<LeadWithRelations | null> {
   const [leadRows, noteRows, tasks, followUps, meetingNotes] = await Promise.all([
     sql`
