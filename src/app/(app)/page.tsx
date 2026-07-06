@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { AlertTriangle, CheckSquare, CircleDollarSign, Flag, Flame, ListChecks } from "lucide-react";
+import { AlertTriangle, Flame, ListChecks } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
 import { QuickActionsRow } from "@/components/dashboard/QuickActionsRow";
 import { ClientsPanel } from "@/components/dashboard/ClientsPanel";
 import { PipelineSummaryCard } from "@/components/dashboard/PipelineSummaryCard";
-import { StatCard, RevenueDecoration, ChecklistDecoration, BellDecoration } from "@/components/dashboard/StatCard";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
@@ -61,11 +61,9 @@ export default async function DashboardPage() {
 
         <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
           <StatCard
-            tone="sage"
-            icon={CircleDollarSign}
+            backgroundImage="/revenuebackground-card.png"
             label="Projected revenue this month"
             value={formatCurrency(data.projectedRevenue)}
-            decoration={<RevenueDecoration />}
             caption={
               <span className="text-navy-500">
                 Recurring fees plus unpaid project work across {data.activeClientCount} active client
@@ -74,11 +72,9 @@ export default async function DashboardPage() {
             }
           />
           <StatCard
-            tone="burnt"
-            icon={CheckSquare}
+            backgroundImage="/todobackground-card.png"
             label="To-Dos"
             value={data.openTodoCount}
-            decoration={<ChecklistDecoration />}
             caption={
               <span className="text-burnt-600">
                 {data.dueTodayCount > 0 ? `${data.dueTodayCount} due today` : "Nothing due today"}
@@ -86,11 +82,9 @@ export default async function DashboardPage() {
             }
           />
           <StatCard
-            tone="violet"
-            icon={Flag}
+            backgroundImage="/followupbackground-card.png"
             label="Follow-ups"
             value={data.hotFollowUps.length}
-            decoration={<BellDecoration />}
             caption={
               <span className="text-violet-600">
                 {overdueFollowUpCount > 0 ? `${overdueFollowUpCount} overdue` : "All caught up"}
