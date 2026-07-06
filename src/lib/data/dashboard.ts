@@ -18,6 +18,7 @@ export interface DashboardData {
   projectedRevenue: number;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
+  /** Up to 3 open to-dos, soonest due date first (regardless of overdue/today/future). */
   todoSnapshot: Task[];
   pipelineSummary: LeadPipelineSummary;
   /** Every to-do not yet completed, regardless of due date. */
@@ -96,9 +97,10 @@ export async function getDashboardData(): Promise<DashboardData> {
       from todos t
       left join todo_tags tt on tt.todo_id = t.id
       left join tags tg on tg.id = tt.tag_id
-      where t.status <> 'COMPLETED' and (t.due_date is null or t.due_date <= ${today}::date)
+      where t.status <> 'COMPLETED'
       group by t.id
       order by (t.due_date is null), t.due_date asc, t.created_at desc
+      limit 3
     `,
     getLeadPipelineSummary(today),
     sql`select count(*)::int as count from todos where status <> 'COMPLETED'`,

@@ -9,7 +9,7 @@ import { listClients, countClients } from "@/lib/data/clients";
 import type { ClientStatus, ClientType } from "@/lib/types";
 import { Plus, Users } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 export default async function ClientsPage({
   searchParams,

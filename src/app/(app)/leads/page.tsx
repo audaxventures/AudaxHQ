@@ -10,7 +10,7 @@ import { listLeads, countLeads } from "@/lib/data/leads";
 import { getToday } from "@/lib/data/profile";
 import type { LeadStatus } from "@/lib/types";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 6;
 
 export default async function LeadsPage({
   searchParams,

@@ -127,10 +127,10 @@ export default async function DashboardPage() {
               }
             />
             {data.todoSnapshot.length === 0 ? (
-              <p className="text-sm text-navy-400 py-2">Nothing due today or overdue.</p>
+              <p className="text-sm text-navy-400 py-2">No open to-dos. You&apos;re caught up.</p>
             ) : (
               <ul className="divide-y divide-navy-100 -mx-1">
-                {data.todoSnapshot.slice(0, 3).map((task) => (
+                {data.todoSnapshot.map((task) => (
                   <li key={task.id} className="flex items-center gap-3 px-1 py-2.5">
                     <span
                       className={cn(
