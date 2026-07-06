@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowDown, ArrowUp, CheckSquare, CircleDollarSign, Flag, Flame, ListChecks } from "lucide-react";
+import { AlertTriangle, CheckSquare, CircleDollarSign, Flag, Flame, ListChecks } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
 import { QuickActionsRow } from "@/components/dashboard/QuickActionsRow";
@@ -36,12 +36,6 @@ export default async function DashboardPage() {
   const firstName = profile.name.trim().split(/\s+/)[0] || null;
   const hour = currentHourInTimezone(profile.timezone);
 
-  const revenueChangePercent =
-    data.monthlyRevenue.lastMonth > 0
-      ? Math.round(
-          ((data.monthlyRevenue.thisMonth - data.monthlyRevenue.lastMonth) / data.monthlyRevenue.lastMonth) * 100
-        )
-      : null;
   const overdueFollowUpCount = data.hotFollowUps.filter((f) => f.isOverdue).length;
 
   const visibleFlags = data.attentionFlags.slice(0, 4);
@@ -69,23 +63,14 @@ export default async function DashboardPage() {
           <StatCard
             tone="sage"
             icon={CircleDollarSign}
-            label="Revenue this month"
-            value={formatCurrency(data.monthlyRevenue.thisMonth)}
+            label="Projected revenue this month"
+            value={formatCurrency(data.projectedRevenue)}
             decoration={<RevenueDecoration />}
             caption={
-              revenueChangePercent !== null ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1",
-                    revenueChangePercent >= 0 ? "text-sage-600" : "text-brick-600"
-                  )}
-                >
-                  {revenueChangePercent >= 0 ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
-                  {Math.abs(revenueChangePercent)}% vs last month
-                </span>
-              ) : (
-                <span className="text-navy-400">No revenue last month</span>
-              )
+              <span className="text-navy-500">
+                Recurring fees plus unpaid project work across {data.activeClientCount} active client
+                {data.activeClientCount === 1 ? "" : "s"}
+              </span>
             }
           />
           <StatCard

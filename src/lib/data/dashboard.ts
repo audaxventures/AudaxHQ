@@ -1,7 +1,6 @@
 import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
-import { getMonthlyRevenueComparison, type MonthlyRevenueComparison } from "@/lib/data/invoicing";
 import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
 import { getToday } from "@/lib/data/profile";
 import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
@@ -15,10 +14,12 @@ export interface AttentionFlag {
 export interface DashboardData {
   projectClients: Client[];
   recurringClients: Client[];
+  activeClientCount: number;
+  /** Recurring monthly fees plus unpaid project-invoice work across active clients. */
+  projectedRevenue: number;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
   todoSnapshot: Task[];
-  monthlyRevenue: MonthlyRevenueComparison;
   pipelineSummary: LeadPipelineSummary;
   /** Every to-do not yet completed, regardless of due date. */
   openTodoCount: number;
@@ -57,16 +58,22 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const [
     activeRows,
+    projectRemainingRows,
     hotFollowUps,
     noFollowUpLeadRows,
     staleInvoiceRows,
     todoRows,
-    monthlyRevenue,
     pipelineSummary,
     openTodoCountRows,
     dueTodayCountRows,
   ] = await Promise.all([
     sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
+    sql`
+      select coalesce(sum(i.amount), 0) as total
+      from invoices i
+      join clients c on c.id = i.client_id
+      where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
+    `,
     listHotFollowUps(today),
     sql`
       select l.id, l.company_name
@@ -94,7 +101,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       group by t.id
       order by (t.due_date is null), t.due_date asc, t.created_at desc
     `,
-    getMonthlyRevenueComparison(today),
     getLeadPipelineSummary(today),
     sql`select count(*)::int as count from todos where status <> 'COMPLETED'`,
     sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date = ${today}::date`,
@@ -103,6 +109,10 @@ export async function getDashboardData(): Promise<DashboardData> {
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
   const projectClients = activeClients.filter((c) => c.type === "PROJECT");
   const recurringClients = activeClients.filter((c) => c.type === "RECURRING");
+
+  const recurringMonthlyTotal = recurringClients.reduce((sum, c) => sum + Number(c.rate), 0);
+  const projectRemaining = Number((projectRemainingRows[0] as Record<string, unknown>).total);
+  const projectedRevenue = recurringMonthlyTotal + projectRemaining;
 
   const attentionFlags: AttentionFlag[] = [];
   for (const row of staleInvoiceRows) {
@@ -146,11 +156,12 @@ export async function getDashboardData(): Promise<DashboardData> {
   return {
     projectClients,
     recurringClients,
+    activeClientCount: activeClients.length,
+    projectedRevenue,
     hotFollowUps,
     attentionFlags,
     todoSnapshot,
     today,
-    monthlyRevenue,
     pipelineSummary,
     openTodoCount: Number((openTodoCountRows[0] as Record<string, unknown>).count),
     dueTodayCount: Number((dueTodayCountRows[0] as Record<string, unknown>).count),
