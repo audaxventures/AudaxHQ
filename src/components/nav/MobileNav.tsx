@@ -12,18 +12,18 @@ export function MobileTopBar() {
 
   return (
     <>
-      <header className="flex md:hidden items-center justify-between bg-navy-900 px-4 py-3 sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-            className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
-          >
-            <Menu size={20} strokeWidth={1.75} />
-          </button>
-          <p className="font-heading text-lg font-medium text-burnt-400">Audax HQ</p>
-        </div>
+      <header className="relative flex md:hidden items-center justify-between bg-navy-900 px-4 py-3 sticky top-0 z-20">
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open menu"
+          className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100 cursor-pointer"
+        >
+          <Menu size={20} strokeWidth={1.75} />
+        </button>
+        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-heading text-lg font-medium text-burnt-400">
+          Audax HQ
+        </p>
         <div className="flex items-center gap-1">
           <Link
             href="/settings"

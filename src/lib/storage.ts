@@ -10,6 +10,8 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 }
 
 export const DOCUMENTS_BUCKET = "client-documents";
+/** Public bucket (unlike DOCUMENTS_BUCKET) — the business logo is rendered directly via its public URL on every page load, no signed URL needed. */
+export const BUSINESS_ASSETS_BUCKET = "business-assets";
 
 // Server-only: the service_role key bypasses row-level security, so this
 // client must never be imported into client components. The bucket itself

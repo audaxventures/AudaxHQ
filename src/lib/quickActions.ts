@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, Clock, NotebookPen, UserPlus, CheckSquare } from "lucide-react";
+import { Building2, Clock, NotebookPen, UserPlus, CheckSquare, Users } from "lucide-react";
 
 interface QuickAction {
   href: string;
@@ -24,3 +24,10 @@ export const QUICK_ACTIONS: QuickAction[] = [
     iconClasses: "bg-gold-100 text-gold-600",
   },
 ];
+
+/** Mobile FAB sheet variant — swaps "New Client" for "View Clients" since jumping straight to the client list is more useful from a quick-actions sheet on mobile. */
+export const MOBILE_QUICK_ACTIONS: QuickAction[] = QUICK_ACTIONS.map((action) =>
+  action.href === "/clients/new"
+    ? { href: "/clients", label: "View Clients", icon: Users, iconClasses: "bg-sage-100 text-sage-600" }
+    : action
+);

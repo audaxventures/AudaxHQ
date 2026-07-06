@@ -8,6 +8,8 @@ import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
 import { isCorrectPasscode, hashPasscode } from "@/lib/auth";
+import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
+import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
 
 function revalidateWorkTypes() {
   revalidatePath("/settings/work-types");
@@ -104,6 +106,42 @@ export async function updateProfile(formData: FormData) {
   await profile.updateProfile({ name, email, timezone });
   // Timezone changes what "today" is computed as almost everywhere in the
   // app, not just this settings page — revalidate the whole (app) section.
+  revalidatePath("/", "layout");
+}
+
+export async function uploadBusinessLogo(formData: FormData) {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Choose a logo file to upload.");
+  }
+  if (!isAllowedLogoExtension(file.name)) {
+    throw new Error("That file type isn't supported.");
+  }
+  if (file.size > MAX_LOGO_SIZE_BYTES) {
+    throw new Error("File is too large (5MB max).");
+  }
+
+  const previousPath = await appSettings.getBusinessLogoPath();
+  const path = newLogoStoragePath(file.name);
+  const { error } = await supabase.storage
+    .from(BUSINESS_ASSETS_BUCKET)
+    .upload(path, file, { contentType: file.type || undefined });
+  if (error) throw new Error(error.message);
+
+  await appSettings.setBusinessLogoPath(path);
+  if (previousPath) {
+    await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([previousPath]);
+  }
+  // Shown on every screen, not just this settings page.
+  revalidatePath("/", "layout");
+}
+
+export async function removeBusinessLogo() {
+  const previousPath = await appSettings.getBusinessLogoPath();
+  await appSettings.setBusinessLogoPath(null);
+  if (previousPath) {
+    await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([previousPath]);
+  }
   revalidatePath("/", "layout");
 }
 

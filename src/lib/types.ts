@@ -240,6 +240,8 @@ export interface AppSettings {
   invoiceAgingUnderDays: number;
   invoiceAgingOverDays: number;
   hasCustomPasscode: boolean;
+  /** Public URL of the uploaded business logo, or null to fall back to the static /logo.png. */
+  logoUrl: string | null;
 }
 
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";
