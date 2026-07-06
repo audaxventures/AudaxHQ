@@ -39,6 +39,8 @@
   --color-slate-100: #e7eaf0;
   --color-blue-600: #2f6f9e;
   --color-blue-100: #dceaf2;
+  --color-violet-600: #7c3aed;
+  --color-violet-100: #ede9fe;
 
   --background: var(--color-cream-50);
   --foreground: var(--color-navy-900);
@@ -82,6 +84,8 @@
   --color-slate-100: var(--color-slate-100);
   --color-blue-600: var(--color-blue-600);
   --color-blue-100: var(--color-blue-100);
+  --color-violet-600: var(--color-violet-600);
+  --color-violet-100: var(--color-violet-100);
 
   --font-heading: var(--font-fraunces);
   --font-sans: var(--font-manrope);

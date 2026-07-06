@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { AlertTriangle, CheckSquare, Flame, ListChecks, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, CheckSquare, CircleDollarSign, Flag, Flame, ListChecks } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
-import { RevenueHero } from "@/components/dashboard/RevenueHero";
 import { QuickActionsRow } from "@/components/dashboard/QuickActionsRow";
 import { ClientsPanel } from "@/components/dashboard/ClientsPanel";
 import { PipelineSummaryCard } from "@/components/dashboard/PipelineSummaryCard";
+import { StatCard, RevenueDecoration, ChecklistDecoration, BellDecoration } from "@/components/dashboard/StatCard";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
@@ -65,75 +65,53 @@ export default async function DashboardPage() {
           <QuickActionsRow />
         </DashboardItem>
 
-        <DashboardItem className="mb-6">
-          <RevenueHero
-            revenue={data.projectedRevenue}
-            weeklyRevenue={data.weeklyRevenueCollected}
-            activeClientCount={data.activeClients.length}
-          />
-        </DashboardItem>
-
-        <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card
+        <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+          <StatCard
             tone="sage"
-            variant="solid"
-            className="p-5 flex items-center gap-3.5 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-sage-600 shadow-sm">
-              <TrendingUp size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
-                {formatCurrency(data.monthlyRevenue.thisMonth)}
-              </p>
-              <p className="text-xs font-semibold text-navy-600">Revenue this month</p>
-              {revenueChangePercent !== null && (
-                <p
+            icon={CircleDollarSign}
+            label="Revenue this month"
+            value={formatCurrency(data.monthlyRevenue.thisMonth)}
+            decoration={<RevenueDecoration />}
+            caption={
+              revenueChangePercent !== null ? (
+                <span
                   className={cn(
-                    "mt-0.5 text-[11px] font-medium",
+                    "inline-flex items-center gap-1",
                     revenueChangePercent >= 0 ? "text-sage-600" : "text-brick-600"
                   )}
                 >
-                  {revenueChangePercent >= 0 ? "+" : ""}
-                  {revenueChangePercent}% vs last month
-                </p>
-              )}
-            </div>
-          </Card>
-          <Card
-            tone="gold"
-            variant="solid"
-            className="p-5 flex items-center gap-3.5 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-gold-600 shadow-sm">
-              <CheckSquare size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
-                {data.openTodoCount}
-              </p>
-              <p className="text-xs font-semibold text-navy-600">
-                {data.dueTodayCount > 0 ? `${data.dueTodayCount} due today` : "Nothing due today"}
-              </p>
-            </div>
-          </Card>
-          <Card
+                  {revenueChangePercent >= 0 ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+                  {Math.abs(revenueChangePercent)}% vs last month
+                </span>
+              ) : (
+                <span className="text-navy-400">No revenue last month</span>
+              )
+            }
+          />
+          <StatCard
             tone="burnt"
-            variant="solid"
-            className="p-5 flex items-center gap-3.5 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-white/80 text-burnt-600 shadow-sm">
-              <Flame size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-heading text-2xl font-semibold text-navy-900 tabular-nums leading-tight">
-                {data.hotFollowUps.length}
-              </p>
-              <p className="text-xs font-semibold text-navy-600">
+            icon={CheckSquare}
+            label="To-Dos"
+            value={data.openTodoCount}
+            decoration={<ChecklistDecoration />}
+            caption={
+              <span className="text-burnt-600">
+                {data.dueTodayCount > 0 ? `${data.dueTodayCount} due today` : "Nothing due today"}
+              </span>
+            }
+          />
+          <StatCard
+            tone="violet"
+            icon={Flag}
+            label="Follow-ups"
+            value={data.hotFollowUps.length}
+            decoration={<BellDecoration />}
+            caption={
+              <span className="text-violet-600">
                 {overdueFollowUpCount > 0 ? `${overdueFollowUpCount} overdue` : "All caught up"}
-              </p>
-            </div>
-          </Card>
+              </span>
+            }
+          />
         </DashboardItem>
 
         {visibleFlags.length > 0 && (

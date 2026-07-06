@@ -1,14 +1,8 @@
 import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
-import {
-  getInvoiceAgingSummary,
-  getMonthlyRevenueComparison,
-  type InvoiceAgingSummary,
-  type MonthlyRevenueComparison,
-} from "@/lib/data/invoicing";
+import { getMonthlyRevenueComparison, type MonthlyRevenueComparison } from "@/lib/data/invoicing";
 import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
-import { getAppSettings } from "@/lib/data/appSettings";
 import { getToday } from "@/lib/data/profile";
 import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
@@ -19,17 +13,11 @@ export interface AttentionFlag {
 }
 
 export interface DashboardData {
-  activeClients: Client[];
   projectClients: Client[];
   recurringClients: Client[];
-  projectedRevenue: number;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
   todoSnapshot: Task[];
-  overdueTodoCount: number;
-  invoiceAging: InvoiceAgingSummary;
-  /** Revenue collected (paid invoices) per week, oldest to newest, trailing 8 weeks. */
-  weeklyRevenueCollected: number[];
   monthlyRevenue: MonthlyRevenueComparison;
   pipelineSummary: LeadPipelineSummary;
   /** Every to-do not yet completed, regardless of due date. */
@@ -65,33 +53,20 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   // Lazily create this month's recurring invoice rows for active recurring
   // clients so the dashboard/invoicing views always reflect the current month.
-  const [, appSettings] = await Promise.all([
-    ensureRecurringInvoicesForAllActiveClients(today),
-    getAppSettings(),
-  ]);
+  await ensureRecurringInvoicesForAllActiveClients(today);
 
   const [
     activeRows,
-    projectRemainingRows,
     hotFollowUps,
     noFollowUpLeadRows,
     staleInvoiceRows,
     todoRows,
-    overdueCountRows,
-    invoiceAging,
-    weeklyRevenueRows,
     monthlyRevenue,
     pipelineSummary,
     openTodoCountRows,
     dueTodayCountRows,
   ] = await Promise.all([
     sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
-    sql`
-      select coalesce(sum(i.amount), 0) as total
-      from invoices i
-      join clients c on c.id = i.client_id
-      where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
-    `,
     listHotFollowUps(today),
     sql`
       select l.id, l.company_name
@@ -119,20 +94,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       group by t.id
       order by (t.due_date is null), t.due_date asc, t.created_at desc
     `,
-    sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date < ${today}::date`,
-    getInvoiceAgingSummary(appSettings.invoiceAgingOverDays, today),
-    sql`
-      select coalesce(sum(i.amount), 0) as total
-      from generate_series(
-        date_trunc('week', ${today}::date) - interval '7 weeks',
-        date_trunc('week', ${today}::date),
-        interval '1 week'
-      ) as gs(week_start)
-      left join invoices i
-        on i.paid_date >= gs.week_start and i.paid_date < gs.week_start + interval '1 week'
-      group by gs.week_start
-      order by gs.week_start
-    `,
     getMonthlyRevenueComparison(today),
     getLeadPipelineSummary(today),
     sql`select count(*)::int as count from todos where status <> 'COMPLETED'`,
@@ -142,15 +103,6 @@ export async function getDashboardData(): Promise<DashboardData> {
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
   const projectClients = activeClients.filter((c) => c.type === "PROJECT");
   const recurringClients = activeClients.filter((c) => c.type === "RECURRING");
-
-  const recurringMonthlyTotal = recurringClients.reduce(
-    (sum, c) => sum + Number(c.rate),
-    0
-  );
-  const projectRemaining = Number(
-    (projectRemainingRows[0] as Record<string, unknown>).total
-  );
-  const projectedRevenue = recurringMonthlyTotal + projectRemaining;
 
   const attentionFlags: AttentionFlag[] = [];
   for (const row of staleInvoiceRows) {
@@ -192,21 +144,12 @@ export async function getDashboardData(): Promise<DashboardData> {
   });
 
   return {
-    activeClients,
     projectClients,
     recurringClients,
-    projectedRevenue,
     hotFollowUps,
     attentionFlags,
     todoSnapshot,
-    overdueTodoCount: Number(
-      (overdueCountRows[0] as Record<string, unknown>).count
-    ),
-    invoiceAging,
     today,
-    weeklyRevenueCollected: weeklyRevenueRows.map((r) =>
-      Number((r as Record<string, unknown>).total)
-    ),
     monthlyRevenue,
     pipelineSummary,
     openTodoCount: Number((openTodoCountRows[0] as Record<string, unknown>).count),
