@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus, Building2, Calendar, User, List, Clock, DollarSign, FileText } from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
@@ -26,7 +27,23 @@ export function LogTimeEntryButton({
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
 }) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // The dashboard/mobile "Log Time" quick action links here with ?logTime=1
+  // to jump straight to this drawer instead of landing on the page and
+  // requiring a second click.
+  const [open, setOpen] = useState(() => searchParams.get("logTime") === "1");
+
+  // Strip the ?logTime=1 param once handled so a later refresh doesn't reopen the drawer.
+  useEffect(() => {
+    if (searchParams.get("logTime") === "1") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("logTime");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
 
   return (
     <>

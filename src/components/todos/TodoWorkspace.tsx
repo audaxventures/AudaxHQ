@@ -1,6 +1,7 @@
 "use client";
 
-import { useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, Circle, GripVertical, ListTodo, Plus } from "lucide-react";
 import { Input } from "@/components/ui/Field";
@@ -76,10 +77,28 @@ export function TodoWorkspace({
       state.map((t) => (t.id === update.id ? { ...t, status: update.status } : t))
   );
   const [, startTransition] = useTransition();
-  const [drawerState, setDrawerState] = useState<DrawerState>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // The dashboard/mobile "Add To-Do" quick action links here with ?new=1 to
+  // jump straight to the create drawer instead of landing on the board and
+  // requiring a second click.
+  const [drawerState, setDrawerState] = useState<DrawerState>(() =>
+    searchParams.get("new") === "1" ? { mode: "create", defaultStatus: "TO_BE_DONE" } : null
+  );
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const quickAddRef = useRef<HTMLFormElement>(null);
   const [quickAddPending, startQuickAdd] = useTransition();
+
+  // Strip the ?new=1 param once handled so a later refresh doesn't reopen the drawer.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("new");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
 
   const visibleColumns = filterStatus
     ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus))

@@ -14,8 +14,8 @@ interface QuickAction {
 export const QUICK_ACTIONS: QuickAction[] = [
   { href: "/leads/new", label: "New Lead", icon: UserPlus, iconClasses: "bg-navy-100 text-navy-700" },
   { href: "/clients/new", label: "New Client", icon: Building2, iconClasses: "bg-sage-100 text-sage-600" },
-  { href: "/todos", label: "Add To-Do", icon: CheckSquare, iconClasses: "bg-burnt-100 text-burnt-600" },
-  { href: "/tracker", label: "Log Time", icon: Clock, iconClasses: "bg-blue-100 text-blue-600" },
+  { href: "/todos?new=1", label: "Add To-Do", icon: CheckSquare, iconClasses: "bg-burnt-100 text-burnt-600" },
+  { href: "/tracker?logTime=1", label: "Log Time", icon: Clock, iconClasses: "bg-blue-100 text-blue-600" },
   {
     href: "/meeting-notes/new",
     label: "Create Meeting Note",
