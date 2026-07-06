@@ -11,3 +11,7 @@ export const NAV_LINKS = [
 ] as const;
 
 export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings";
+
+/** The mobile bottom tab bar only has room for a few links — the rest live in the drawer. */
+const MOBILE_TAB_HREFS = ["/", "/clients", "/todos"];
+export const MOBILE_TAB_LINKS = NAV_LINKS.filter((link) => MOBILE_TAB_HREFS.includes(link.href));

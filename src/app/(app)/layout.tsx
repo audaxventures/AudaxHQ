@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
+import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
 import { PageTransition } from "@/components/PageTransition";
 
 // This app is a live daily-use tool backed by Postgres — every page here
@@ -24,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <PageTransition>{children}</PageTransition>
         </main>
         <MobileTabBar />
+        <QuickActionsFab />
       </div>
     </div>
   );
