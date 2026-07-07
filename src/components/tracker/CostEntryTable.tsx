@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { Check, MoreHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
@@ -49,42 +50,76 @@ function entryFinancials(entry: CostEntry): { revenue: number; cost: number; pro
   return { revenue: 0, cost: entry.amount, profit: -entry.amount };
 }
 
+const MENU_WIDTH = 128;
+
 function RowActions({ onEdit, onDelete }: { onEdit?: () => void; onDelete?: () => void }) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    // The menu (~40px per item) can render past the viewport or the scrollable
+    // card's bottom edge for rows near the end of a long table — flip it above
+    // the button instead of always dropping down when there isn't room below.
+    const menuHeight = (onEdit ? 40 : 0) + (onDelete ? 40 : 0) + 8;
+    const openUpward = window.innerHeight - rect.bottom < menuHeight;
+    setPosition({
+      top: openUpward ? rect.top - menuHeight : rect.bottom + 4,
+      left: rect.right - MENU_WIDTH,
+    });
+  }, [open, onEdit, onDelete]);
+
   return (
-    <div className="relative">
+    <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
         className="rounded-md p-1 text-navy-400 transition-colors hover:bg-navy-100 hover:text-navy-700 cursor-pointer"
         aria-label="Entry actions"
       >
         <MoreHorizontal size={16} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-lg border border-navy-100 bg-white py-1 shadow-lg">
-          {onEdit && (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="block w-full px-3 py-1.5 text-left text-sm text-navy-700 hover:bg-navy-100 cursor-pointer"
+      {open &&
+        position &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              style={{ top: position.top, left: position.left, width: MENU_WIDTH }}
+              className="fixed z-50 rounded-lg border border-navy-100 bg-white py-1 shadow-lg"
             >
-              Edit
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="block w-full px-3 py-1.5 text-left text-sm text-brick-600 hover:bg-brick-100 cursor-pointer"
-            >
-              Delete
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onEdit();
+                  }}
+                  className="block w-full px-3 py-1.5 text-left text-sm text-navy-700 hover:bg-navy-100 cursor-pointer"
+                >
+                  Edit
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onDelete();
+                  }}
+                  className="block w-full px-3 py-1.5 text-left text-sm text-brick-600 hover:bg-brick-100 cursor-pointer"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
+    </>
   );
 }
 
