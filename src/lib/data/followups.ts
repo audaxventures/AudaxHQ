@@ -10,6 +10,7 @@ interface FollowUpRow {
   status: FollowUpStatus;
   created_at: string;
   updated_at: string;
+  assigned_to_team_member_id: string | null;
 }
 
 function mapFollowUp(row: FollowUpRow): FollowUp {
@@ -22,6 +23,7 @@ function mapFollowUp(row: FollowUpRow): FollowUp {
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    assignedToTeamMemberId: row.assigned_to_team_member_id,
   };
 }
 
@@ -55,6 +57,7 @@ export async function listHotFollowUps(today: string, accessibleClientIds?: stri
   const rows = await sql`
     select
       f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
+      f.assigned_to_team_member_id,
       coalesce(c.company_name, l.company_name) as owner_name,
       case when f.client_id is not null then 'client' else 'lead' end as owner_kind,
       f.date < ${today}::date as is_overdue
@@ -85,26 +88,32 @@ export async function listHotFollowUps(today: string, accessibleClientIds?: stri
 
 export async function addFollowUp(
   owner: { clientId?: string; leadId?: string },
-  input: { label: string; date: string }
+  input: { label: string; date: string; assignedToTeamMemberId?: string | null }
 ): Promise<void> {
   await sql`
-    insert into follow_ups (client_id, lead_id, label, date)
-    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${input.label}, ${input.date})
+    insert into follow_ups (client_id, lead_id, label, date, assigned_to_team_member_id)
+    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${input.label}, ${input.date}, ${input.assignedToTeamMemberId ?? null})
   `;
 }
 
 export async function updateFollowUp(
   id: string,
-  input: { label: string; date: string; status: FollowUpStatus }
+  input: { label: string; date: string; status: FollowUpStatus; assignedToTeamMemberId?: string | null }
 ): Promise<void> {
   await sql`
-    update follow_ups set label = ${input.label}, date = ${input.date}, status = ${input.status}, updated_at = now()
+    update follow_ups set
+      label = ${input.label}, date = ${input.date}, status = ${input.status},
+      assigned_to_team_member_id = ${input.assignedToTeamMemberId ?? null}, updated_at = now()
     where id = ${id}
   `;
 }
 
 export async function setFollowUpStatus(id: string, status: FollowUpStatus): Promise<void> {
   await sql`update follow_ups set status = ${status}, updated_at = now() where id = ${id}`;
+}
+
+export async function setFollowUpAssignee(id: string, assignedToTeamMemberId: string | null): Promise<void> {
+  await sql`update follow_ups set assigned_to_team_member_id = ${assignedToTeamMemberId}, updated_at = now() where id = ${id}`;
 }
 
 export async function deleteFollowUp(id: string): Promise<void> {

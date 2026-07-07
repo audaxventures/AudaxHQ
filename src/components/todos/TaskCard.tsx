@@ -38,6 +38,8 @@ export function TaskCard({
   today,
   onDragColumnChange,
   onDropOnColumn,
+  draggable = true,
+  assignedToLabel,
 }: {
   task: Task;
   onOpen: () => void;
@@ -46,6 +48,10 @@ export function TaskCard({
   onDragColumnChange?: (columnKey: string | null) => void;
   /** Fires once on drop with the column key under the pointer, if any. */
   onDropOnColumn?: (columnKey: string) => void;
+  /** False for cards in "Assigned to others" — you can still open and edit them, but board-ownership drag-and-drop belongs to whoever they're assigned to. */
+  draggable?: boolean;
+  /** Set only for cards not on the viewer's own board — shows who this was handed off to. */
+  assignedToLabel?: string;
 }) {
   const [, startTransition] = useTransition();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -92,16 +98,19 @@ export function TaskCard({
   return (
     <motion.div
       ref={cardRef}
-      drag
+      drag={draggable}
       dragSnapToOrigin
       dragElastic={0.15}
       dragMomentum={false}
-      onDrag={handleDrag}
-      onDragEnd={handleDragEnd}
+      onDrag={draggable ? handleDrag : undefined}
+      onDragEnd={draggable ? handleDragEnd : undefined}
       onTap={handleTap}
-      whileDrag={{ scale: 1.04, boxShadow: "0 16px 32px rgba(16,29,51,0.2)", zIndex: 50 }}
-      style={{ touchAction: "none" }}
-      className="cursor-grab rounded-xl border border-navy-100 bg-white p-3.5 shadow-[0_1px_2px_rgba(16,29,51,0.04)] transition-shadow hover:shadow-md active:cursor-grabbing"
+      whileDrag={draggable ? { scale: 1.04, boxShadow: "0 16px 32px rgba(16,29,51,0.2)", zIndex: 50 } : undefined}
+      style={{ touchAction: draggable ? "none" : undefined }}
+      className={cn(
+        "rounded-xl border border-navy-100 bg-white p-3.5 shadow-[0_1px_2px_rgba(16,29,51,0.04)] transition-shadow hover:shadow-md",
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+      )}
     >
       <div className="flex items-start gap-2.5">
         <button
@@ -138,10 +147,16 @@ export function TaskCard({
             <Hourglass size={11} /> Waiting on client
           </span>
         )}
-        {handedOff && (
+        {assignedToLabel ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
-            <Send size={11} /> From {task.createdByName}
+            <Send size={11} /> To {assignedToLabel}
           </span>
+        ) : (
+          handedOff && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
+              <Send size={11} /> From {task.createdByName}
+            </span>
+          )
         )}
         {task.tags.map((tag) => (
           <Badge key={tag} tone="slate">

@@ -59,18 +59,21 @@ export interface TaskFilters {
   /** Case-insensitive substring match against title or description. */
   search?: string;
   /**
-   * Restrict to to-dos currently on this person's board — omit the key
-   * entirely for an unfiltered (all to-dos) view, which only the owner-only
-   * full data export should ever do. Pass null for the owner's own board,
-   * or a team member's id for theirs.
+   * Restrict to to-dos visible to this person: assigned to them, or created
+   * by them (so handing a to-do off to someone else doesn't make it vanish
+   * for whoever assigned it — they keep visibility and edit rights, just not
+   * drag-and-drop board ownership). Omit the key entirely for an unfiltered
+   * (all to-dos) view, which only the owner-only full data export should
+   * ever do. Pass null for the owner's own board/creations, or a team
+   * member's id for theirs.
    */
-  assignedTo?: string | null;
+  visibleTo?: string | null;
 }
 
 export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   const searchPattern = filters.search ? `%${filters.search}%` : null;
-  const hasAssigneeFilter = "assignedTo" in filters;
-  const assigneeValue = filters.assignedTo ?? null;
+  const hasVisibleToFilter = "visibleTo" in filters;
+  const visibleToValue = filters.visibleTo ?? null;
   const rows = (await sql`
     select
       t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id,
@@ -107,8 +110,9 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
         or t.description ilike ${searchPattern}
       )
       and (
-        ${hasAssigneeFilter} is false
-        or t.assigned_to_team_member_id is not distinct from ${assigneeValue}::uuid
+        ${hasVisibleToFilter} is false
+        or t.assigned_to_team_member_id is not distinct from ${visibleToValue}::uuid
+        or t.created_by_team_member_id is not distinct from ${visibleToValue}::uuid
       )
     group by t.id, tt_lookup.name, c.company_name, l.company_name, creator_tm.name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc
@@ -185,12 +189,14 @@ export async function createTask(input: TaskInput, createdByTeamMemberId: string
 }
 
 /**
- * `restrictToAssignee` is always the caller's own identity (null for the
+ * `callerTeamMemberId` is always the caller's own identity (null for the
  * owner, a team member's id otherwise) — everyone, owner included, may only
- * touch to-dos currently on their own board. A mismatch is a silent no-op
- * rather than an error, since the row simply isn't reachable to this caller.
+ * touch to-dos they're currently assigned OR the ones they created (so
+ * handing a to-do off doesn't strip the assigner's own edit rights over it).
+ * A mismatch is a silent no-op rather than an error, since the row simply
+ * isn't reachable to this caller.
  */
-export async function updateTask(id: string, input: TaskInput, restrictToAssignee: string | null): Promise<void> {
+export async function updateTask(id: string, input: TaskInput, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     update todos set
       title = ${input.title},
@@ -201,23 +207,32 @@ export async function updateTask(id: string, input: TaskInput, restrictToAssigne
       assigned_to_team_member_id = ${input.assignedToTeamMemberId ?? null},
       updated_at = now()
     where id = ${id}
-      and assigned_to_team_member_id is not distinct from ${restrictToAssignee}::uuid
+      and (
+        assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+        or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+      )
   `;
   await setTaskTags(id, input.tags);
 }
 
-export async function setTaskStatus(id: string, status: TaskStatus, restrictToAssignee: string | null): Promise<void> {
+export async function setTaskStatus(id: string, status: TaskStatus, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     update todos set status = ${status}, updated_at = now()
     where id = ${id}
-      and assigned_to_team_member_id is not distinct from ${restrictToAssignee}::uuid
+      and (
+        assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+        or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+      )
   `;
 }
 
-export async function deleteTask(id: string, restrictToAssignee: string | null): Promise<void> {
+export async function deleteTask(id: string, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     delete from todos
     where id = ${id}
-      and assigned_to_team_member_id is not distinct from ${restrictToAssignee}::uuid
+      and (
+        assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+        or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
+      )
   `;
 }

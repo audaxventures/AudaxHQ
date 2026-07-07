@@ -45,7 +45,8 @@ export default async function LeadDetailPage({
       listWorkTypes({ includeInactive: true }),
       listLeadSources({ includeInactive: true }),
       getToday(),
-      isOwner ? listTeamMembers() : Promise.resolve([]),
+      // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
+      listTeamMembers(),
       isOwner ? listWorkCategories() : Promise.resolve([]),
       isOwner ? listClients() : Promise.resolve([]),
       isOwner ? listLeads() : Promise.resolve([]),
@@ -152,7 +153,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} today={today} />
+            <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} today={today} teamMembers={teamMembers} />
           </Card>
 
           <Card className="p-6">

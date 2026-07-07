@@ -58,7 +58,8 @@ export default async function ClientDetailPage({
     isOwner ? listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
     listWorkTypes({ includeInactive: true }),
     getToday(),
-    isOwner ? listTeamMembers() : Promise.resolve([]),
+    // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
+    listTeamMembers(),
     isOwner ? listWorkCategories() : Promise.resolve([]),
     isOwner ? listClients() : Promise.resolve([]),
     isOwner ? listLeads() : Promise.resolve([]),
@@ -155,7 +156,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} today={today} />
+            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} today={today} teamMembers={teamMembers} />
           </Card>
 
           <Card className="p-6">

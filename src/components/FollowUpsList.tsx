@@ -1,16 +1,26 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { Trash2, Plus, CalendarClock } from "lucide-react";
-import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { Trash2, Plus, CalendarClock, UserCircle2 } from "lucide-react";
+import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import { formatDate, isOverdue } from "@/lib/format";
-import type { FollowUp } from "@/lib/types";
-import { addFollowUp, deleteFollowUp, setFollowUpStatus } from "@/lib/actions/followups";
+import type { FollowUp, TeamMember } from "@/lib/types";
+import { addFollowUp, deleteFollowUp, setFollowUpAssignee, setFollowUpStatus } from "@/lib/actions/followups";
 
 type Owner = { clientId: string } | { leadId: string };
 
-function FollowUpRow({ followUp, owner, today }: { followUp: FollowUp; owner: Owner; today: string }) {
+function FollowUpRow({
+  followUp,
+  owner,
+  today,
+  teamMembers,
+}: {
+  followUp: FollowUp;
+  owner: Owner;
+  today: string;
+  teamMembers: TeamMember[];
+}) {
   const [, startTransition] = useTransition();
   const overdue = followUp.status === "UPCOMING" && isOverdue(followUp.date, today);
   const completed = followUp.status === "COMPLETED";
@@ -41,11 +51,35 @@ function FollowUpRow({ followUp, owner, today }: { followUp: FollowUp; owner: Ow
           <p className={cn("text-sm", completed ? "text-navy-400 line-through" : "text-navy-800 font-medium")}>
             {followUp.label}
           </p>
-          <span className={cn("inline-flex items-center gap-1 text-xs", overdue ? "text-brick-600 font-medium" : "text-navy-400")}>
-            <CalendarClock size={12} />
-            {overdue ? "Overdue: " : ""}
-            {formatDate(followUp.date)}
-          </span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className={cn("inline-flex items-center gap-1 text-xs", overdue ? "text-brick-600 font-medium" : "text-navy-400")}>
+              <CalendarClock size={12} />
+              {overdue ? "Overdue: " : ""}
+              {formatDate(followUp.date)}
+            </span>
+            {teamMembers.length > 0 && (
+              <label className="inline-flex items-center gap-1 text-xs text-navy-400">
+                <UserCircle2 size={12} />
+                <select
+                  value={followUp.assignedToTeamMemberId ?? ""}
+                  onChange={(e) =>
+                    startTransition(async () => {
+                      await setFollowUpAssignee(followUp.id, e.target.value || null, owner);
+                    })
+                  }
+                  aria-label="Assign to"
+                  className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-navy-500 hover:text-navy-700 focus:ring-0"
+                >
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((tm) => (
+                    <option key={tm.id} value={tm.id}>
+                      {tm.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
         </div>
       </div>
       <button
@@ -64,10 +98,13 @@ export function FollowUpsList({
   owner,
   followUps,
   today,
+  teamMembers = [],
 }: {
   owner: Owner;
   followUps: FollowUp[];
   today: string;
+  /** Who this follow-up can be assigned to. Omitted entirely when there's no one to assign to yet. */
+  teamMembers?: TeamMember[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
@@ -81,10 +118,10 @@ export function FollowUpsList({
       ) : (
         <ul className="space-y-0.5 mb-3">
           {upcoming.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} />
+            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} teamMembers={teamMembers} />
           ))}
           {completed.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} />
+            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} teamMembers={teamMembers} />
           ))}
         </ul>
       )}
@@ -96,9 +133,9 @@ export function FollowUpsList({
           });
           formRef.current?.reset();
         }}
-        className="flex items-end gap-2"
+        className="flex flex-wrap items-end gap-2"
       >
-        <FieldGroup className="flex-1">
+        <FieldGroup className="flex-1 min-w-[10rem]">
           <Label htmlFor="followup-label">Follow-up</Label>
           <Input id="followup-label" name="label" placeholder="Send updated proposal…" required />
         </FieldGroup>
@@ -106,6 +143,19 @@ export function FollowUpsList({
           <Label htmlFor="followup-date">Date</Label>
           <Input id="followup-date" name="date" type="date" required className="w-40" />
         </FieldGroup>
+        {teamMembers.length > 0 && (
+          <FieldGroup>
+            <Label htmlFor="followup-assigned-to">Assign to</Label>
+            <Select id="followup-assigned-to" name="assignedTo" defaultValue="" className="w-40" icon={UserCircle2}>
+              <option value="">Unassigned</option>
+              {teamMembers.map((tm) => (
+                <option key={tm.id} value={tm.id}>
+                  {tm.name}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        )}
         <button
           type="submit"
           className="flex items-center justify-center rounded-lg bg-navy-100 p-2.5 text-navy-600 hover:bg-navy-200 transition-colors cursor-pointer shrink-0"

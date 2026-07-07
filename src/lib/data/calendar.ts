@@ -21,7 +21,18 @@ export interface CalendarEvent {
   completed: boolean;
 }
 
-export async function listCalendarEvents(from: string, to: string): Promise<CalendarEvent[]> {
+export interface CalendarEventFilters {
+  /** Team-member scoping: only their own assigned tasks. Undefined/null = no restriction (owner). */
+  restrictToTeamMemberId?: string | null;
+  /** Team-member scoping: client-owned follow-ups/meetings restricted to this list — lead-owned ones are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
+  accessibleClientIds?: string[] | null;
+}
+
+export async function listCalendarEvents(
+  from: string,
+  to: string,
+  filters: CalendarEventFilters = {}
+): Promise<CalendarEvent[]> {
   const [followUpRows, meetingRows, taskRows] = await Promise.all([
     sql`
       select f.id, f.date, f.label, f.client_id, f.lead_id,
@@ -30,6 +41,11 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
       left join clients c on c.id = f.client_id
       left join leads l on l.id = f.lead_id
       where f.status = 'UPCOMING' and f.date between ${from} and ${to}
+        and (
+          ${filters.accessibleClientIds ?? null}::uuid[] is null
+          or f.client_id is null
+          or f.client_id = any(${filters.accessibleClientIds ?? null}::uuid[])
+        )
     `,
     sql`
       select m.id, m.meeting_date as date, m.client_id, m.lead_id,
@@ -38,6 +54,11 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
       left join clients c on c.id = m.client_id
       left join leads l on l.id = m.lead_id
       where m.meeting_date between ${from} and ${to}
+        and (
+          ${filters.accessibleClientIds ?? null}::uuid[] is null
+          or m.client_id is null
+          or m.client_id = any(${filters.accessibleClientIds ?? null}::uuid[])
+        )
     `,
     sql`
       select t.id, t.due_date as date, t.title, t.status, t.client_id, t.lead_id,
@@ -46,6 +67,7 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
       left join clients c on c.id = t.client_id
       left join leads l on l.id = t.lead_id
       where t.due_date is not null and t.due_date between ${from} and ${to}
+        and (${filters.restrictToTeamMemberId ?? null}::uuid is null or t.assigned_to_team_member_id = ${filters.restrictToTeamMemberId ?? null})
     `,
   ]);
 

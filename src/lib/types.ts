@@ -70,6 +70,8 @@ export interface FollowUp {
   status: FollowUpStatus;
   createdAt: string;
   updatedAt: string;
+  /** Who's responsible for it — null means unassigned. */
+  assignedToTeamMemberId: string | null;
 }
 
 export interface MeetingNote {
