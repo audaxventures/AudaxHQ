@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Check, KeyRound, Pencil, Plus, ShieldCheck, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
+import { InfoNote } from "@/components/ui/InfoNote";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import type { TeamMember } from "@/lib/types";
@@ -410,6 +411,16 @@ export function TeamMembersPanel({
         </div>
       )}
       <AddTeamMemberForm />
+
+      <div className="mt-4">
+        <InfoNote>
+          <p className="font-medium text-navy-900">
+            Click the <ShieldCheck size={13} className="inline -mt-0.5 text-navy-600" /> shield icon next to a team
+            member to manage their login and access.
+          </p>
+          <p className="text-navy-500">That&apos;s where you turn on sign-in, reset a passcode, and choose which clients they can see.</p>
+        </InfoNote>
+      </div>
     </div>
   );
 }
