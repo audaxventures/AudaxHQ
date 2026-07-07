@@ -3,7 +3,7 @@
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Circle, GripVertical, ListTodo, Plus } from "lucide-react";
+import { CheckCircle2, Circle, GripVertical, ListTodo, Plus, Send } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -29,13 +29,28 @@ interface BoardColumn {
   primaryStatus: TaskStatus;
   icon: LucideIcon;
   iconClasses: string;
+  /**
+   * "own": only to-dos currently assigned to the viewer. "handedOff": to-dos
+   * the viewer created but assigned to someone else. "all": either — used
+   * for Completed, so a handed-off to-do that gets finished moves here
+   * instead of lingering in "Assigned to others".
+   */
+  scope: "own" | "handedOff" | "all";
 }
 
 // "Waiting on Client" isn't its own column — those tasks live in In
 // Progress (see TaskCard's own badge for that status) so the board stays
-// three columns wide, but the underlying status is untouched.
+// four columns wide, but the underlying status is untouched.
 const BOARD_COLUMNS: BoardColumn[] = [
-  { key: "TO_BE_DONE", label: TASK_STATUS_LABELS.TO_BE_DONE, statuses: ["TO_BE_DONE"], primaryStatus: "TO_BE_DONE", icon: ListTodo, iconClasses: "bg-burnt-100 text-burnt-600" },
+  {
+    key: "TO_BE_DONE",
+    label: TASK_STATUS_LABELS.TO_BE_DONE,
+    statuses: ["TO_BE_DONE"],
+    primaryStatus: "TO_BE_DONE",
+    icon: ListTodo,
+    iconClasses: "bg-burnt-100 text-burnt-600",
+    scope: "own",
+  },
   {
     key: "IN_PROGRESS",
     label: TASK_STATUS_LABELS.IN_PROGRESS,
@@ -43,9 +58,31 @@ const BOARD_COLUMNS: BoardColumn[] = [
     primaryStatus: "IN_PROGRESS",
     icon: Circle,
     iconClasses: "bg-blue-100 text-blue-600",
+    scope: "own",
   },
-  { key: "COMPLETED", label: TASK_STATUS_LABELS.COMPLETED, statuses: ["COMPLETED"], primaryStatus: "COMPLETED", icon: CheckCircle2, iconClasses: "bg-sage-100 text-sage-600" },
+  {
+    key: "ASSIGNED_TO_OTHERS",
+    label: "Assigned to others",
+    statuses: ["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK"],
+    primaryStatus: "TO_BE_DONE",
+    icon: Send,
+    iconClasses: "bg-violet-100 text-violet-600",
+    scope: "handedOff",
+  },
+  {
+    key: "COMPLETED",
+    label: TASK_STATUS_LABELS.COMPLETED,
+    statuses: ["COMPLETED"],
+    primaryStatus: "COMPLETED",
+    icon: CheckCircle2,
+    iconClasses: "bg-sage-100 text-sage-600",
+    scope: "all",
+  },
 ];
+
+function taskScope(task: Task, currentAssigneeId: string | null): "own" | "handedOff" {
+  return task.assignedToTeamMemberId === currentAssigneeId ? "own" : "handedOff";
+}
 
 const COMPLETED_PREVIEW_COUNT = 3;
 
@@ -59,6 +96,7 @@ export function TodoWorkspace({
   todoTypes,
   defaultTypeSelection,
   assignOptions,
+  currentAssigneeId,
   today,
 }: {
   tasks: Task[];
@@ -72,6 +110,8 @@ export function TodoWorkspace({
   defaultTypeSelection: string;
   /** "Me" plus whoever else you're allowed to hand a to-do to. */
   assignOptions: { value: string; label: string }[];
+  /** The viewer's own board identity — null for the owner, a team member's id otherwise. Distinguishes "own" tasks from ones handed off to someone else. */
+  currentAssigneeId: string | null;
   today: string;
 }) {
   const [optimisticTasks, applyStatusChange] = useOptimistic(
@@ -103,9 +143,18 @@ export function TodoWorkspace({
     }
   }, [searchParams, router, pathname]);
 
-  const visibleColumns = filterStatus
-    ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus))
-    : BOARD_COLUMNS;
+  // Reuse the same "who can I hand this off to" list to label handed-off
+  // cards, keyed the same way the assign-to <select> submits values: ""
+  // for the viewer themselves, "OWNER" for the owner, otherwise a team
+  // member's id.
+  const assigneeLabelById = new Map(assignOptions.map((o) => [o.value, o.label]));
+  function assigneeLabelFor(task: Task): string {
+    return assigneeLabelById.get(task.assignedToTeamMemberId ?? "OWNER") ?? "a teammate";
+  }
+
+  const visibleColumns = (
+    filterStatus ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus)) : BOARD_COLUMNS
+  ).filter((c) => c.key !== "ASSIGNED_TO_OTHERS" || assignOptions.length > 1);
 
   function moveTaskToColumn(taskId: string, columnKey: string) {
     const column = BOARD_COLUMNS.find((c) => c.key === columnKey);
@@ -157,12 +206,17 @@ export function TodoWorkspace({
       <div
         className={cn(
           "grid grid-cols-1 gap-4",
-          visibleColumns.length > 1 ? "lg:grid-cols-3" : "lg:grid-cols-1"
+          visibleColumns.length >= 4 ? "lg:grid-cols-4" : visibleColumns.length > 1 ? "lg:grid-cols-3" : "lg:grid-cols-1"
         )}
       >
         {visibleColumns.map((column) => {
-          const items = optimisticTasks.filter((t) => column.statuses.includes(t.status));
+          const items = optimisticTasks.filter(
+            (t) =>
+              column.statuses.includes(t.status) &&
+              (column.scope === "all" || taskScope(t, currentAssigneeId) === column.scope)
+          );
           const isCompleted = column.key === "COMPLETED";
+          const isHandedOffColumn = column.scope === "handedOff";
           const visibleItems = isCompleted && !showAllCompleted ? items.slice(0, COMPLETED_PREVIEW_COUNT) : items;
           const Icon = column.icon;
 
@@ -191,6 +245,8 @@ export function TodoWorkspace({
                     key={task.id}
                     task={task}
                     today={today}
+                    draggable={!isHandedOffColumn}
+                    assignedToLabel={isHandedOffColumn ? assigneeLabelFor(task) : undefined}
                     onDragColumnChange={setDragOverColumn}
                     onDropOnColumn={(columnKey) => moveTaskToColumn(task.id, columnKey)}
                     onOpen={() => setDrawerState({ mode: "edit", task })}
@@ -211,13 +267,15 @@ export function TodoWorkspace({
                   </a>
                 )
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setDrawerState({ mode: "create", defaultStatus: column.primaryStatus })}
-                  className="mt-3 flex items-center gap-1.5 px-1 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
-                >
-                  <Plus size={14} /> Add task
-                </button>
+                column.scope === "own" && (
+                  <button
+                    type="button"
+                    onClick={() => setDrawerState({ mode: "create", defaultStatus: column.primaryStatus })}
+                    className="mt-3 flex items-center gap-1.5 px-1 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
+                  >
+                    <Plus size={14} /> Add task
+                  </button>
+                )
               )}
             </div>
           );
@@ -238,6 +296,7 @@ export function TodoWorkspace({
           todoTypes={todoTypes}
           defaultTypeSelection={defaultTypeSelection}
           assignOptions={assignOptions}
+          currentAssigneeId={currentAssigneeId}
           onClose={() => setDrawerState(null)}
         />
       )}

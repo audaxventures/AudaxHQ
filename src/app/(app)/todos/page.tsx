@@ -80,8 +80,9 @@ export default async function TodosPage({
       todoTypeId: sp.todoTypeId,
       status: sp.status as TaskStatus | undefined,
       priority: sp.priority as TaskPriority | undefined,
-      // Everyone's board is private — this is always your own to-dos, never a colleague's.
-      assignedTo: selfAssigneeId,
+      // Your own to-dos plus anything you handed off to someone else — never
+      // a colleague's unrelated to-dos.
+      visibleTo: selfAssigneeId,
     }),
     listAllTags(),
     listClients({ accessibleClientIds }),
@@ -147,6 +148,7 @@ export default async function TodosPage({
         todoTypes={todoTypes}
         defaultTypeSelection={defaultTypeSelection}
         assignOptions={assignOptions}
+        currentAssigneeId={selfAssigneeId}
         today={today}
       />
     </div>

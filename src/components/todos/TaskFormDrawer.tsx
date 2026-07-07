@@ -33,6 +33,14 @@ function taskTypeSelection(task: Task): string {
   return task.type === "CUSTOM" ? (task.todoTypeId ?? "") : task.type;
 }
 
+/** Mirrors the assign-to <select>'s value convention: "" for the viewer themselves, "OWNER" for the owner, otherwise a team member's id. */
+function defaultAssignValue(task: Task | undefined, currentAssigneeId: string | null): string {
+  if (!task) return "";
+  if (task.assignedToTeamMemberId === currentAssigneeId) return "";
+  if (task.assignedToTeamMemberId === null) return "OWNER";
+  return task.assignedToTeamMemberId;
+}
+
 export function TaskFormDrawer({
   mode,
   task,
@@ -42,6 +50,7 @@ export function TaskFormDrawer({
   todoTypes,
   defaultTypeSelection,
   assignOptions,
+  currentAssigneeId,
   onClose,
 }: {
   mode: "create" | "edit";
@@ -51,8 +60,10 @@ export function TaskFormDrawer({
   leads: OwnerOption[];
   todoTypes: TodoType[];
   defaultTypeSelection: string;
-  /** "Me" plus whoever else you're allowed to hand a to-do to. A to-do is only ever editable while it's on your own board, so "Me" is always the correct default here even in edit mode. */
+  /** "Me" plus whoever else you're allowed to hand a to-do to. */
   assignOptions: { value: string; label: string }[];
+  /** The viewer's own board identity — null for the owner, a team member's id otherwise. Used to default the assign-to field to the task's actual current assignee rather than always "Me" (which would silently reassign a handed-off task back to the viewer on save). */
+  currentAssigneeId: string | null;
   onClose: () => void;
 }) {
   const [typeSelection, setTypeSelection] = useState(task ? taskTypeSelection(task) : defaultTypeSelection);
@@ -133,7 +144,12 @@ export function TaskFormDrawer({
         {assignOptions.length > 1 && (
           <FieldGroup>
             <Label htmlFor="task-assigned-to">Assign to</Label>
-            <Select id="task-assigned-to" name="assignedTo" defaultValue="" icon={UserCircle2}>
+            <Select
+              id="task-assigned-to"
+              name="assignedTo"
+              defaultValue={defaultAssignValue(task, currentAssigneeId)}
+              icon={UserCircle2}
+            >
               {assignOptions.map((opt) => (
                 <option key={opt.value || "self"} value={opt.value}>
                   {opt.label}

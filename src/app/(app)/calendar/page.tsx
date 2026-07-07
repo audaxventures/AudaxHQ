@@ -6,6 +6,8 @@ import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
 import { getTimezone } from "@/lib/data/profile";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -29,7 +31,14 @@ export default async function CalendarPage({
   const grid = buildMonthGrid(year, month);
   const today = todayDateStr(timezone);
 
-  const allEvents = await listCalendarEvents(grid[0].date, grid[grid.length - 1].date);
+  const user = await getCurrentUser();
+  const teamMember = user?.role === "TEAM_MEMBER" ? user.teamMember : null;
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+
+  const allEvents = await listCalendarEvents(grid[0].date, grid[grid.length - 1].date, {
+    restrictToTeamMemberId: teamMember?.id,
+    accessibleClientIds,
+  });
   const events = allEvents.filter((e) => activeTypes.has(e.kind));
 
   const eventsByDate = new Map<string, typeof events>();
