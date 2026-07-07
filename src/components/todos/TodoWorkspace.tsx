@@ -104,14 +104,12 @@ export function TodoWorkspace({
     ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus))
     : BOARD_COLUMNS;
 
-  function handleDrop(column: BoardColumn, e: React.DragEvent) {
-    e.preventDefault();
-    setDragOverColumn(null);
-    const taskId = e.dataTransfer.getData("text/plain");
+  function moveTaskToColumn(taskId: string, columnKey: string) {
+    const column = BOARD_COLUMNS.find((c) => c.key === columnKey);
     const task = optimisticTasks.find((t) => t.id === taskId);
     // Already belongs in this column (e.g. a Waiting-on-Client task dropped
     // back into In Progress) — leave its actual status alone.
-    if (!task || column.statuses.includes(task.status)) return;
+    if (!column || !task || column.statuses.includes(task.status)) return;
     const status = column.primaryStatus;
     startTransition(async () => {
       applyStatusChange({ id: taskId, status });
@@ -168,12 +166,7 @@ export function TodoWorkspace({
           return (
             <div
               key={column.key}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOverColumn(column.key);
-              }}
-              onDragLeave={() => setDragOverColumn((c) => (c === column.key ? null : c))}
-              onDrop={(e) => handleDrop(column, e)}
+              data-column-key={column.key}
               className={cn(
                 "flex flex-col rounded-2xl border p-3 transition-colors",
                 dragOverColumn === column.key ? "border-burnt-300 bg-burnt-100/30" : "border-navy-100 bg-cream-100/40"
@@ -195,11 +188,8 @@ export function TodoWorkspace({
                     key={task.id}
                     task={task}
                     today={today}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", task.id);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
+                    onDragColumnChange={setDragOverColumn}
+                    onDropOnColumn={(columnKey) => moveTaskToColumn(task.id, columnKey)}
                     onOpen={() => setDrawerState({ mode: "edit", task })}
                   />
                 ))}

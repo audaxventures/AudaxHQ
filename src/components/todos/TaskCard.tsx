@@ -1,7 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useRef, useTransition } from "react";
 import Link from "next/link";
+import { motion, type PanInfo } from "framer-motion";
 import { Check, Flag, Hourglass } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Badge, TaskTypeBadge } from "@/components/ui/Badge";
@@ -21,20 +22,38 @@ function isDueToday(dueDate: string | null, today: string): boolean {
   return formatDateInput(dueDate) === today;
 }
 
+/** Column drop targets are marked with data-column-key — walk the elements under the pointer (skipping the dragged card itself) to find one. */
+function columnKeyAtPoint(x: number, y: number, exclude: Element | null): string | null {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (exclude?.contains(el)) continue;
+    const columnEl = el.closest?.("[data-column-key]");
+    if (columnEl instanceof HTMLElement) return columnEl.dataset.columnKey ?? null;
+  }
+  return null;
+}
+
 export function TaskCard({
   task,
   onOpen,
-  draggable,
-  onDragStart,
   today,
+  onDragColumnChange,
+  onDropOnColumn,
 }: {
   task: Task;
   onOpen: () => void;
-  draggable?: boolean;
-  onDragStart?: (e: React.DragEvent) => void;
   today: string;
+  /** Fires continuously while dragging with the column key under the pointer (or null), so the board can highlight the target column. Also used on drag end/cancel to clear it. */
+  onDragColumnChange?: (columnKey: string | null) => void;
+  /** Fires once on drop with the column key under the pointer, if any. */
+  onDropOnColumn?: (columnKey: string) => void;
 }) {
   const [, startTransition] = useTransition();
+  const cardRef = useRef<HTMLDivElement>(null);
+  // framer-motion can still fire onTap for the same gesture that just completed
+  // a drag (e.g. once the card's dropped into a new column and remounts there),
+  // so suppress onOpen briefly after any drag ends rather than trusting tap/drag
+  // to be mutually exclusive.
+  const justDraggedRef = useRef(false);
   const completed = task.status === "COMPLETED";
   const overdue = !completed && isOverdue(task.dueDate, today);
   const dueToday = !completed && isDueToday(task.dueDate, today);
@@ -49,19 +68,43 @@ export function TaskCard({
     });
   }
 
+  function handleDrag(_: unknown, info: PanInfo) {
+    onDragColumnChange?.(columnKeyAtPoint(info.point.x, info.point.y, cardRef.current));
+  }
+
+  function handleDragEnd(_: unknown, info: PanInfo) {
+    justDraggedRef.current = true;
+    setTimeout(() => {
+      justDraggedRef.current = false;
+    }, 150);
+    const key = columnKeyAtPoint(info.point.x, info.point.y, cardRef.current);
+    onDragColumnChange?.(null);
+    if (key) onDropOnColumn?.(key);
+  }
+
+  function handleTap() {
+    if (justDraggedRef.current) return;
+    onOpen();
+  }
+
   return (
-    <div
-      draggable={draggable}
-      onDragStart={onDragStart}
-      onClick={onOpen}
-      className={cn(
-        "cursor-pointer rounded-xl border border-navy-100 bg-white p-3.5 shadow-[0_1px_2px_rgba(16,29,51,0.04)] transition-shadow hover:shadow-md",
-        draggable && "active:cursor-grabbing"
-      )}
+    <motion.div
+      ref={cardRef}
+      drag
+      dragSnapToOrigin
+      dragElastic={0.15}
+      dragMomentum={false}
+      onDrag={handleDrag}
+      onDragEnd={handleDragEnd}
+      onTap={handleTap}
+      whileDrag={{ scale: 1.04, boxShadow: "0 16px 32px rgba(16,29,51,0.2)", zIndex: 50 }}
+      style={{ touchAction: "none" }}
+      className="cursor-grab rounded-xl border border-navy-100 bg-white p-3.5 shadow-[0_1px_2px_rgba(16,29,51,0.04)] transition-shadow hover:shadow-md active:cursor-grabbing"
     >
       <div className="flex items-start gap-2.5">
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={toggleComplete}
           aria-label={completed ? "Mark incomplete" : "Mark complete"}
           className={cn(
@@ -81,6 +124,7 @@ export function TaskCard({
         {ownerHref && ownerName && (
           <Link
             href={ownerHref}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center rounded-full bg-burnt-100 px-2.5 py-1 text-xs font-medium text-burnt-600 hover:bg-burnt-200"
           >
@@ -114,6 +158,6 @@ export function TaskCard({
           </span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

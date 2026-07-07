@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Users, CheckSquare, DollarSign, BarChart3 } from "lucide-react";
+import { Users, Target, DollarSign, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Footer } from "@/components/ui/Footer";
 
@@ -11,22 +11,22 @@ const FEATURES = [
     description: "Keep every client relationship and project organized and on track.",
   },
   {
-    icon: CheckSquare,
-    toneClasses: "bg-slate-100 text-slate-600",
-    title: "Tasks & Productivity",
-    description: "Stay focused with to-dos, calendars, and meeting notes.",
+    icon: Target,
+    toneClasses: "bg-blue-100 text-blue-600",
+    title: "Lead Management",
+    description: "Track your pipeline from first contact to signed client.",
   },
   {
     icon: DollarSign,
     toneClasses: "bg-sage-100 text-sage-600",
-    title: "Financial Overview",
+    title: "Revenue Tracker",
     description: "Track revenue, invoices, and cash flow in real time.",
   },
   {
-    icon: BarChart3,
-    toneClasses: "bg-blue-100 text-blue-600",
-    title: "Business Insights",
-    description: "Make data-driven decisions with clear reporting and analytics.",
+    icon: CheckSquare,
+    toneClasses: "bg-slate-100 text-slate-600",
+    title: "Tasks & Productivity",
+    description: "Stay focused with to-dos, calendars, and meeting notes.",
   },
 ] as const;
 

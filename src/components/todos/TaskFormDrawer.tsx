@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Building2, Calendar, Circle, Flag, List, Tag as TagIcon, Target, Trash2 } from "lucide-react";
+import { Building2, Circle, Flag, List, Tag as TagIcon, Target, Trash2 } from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
@@ -223,7 +223,7 @@ export function TaskFormDrawer({
             name="dueDate"
             type="date"
             defaultValue={formatDateInput(task?.dueDate)}
-            icon={Calendar}
+            className="min-w-0"
           />
         </FieldGroup>
 
