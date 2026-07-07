@@ -16,16 +16,24 @@ interface OwnerOption {
   companyName: string;
 }
 
+interface LockedTeamMember {
+  id: string;
+  name: string;
+}
+
 export function LogTimeEntryButton({
   clients,
   leads,
   teamMembers,
   workCategories,
+  lockedTeamMember,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
+  /** Set for a team-member session: locks the entry to their own name, hides the rate field and the Fixed cost option entirely (they only ever log their own billable-by-the-owner hours). */
+  lockedTeamMember?: LockedTeamMember;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -56,6 +64,7 @@ export function LogTimeEntryButton({
           leads={leads}
           teamMembers={teamMembers}
           workCategories={workCategories}
+          lockedTeamMember={lockedTeamMember}
           onClose={() => setOpen(false)}
         />
       )}
@@ -68,16 +77,18 @@ function LogTimeDrawer({
   leads,
   teamMembers,
   workCategories,
+  lockedTeamMember,
   onClose,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
+  lockedTeamMember?: LockedTeamMember;
   onClose: () => void;
 }) {
   const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">("TIME");
-  const [teamMemberId, setTeamMemberId] = useState("");
+  const [teamMemberId, setTeamMemberId] = useState(lockedTeamMember?.id ?? "");
   const [categoryId, setCategoryId] = useState("");
   const [rate, setRate] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -92,13 +103,14 @@ function LogTimeDrawer({
 
   function handleCategoryChange(id: string) {
     setCategoryId(id);
+    if (lockedTeamMember) return;
     const category = workCategories.find((c) => c.id === id);
     if (category) setRate(category.defaultHourlyRate);
   }
 
   function resetForm() {
     formRef.current?.reset();
-    setTeamMemberId("");
+    setTeamMemberId(lockedTeamMember?.id ?? "");
     setCategoryId("");
     setRate("");
   }
@@ -126,28 +138,30 @@ function LogTimeDrawer({
         }}
         className="space-y-4"
       >
-        <div className="flex rounded-lg border border-navy-200 p-1">
-          <button
-            type="button"
-            onClick={() => setEntryType("TIME")}
-            className={cn(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors cursor-pointer",
-              entryType === "TIME" ? "bg-navy-900 text-cream-50" : "text-navy-600 hover:bg-navy-100"
-            )}
-          >
-            Time entry
-          </button>
-          <button
-            type="button"
-            onClick={() => setEntryType("FIXED_COST")}
-            className={cn(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors cursor-pointer",
-              entryType === "FIXED_COST" ? "bg-navy-900 text-cream-50" : "text-navy-600 hover:bg-navy-100"
-            )}
-          >
-            Fixed cost
-          </button>
-        </div>
+        {!lockedTeamMember && (
+          <div className="flex rounded-lg border border-navy-200 p-1">
+            <button
+              type="button"
+              onClick={() => setEntryType("TIME")}
+              className={cn(
+                "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                entryType === "TIME" ? "bg-navy-900 text-cream-50" : "text-navy-600 hover:bg-navy-100"
+              )}
+            >
+              Time entry
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntryType("FIXED_COST")}
+              className={cn(
+                "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                entryType === "FIXED_COST" ? "bg-navy-900 text-cream-50" : "text-navy-600 hover:bg-navy-100"
+              )}
+            >
+              Fixed cost
+            </button>
+          </div>
+        )}
 
         <FieldGroup>
           <Label htmlFor="entry-owner" required>
@@ -202,35 +216,39 @@ function LogTimeDrawer({
                 ))}
               </Select>
             </FieldGroup>
-            <FieldGroup>
-              <Label htmlFor="entry-team-member" required>
-                Team member
-              </Label>
-              <Select
-                id="entry-team-member"
-                name="teamMemberId"
-                required
-                value={teamMemberId}
-                onChange={(e) => handleTeamMemberChange(e.target.value)}
-                icon={User}
-              >
-                <option value="" disabled>
-                  Select team member
-                </option>
-                {teamMembers.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+            {lockedTeamMember ? (
+              <input type="hidden" name="teamMemberId" value={lockedTeamMember.id} />
+            ) : (
+              <FieldGroup>
+                <Label htmlFor="entry-team-member" required>
+                  Team member
+                </Label>
+                <Select
+                  id="entry-team-member"
+                  name="teamMemberId"
+                  required
+                  value={teamMemberId}
+                  onChange={(e) => handleTeamMemberChange(e.target.value)}
+                  icon={User}
+                >
+                  <option value="" disabled>
+                    Select team member
                   </option>
-                ))}
-              </Select>
-            </FieldGroup>
+                  {teamMembers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </Select>
+              </FieldGroup>
+            )}
             <FieldGroup>
               <Label htmlFor="entry-date" required>
                 Date
               </Label>
               <Input id="entry-date" name="date" type="date" required icon={Calendar} />
             </FieldGroup>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={cn("grid gap-3", lockedTeamMember ? "grid-cols-1" : "grid-cols-2")}>
               <FieldGroup>
                 <Label htmlFor="entry-hours" required>
                   Hours
@@ -247,23 +265,25 @@ function LogTimeDrawer({
                 />
                 <p className="text-xs text-navy-400">Use decimal (e.g. 1.5 for 1.5 hours)</p>
               </FieldGroup>
-              <FieldGroup>
-                <Label htmlFor="entry-rate" required>
-                  Rate ($/hr)
-                </Label>
-                <Input
-                  id="entry-rate"
-                  name="rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                  placeholder="0.00"
-                  icon={DollarSign}
-                />
-              </FieldGroup>
+              {!lockedTeamMember && (
+                <FieldGroup>
+                  <Label htmlFor="entry-rate" required>
+                    Rate ($/hr)
+                  </Label>
+                  <Input
+                    id="entry-rate"
+                    name="rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    placeholder="0.00"
+                    icon={DollarSign}
+                  />
+                </FieldGroup>
+              )}
             </div>
             <label className="flex items-center gap-2 text-sm text-navy-700">
               <input type="checkbox" name="billable" defaultChecked className="rounded border-navy-300" />

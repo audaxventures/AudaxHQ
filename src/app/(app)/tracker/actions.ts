@@ -5,7 +5,7 @@ import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
 import * as teamMembers from "@/lib/data/teamMembers";
 import * as workCategories from "@/lib/data/workCategories";
-import { requireOwner } from "@/lib/currentUser";
+import { getCurrentUser, requireOwner } from "@/lib/currentUser";
 import type { FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -22,17 +22,41 @@ function parseOwner(raw: string): { clientId: string | null; leadId: string | nu
 }
 
 export async function createTimeEntry(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
-  const teamMemberId = String(formData.get("teamMemberId") ?? "");
   const categoryId = String(formData.get("categoryId") ?? "") || null;
   const date = String(formData.get("date") ?? "");
   const hours = Number(formData.get("hours"));
-  const rate = Number(formData.get("rate"));
   const billable = formData.get("billable") === "on";
   const description = String(formData.get("description") ?? "").trim() || null;
 
-  if (!teamMemberId || !date || !(hours > 0) || !(rate >= 0)) {
-    throw new Error("Fill in team member, date, and hours.");
+  if (!date || !(hours > 0)) {
+    throw new Error("Fill in date and hours.");
+  }
+
+  let teamMemberId: string;
+  let rate: number;
+
+  if (user.role === "OWNER") {
+    teamMemberId = String(formData.get("teamMemberId") ?? "");
+    rate = Number(formData.get("rate"));
+    if (!teamMemberId || !(rate >= 0)) {
+      throw new Error("Fill in team member and rate.");
+    }
+  } else {
+    // Team members can only log their own hours, at their own rate — both are
+    // pinned server-side rather than trusted from the form, which also keeps
+    // the rate ($) figure out of their hands entirely.
+    teamMemberId = user.teamMember.id;
+    rate = Number(user.teamMember.defaultHourlyRate);
+    if (clientId) {
+      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId);
+      if (!accessibleIds.includes(clientId)) {
+        throw new Error("You don't have access to that client.");
+      }
+    }
   }
 
   await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
@@ -40,11 +64,14 @@ export async function createTimeEntry(formData: FormData) {
 }
 
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
-  await costEntries.deleteTimeEntry(id);
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  await costEntries.deleteTimeEntry(id, user.role === "TEAM_MEMBER" ? user.teamMember.id : null);
   revalidateOwner(clientId, leadId);
 }
 
 export async function createFixedCost(formData: FormData) {
+  await requireOwner();
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const date = String(formData.get("date") ?? "");
   const description = String(formData.get("description") ?? "").trim();
@@ -60,6 +87,7 @@ export async function createFixedCost(formData: FormData) {
 }
 
 export async function deleteFixedCost(id: string, clientId: string | null, leadId: string | null) {
+  await requireOwner();
   await costEntries.deleteFixedCost(id);
   revalidateOwner(clientId, leadId);
 }

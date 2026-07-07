@@ -9,8 +9,10 @@ import type { Client } from "@/lib/types";
 
 export function ClientListRow({
   client,
+  hideBilling = false,
 }: {
   client: Client & { unpaidInvoiceCount: number; invoiceCount: number };
+  hideBilling?: boolean;
 }) {
   return (
     <Link
@@ -36,7 +38,7 @@ export function ClientListRow({
         <div className="flex flex-wrap items-center gap-2">
           <ClientStatusBadge status={client.status} />
           <Badge tone="navy">{client.type === "PROJECT" ? "Project" : "Recurring"}</Badge>
-          {client.invoiceCount > 0 && (
+          {!hideBilling && client.invoiceCount > 0 && (
             <Badge tone={client.unpaidInvoiceCount > 0 ? "gold" : "sage"}>
               {client.unpaidInvoiceCount > 0
                 ? `${client.unpaidInvoiceCount} unpaid invoice${client.unpaidInvoiceCount === 1 ? "" : "s"}`
@@ -44,10 +46,12 @@ export function ClientListRow({
             </Badge>
           )}
         </div>
-        <div className="text-right shrink-0">
-          <p className="font-heading text-base text-navy-900">{formatCurrency(client.rate)}</p>
-          <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
-        </div>
+        {!hideBilling && (
+          <div className="text-right shrink-0">
+            <p className="font-heading text-base text-navy-900">{formatCurrency(client.rate)}</p>
+            <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
+          </div>
+        )}
       </div>
       <ChevronRight
         size={18}

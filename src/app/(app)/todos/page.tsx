@@ -8,6 +8,8 @@ import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { listTodoTypes } from "@/lib/data/todoTypes";
 import { getToday } from "@/lib/data/profile";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 import { formatDateInput } from "@/lib/format";
 import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
@@ -53,6 +55,8 @@ export default async function TodosPage({
   }>;
 }) {
   const sp = await searchParams;
+  const user = await getCurrentUser();
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
   const [allTasks, allTags, clients, leads, todoTypes, today] = await Promise.all([
     listTasks({
       search: sp.q,
@@ -63,7 +67,7 @@ export default async function TodosPage({
       priority: sp.priority as TaskPriority | undefined,
     }),
     listAllTags(),
-    listClients(),
+    listClients({ accessibleClientIds }),
     listLeads(),
     listTodoTypes({ includeInactive: true }),
     getToday(),

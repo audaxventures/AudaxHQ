@@ -6,6 +6,7 @@ import { listTasks } from "@/lib/data/todos";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
 import { formatDateInput } from "@/lib/format";
+import { getCurrentUser } from "@/lib/currentUser";
 import { FIXED_TASK_TYPE_LABELS } from "@/lib/types";
 
 const ENTITIES = ["clients", "leads", "invoices", "tasks", "time-entries", "fixed-costs"] as const;
@@ -133,6 +134,11 @@ async function buildCsv(entity: Entity): Promise<string> {
 
 // GET /api/export?entity=clients|leads|invoices|tasks|time-entries|fixed-costs
 export async function GET(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "OWNER") {
+    return new NextResponse("Not authorized", { status: 403 });
+  }
+
   const entityParam = new URL(request.url).searchParams.get("entity");
   if (!ENTITIES.includes(entityParam as Entity)) {
     return NextResponse.json({ error: "Unknown entity" }, { status: 400 });

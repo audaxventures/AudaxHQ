@@ -39,9 +39,11 @@ function TabPill({
 export function ClientsPanel({
   recurringClients,
   projectClients,
+  hideRate = false,
 }: {
   recurringClients: Client[];
   projectClients: Client[];
+  hideRate?: boolean;
 }) {
   const [tab, setTab] = useState<"RECURRING" | "PROJECT">("RECURRING");
   const clients = tab === "RECURRING" ? recurringClients : projectClients;
@@ -87,10 +89,12 @@ export function ClientsPanel({
                 >
                   <AvatarChip name={c.companyName} color={c.color} />
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-navy-900">{c.companyName}</p>
-                  <span className="shrink-0 text-xs font-medium text-navy-500">
-                    {formatCurrency(c.rate)}
-                    {tab === "RECURRING" ? "/mo" : ""}
-                  </span>
+                  {!hideRate && (
+                    <span className="shrink-0 text-xs font-medium text-navy-500">
+                      {formatCurrency(c.rate)}
+                      {tab === "RECURRING" ? "/mo" : ""}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))

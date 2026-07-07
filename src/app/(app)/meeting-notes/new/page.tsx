@@ -3,9 +3,13 @@ import { Card } from "@/components/ui/Card";
 import { NewMeetingNoteForm } from "@/components/meetingnotes/NewMeetingNoteForm";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 
 export default async function NewMeetingNotePage() {
-  const [clients, leads] = await Promise.all([listClients(), listLeads()]);
+  const user = await getCurrentUser();
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const [clients, leads] = await Promise.all([listClients({ accessibleClientIds }), listLeads()]);
 
   return (
     <div>

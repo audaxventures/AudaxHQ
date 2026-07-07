@@ -14,8 +14,8 @@ export interface AttentionFlag {
 export interface DashboardData {
   projectClients: Client[];
   recurringClients: Client[];
-  /** Recurring monthly fees plus unpaid project-invoice work across active clients. */
-  projectedRevenue: number;
+  /** Recurring monthly fees plus unpaid project-invoice work across active clients. Null for team members — client billing is hidden from them entirely. */
+  projectedRevenue: number | null;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
   /** Up to 5 open to-dos, soonest due date first (regardless of overdue/today/future). */
@@ -50,7 +50,8 @@ function mapClient(row: Record<string, unknown>): Client {
   };
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+/** `accessibleClientIds`: null for the owner (no restriction); a team member's exact client-access list otherwise. `isOwner` additionally gates client-billing figures (revenue, stale-invoice flags), which stay hidden from team members regardless of which clients they can see. */
+export async function getDashboardData(isOwner: boolean, accessibleClientIds: string[] | null): Promise<DashboardData> {
   const today = await getToday();
 
   // Lazily create this month's recurring invoice rows for active recurring
@@ -68,14 +69,21 @@ export async function getDashboardData(): Promise<DashboardData> {
     openTodoCountRows,
     dueTodayCountRows,
   ] = await Promise.all([
-    sql`select * from clients where status = 'ACTIVE' order by company_name asc`,
     sql`
-      select coalesce(sum(i.amount), 0) as total
-      from invoices i
-      join clients c on c.id = i.client_id
-      where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
+      select * from clients
+      where status = 'ACTIVE'
+        and (${accessibleClientIds ?? null}::uuid[] is null or id = any(${accessibleClientIds ?? null}::uuid[]))
+      order by company_name asc
     `,
-    listHotFollowUps(today),
+    isOwner
+      ? sql`
+          select coalesce(sum(i.amount), 0) as total
+          from invoices i
+          join clients c on c.id = i.client_id
+          where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
+        `
+      : Promise.resolve([{ total: 0 }]),
+    listHotFollowUps(today, accessibleClientIds),
     sql`
       select l.id, l.company_name
       from leads l
@@ -83,16 +91,18 @@ export async function getDashboardData(): Promise<DashboardData> {
         and not exists (select 1 from follow_ups f where f.lead_id = l.id and f.status = 'UPCOMING')
       order by l.created_at desc
     `,
-    sql`
-      select c.id as client_id, c.company_name as client_name
-      from invoices i
-      join clients c on c.id = i.client_id
-      where c.status = 'ACTIVE'
-        and i.status = 'NOT_INVOICED'
-        and i.period_year = extract(year from ${today}::date)
-        and i.period_month = extract(month from ${today}::date)
-        and extract(day from ${today}::date) > 15
-    `,
+    isOwner
+      ? sql`
+          select c.id as client_id, c.company_name as client_name
+          from invoices i
+          join clients c on c.id = i.client_id
+          where c.status = 'ACTIVE'
+            and i.status = 'NOT_INVOICED'
+            and i.period_year = extract(year from ${today}::date)
+            and i.period_month = extract(month from ${today}::date)
+            and extract(day from ${today}::date) > 15
+        `
+      : Promise.resolve([]),
     sql`
       select t.*, coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags
       from todos t
@@ -112,9 +122,12 @@ export async function getDashboardData(): Promise<DashboardData> {
   const projectClients = activeClients.filter((c) => c.type === "PROJECT");
   const recurringClients = activeClients.filter((c) => c.type === "RECURRING");
 
-  const recurringMonthlyTotal = recurringClients.reduce((sum, c) => sum + Number(c.rate), 0);
-  const projectRemaining = Number((projectRemainingRows[0] as Record<string, unknown>).total);
-  const projectedRevenue = recurringMonthlyTotal + projectRemaining;
+  let projectedRevenue: number | null = null;
+  if (isOwner) {
+    const recurringMonthlyTotal = recurringClients.reduce((sum, c) => sum + Number(c.rate), 0);
+    const projectRemaining = Number((projectRemainingRows[0] as Record<string, unknown>).total);
+    projectedRevenue = recurringMonthlyTotal + projectRemaining;
+  }
 
   const attentionFlags: AttentionFlag[] = [];
   for (const row of staleInvoiceRows) {
@@ -155,9 +168,14 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   });
 
+  // ClientsPanel is a Client Component — its props (including `rate`) are
+  // serialized to the browser regardless of whether the UI renders the
+  // figure, so strip it here rather than trusting the component alone.
+  const sanitizeClientRate = (c: Client): Client => (isOwner ? c : { ...c, rate: "0" });
+
   return {
-    projectClients,
-    recurringClients,
+    projectClients: projectClients.map(sanitizeClientRate),
+    recurringClients: recurringClients.map(sanitizeClientRate),
     projectedRevenue,
     hotFollowUps,
     attentionFlags,

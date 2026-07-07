@@ -81,10 +81,13 @@ export function CostEntryTable({
   entries,
   showOwner = false,
   deletable = false,
+  hideFinancials = false,
 }: {
   entries: CostEntry[];
   showOwner?: boolean;
   deletable?: boolean;
+  /** Team members don't see client billing figures — omit the Rate/Cost/Revenue/Profit columns. */
+  hideFinancials?: boolean;
 }) {
   const [, startTransition] = useTransition();
 
@@ -124,10 +127,14 @@ export function CostEntryTable({
               <th className="py-2 pr-4">Team member</th>
               <th className="py-2 pr-4">Hours</th>
               <th className="py-2 pr-4">Billable</th>
-              <th className="py-2 pr-4">Rate</th>
-              <th className="py-2 pr-4 text-right">Cost</th>
-              <th className="py-2 pr-4 text-right">Revenue</th>
-              <th className="py-2 pr-4 text-right">Profit</th>
+              {!hideFinancials && (
+                <>
+                  <th className="py-2 pr-4">Rate</th>
+                  <th className="py-2 pr-4 text-right">Cost</th>
+                  <th className="py-2 pr-4 text-right">Revenue</th>
+                  <th className="py-2 pr-4 text-right">Profit</th>
+                </>
+              )}
               {deletable && <th className="py-2 pl-2" />}
             </tr>
           </thead>
@@ -135,7 +142,7 @@ export function CostEntryTable({
             <tbody key={group.date} className="divide-y divide-navy-100">
               <tr>
                 <td
-                  colSpan={(showOwner ? 1 : 0) + 8 + (deletable ? 1 : 0)}
+                  colSpan={(showOwner ? 1 : 0) + (hideFinancials ? 4 : 8) + (deletable ? 1 : 0)}
                   className="pt-4 pb-1.5 text-xs font-semibold uppercase tracking-wide text-navy-400"
                 >
                   {formatDate(group.date)}
@@ -164,19 +171,23 @@ export function CostEntryTable({
                         "—"
                       )}
                     </td>
-                    <td className="py-2.5 pr-4 tabular-nums text-navy-600">
-                      {e.rate !== null ? formatCurrency(e.rate) : "—"}
-                    </td>
-                    <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(cost)}</td>
-                    <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(revenue)}</td>
-                    <td
-                      className={cn(
-                        "py-2.5 pr-4 text-right font-medium tabular-nums",
-                        profit < 0 ? "text-brick-600" : "text-navy-900"
-                      )}
-                    >
-                      {formatCurrency(profit)}
-                    </td>
+                    {!hideFinancials && (
+                      <>
+                        <td className="py-2.5 pr-4 tabular-nums text-navy-600">
+                          {e.rate !== null ? formatCurrency(e.rate) : "—"}
+                        </td>
+                        <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(cost)}</td>
+                        <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(revenue)}</td>
+                        <td
+                          className={cn(
+                            "py-2.5 pr-4 text-right font-medium tabular-nums",
+                            profit < 0 ? "text-brick-600" : "text-navy-900"
+                          )}
+                        >
+                          {formatCurrency(profit)}
+                        </td>
+                      </>
+                    )}
                     {deletable && (
                       <td className="py-2.5 pl-2 text-right">
                         <RowActions onDelete={() => handleDelete(e)} />

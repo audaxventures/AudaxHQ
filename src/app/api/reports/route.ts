@@ -4,6 +4,7 @@ import { getClient } from "@/lib/data/clients";
 import { getLead } from "@/lib/data/leads";
 import { formatDateInput, isDateInRange } from "@/lib/format";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
+import { getCurrentUser } from "@/lib/currentUser";
 import type { CostEntry } from "@/lib/types";
 
 function entryRow(e: CostEntry): string {
@@ -29,6 +30,11 @@ function entryRow(e: CostEntry): string {
 // "Download report" link omits it, since a general log filtered across
 // several owners has no single profitability baseline.
 export async function GET(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "OWNER") {
+    return new NextResponse("Not authorized", { status: 403 });
+  }
+
   const params = new URL(request.url).searchParams;
   const clientId = params.get("clientId") || undefined;
   const leadId = params.get("leadId") || undefined;
