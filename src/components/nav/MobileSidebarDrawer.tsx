@@ -34,23 +34,27 @@ export function MobileSidebarDrawer({ role, onClose }: { role: SessionRole; onCl
       />
       <div
         className={cn(
-          "absolute inset-y-0 left-0 flex w-full max-w-[280px] flex-col overflow-y-auto bg-gradient-to-b from-navy-900 to-navy-950 px-4 py-6 shadow-2xl transition-transform duration-300 ease-out",
+          "absolute inset-y-0 left-0 flex w-full max-w-[280px] flex-col overflow-y-auto bg-navy-900 bg-cover bg-center px-4 py-6 shadow-2xl transition-transform duration-300 ease-out",
           show ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ backgroundImage: "url('/sidebar.png')" }}
       >
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            background: "radial-gradient(120% 60% at 50% 0%, rgba(214,122,60,0.16), transparent 60%)",
+            background:
+              "linear-gradient(180deg, rgba(10,20,36,0.45) 0%, rgba(10,20,36,0.55) 45%, rgba(10,20,36,0.82) 100%)",
           }}
         />
-        <div className="relative mb-6 flex shrink-0 items-center justify-between border-b border-navy-800/60 pb-5">
-          {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-          <img src="/logo.white.png" alt="Audax Ventures" className="h-9 w-auto" />
+        <div className="relative mb-6 flex shrink-0 items-start justify-between border-b border-navy-800/60 pb-5">
+          <div>
+            <p className="font-heading text-2xl font-semibold text-cream-100 leading-tight">Audax HQ</p>
+            <p className="mt-1.5 text-xs italic text-burnt-400">Your business command centre</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-navy-400 transition-colors hover:text-cream-100 cursor-pointer"
+            className="shrink-0 text-navy-400 transition-colors hover:text-cream-100 cursor-pointer"
             aria-label="Close menu"
           >
             <X size={20} />
