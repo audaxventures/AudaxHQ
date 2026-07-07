@@ -30,6 +30,8 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
 export interface MeetingNoteFilters {
   clientId?: string;
   leadId?: string;
+  /** Team-member scoping: restrict client-owned notes to this list — lead-owned notes are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
+  accessibleClientIds?: string[] | null;
 }
 
 export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
@@ -43,6 +45,11 @@ export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promis
     left join leads l on l.id = m.lead_id
     where (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or m.lead_id = ${filters.leadId ?? null})
+      and (
+        ${filters.accessibleClientIds ?? null}::uuid[] is null
+        or m.client_id is null
+        or m.client_id = any(${filters.accessibleClientIds ?? null}::uuid[])
+      )
     order by m.meeting_date desc, m.created_at desc
   `;
   return (rows as unknown as MeetingNoteRow[]).map(mapMeetingNote);

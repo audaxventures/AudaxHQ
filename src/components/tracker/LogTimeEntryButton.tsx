@@ -7,9 +7,10 @@ import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Fiel
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { cn } from "@/lib/cn";
-import type { TeamMember, WorkCategory } from "@/lib/types";
+import { formatDateInput } from "@/lib/format";
+import type { CostEntry, TeamMember, WorkCategory } from "@/lib/types";
 import { FIXED_COST_CATEGORY_LABELS, FIXED_COST_CATEGORY_ORDER } from "@/lib/types";
-import { createFixedCost, createTimeEntry } from "@/app/(app)/tracker/actions";
+import { createFixedCost, createTimeEntry, updateFixedCost, updateTimeEntry } from "@/app/(app)/tracker/actions";
 
 interface OwnerOption {
   id: string;
@@ -40,14 +41,19 @@ export function LogTimeEntryButton({
   const searchParams = useSearchParams();
   // The dashboard/mobile "Log Time" quick action links here with ?logTime=1
   // to jump straight to this drawer instead of landing on the page and
-  // requiring a second click.
+  // requiring a second click. The Cost & Profitability section's quick-log
+  // link also adds &clientId=/&leadId= to pre-select the owner.
   const [open, setOpen] = useState(() => searchParams.get("logTime") === "1");
+  const initialClientId = searchParams.get("clientId") ?? undefined;
+  const initialLeadId = searchParams.get("leadId") ?? undefined;
 
-  // Strip the ?logTime=1 param once handled so a later refresh doesn't reopen the drawer.
+  // Strip the ?logTime=1 (and owner) params once handled so a later refresh doesn't reopen the drawer.
   useEffect(() => {
     if (searchParams.get("logTime") === "1") {
       const params = new URLSearchParams(searchParams.toString());
       params.delete("logTime");
+      params.delete("clientId");
+      params.delete("leadId");
       const qs = params.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }
@@ -65,6 +71,7 @@ export function LogTimeEntryButton({
           teamMembers={teamMembers}
           workCategories={workCategories}
           lockedTeamMember={lockedTeamMember}
+          initialOwner={{ clientId: initialClientId, leadId: initialLeadId }}
           onClose={() => setOpen(false)}
         />
       )}
@@ -72,12 +79,14 @@ export function LogTimeEntryButton({
   );
 }
 
-function LogTimeDrawer({
+export function LogTimeDrawer({
   clients,
   leads,
   teamMembers,
   workCategories,
   lockedTeamMember,
+  entry,
+  initialOwner,
   onClose,
 }: {
   clients: OwnerOption[];
@@ -85,15 +94,29 @@ function LogTimeDrawer({
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
   lockedTeamMember?: LockedTeamMember;
+  /** When set, the drawer edits this existing entry instead of creating a new one. */
+  entry?: CostEntry;
+  /** Pre-selects the owner dropdown for a new entry (e.g. from a client/lead detail page's quick-log link). Ignored when editing. */
+  initialOwner?: { clientId?: string; leadId?: string };
   onClose: () => void;
 }) {
-  const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">("TIME");
-  const [teamMemberId, setTeamMemberId] = useState(lockedTeamMember?.id ?? "");
-  const [categoryId, setCategoryId] = useState("");
-  const [rate, setRate] = useState("");
+  const isEdit = Boolean(entry);
+  const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">(entry?.entryType ?? "TIME");
+  const [teamMemberId, setTeamMemberId] = useState(entry?.teamMemberId ?? lockedTeamMember?.id ?? "");
+  const [categoryId, setCategoryId] = useState(entry?.workCategoryId ?? "");
+  const [rate, setRate] = useState(entry?.rate != null ? String(entry.rate) : "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const defaultOwnerValue = entry?.clientId
+    ? `client:${entry.clientId}`
+    : entry?.leadId
+      ? `lead:${entry.leadId}`
+      : initialOwner?.clientId
+        ? `client:${initialOwner.clientId}`
+        : initialOwner?.leadId
+          ? `lead:${initialOwner.leadId}`
+          : "";
 
   function handleTeamMemberChange(id: string) {
     setTeamMemberId(id);
@@ -116,7 +139,11 @@ function LogTimeDrawer({
   }
 
   return (
-    <Drawer title="Log time entry" description="Add a new time or cost entry." onClose={onClose}>
+    <Drawer
+      title={isEdit ? "Edit entry" : "Log time entry"}
+      description={isEdit ? "Update this time or cost entry." : "Add a new time or cost entry."}
+      onClose={onClose}
+    >
       <form
         ref={formRef}
         action={(formData) => {
@@ -124,13 +151,22 @@ function LogTimeDrawer({
           const keepOpen = formData.get("intent") === "continue";
           startTransition(async () => {
             try {
-              if (entryType === "TIME") {
-                await createTimeEntry(formData);
+              if (entry) {
+                if (entry.entryType === "TIME") {
+                  await updateTimeEntry(entry.id, entry.clientId, entry.leadId, formData);
+                } else {
+                  await updateFixedCost(entry.id, entry.clientId, entry.leadId, formData);
+                }
+                onClose();
               } else {
-                await createFixedCost(formData);
+                if (entryType === "TIME") {
+                  await createTimeEntry(formData);
+                } else {
+                  await createFixedCost(formData);
+                }
+                resetForm();
+                if (!keepOpen) onClose();
               }
-              resetForm();
-              if (!keepOpen) onClose();
             } catch (e) {
               setError(e instanceof Error ? e.message : "Could not save this entry.");
             }
@@ -138,7 +174,7 @@ function LogTimeDrawer({
         }}
         className="space-y-4"
       >
-        {!lockedTeamMember && (
+        {!lockedTeamMember && !isEdit && (
           <div className="flex rounded-lg border border-navy-200 p-1">
             <button
               type="button"
@@ -167,7 +203,7 @@ function LogTimeDrawer({
           <Label htmlFor="entry-owner" required>
             Client / Lead
           </Label>
-          <Select id="entry-owner" name="owner" required defaultValue="" icon={Building2}>
+          <Select id="entry-owner" name="owner" required defaultValue={defaultOwnerValue} icon={Building2}>
             <option value="" disabled>
               Select a client or lead
             </option>
@@ -246,7 +282,14 @@ function LogTimeDrawer({
               <Label htmlFor="entry-date" required>
                 Date
               </Label>
-              <Input id="entry-date" name="date" type="date" required icon={Calendar} />
+              <Input
+                id="entry-date"
+                name="date"
+                type="date"
+                required
+                defaultValue={entry ? formatDateInput(entry.date) : undefined}
+                icon={Calendar}
+              />
             </FieldGroup>
             <div className={cn("grid gap-3", lockedTeamMember ? "grid-cols-1" : "grid-cols-2")}>
               <FieldGroup>
@@ -260,6 +303,7 @@ function LogTimeDrawer({
                   step="0.25"
                   min="0.25"
                   required
+                  defaultValue={entry?.hours ?? undefined}
                   placeholder="0.00"
                   icon={Clock}
                 />
@@ -286,7 +330,12 @@ function LogTimeDrawer({
               )}
             </div>
             <label className="flex items-center gap-2 text-sm text-navy-700">
-              <input type="checkbox" name="billable" defaultChecked className="rounded border-navy-300" />
+              <input
+                type="checkbox"
+                name="billable"
+                defaultChecked={entry ? entry.billable ?? false : true}
+                className="rounded border-navy-300"
+              />
               Billable
             </label>
             <FieldGroup>
@@ -295,6 +344,7 @@ function LogTimeDrawer({
                 id="entry-description"
                 name="description"
                 rows={3}
+                defaultValue={entry?.description ?? ""}
                 placeholder="Add context, decisions, or any relevant details…"
               />
             </FieldGroup>
@@ -309,6 +359,7 @@ function LogTimeDrawer({
                 id="entry-fixed-description"
                 name="description"
                 required
+                defaultValue={entry?.description ?? ""}
                 placeholder="e.g. Stock photo license"
                 icon={FileText}
               />
@@ -317,7 +368,14 @@ function LogTimeDrawer({
               <Label htmlFor="entry-date-fixed" required>
                 Date
               </Label>
-              <Input id="entry-date-fixed" name="date" type="date" required icon={Calendar} />
+              <Input
+                id="entry-date-fixed"
+                name="date"
+                type="date"
+                required
+                defaultValue={entry ? formatDateInput(entry.date) : undefined}
+                icon={Calendar}
+              />
             </FieldGroup>
             <FieldGroup>
               <Label htmlFor="entry-amount" required>
@@ -330,13 +388,14 @@ function LogTimeDrawer({
                 step="0.01"
                 min="0"
                 required
+                defaultValue={entry?.amount ?? undefined}
                 placeholder="0.00"
                 icon={DollarSign}
               />
             </FieldGroup>
             <FieldGroup>
               <Label htmlFor="entry-category">Category (optional)</Label>
-              <Select id="entry-category" name="category" defaultValue="" icon={List}>
+              <Select id="entry-category" name="category" defaultValue={entry?.category ?? ""} icon={List}>
                 <option value="">—</option>
                 {FIXED_COST_CATEGORY_ORDER.map((c) => (
                   <option key={c} value={c}>
@@ -352,18 +411,20 @@ function LogTimeDrawer({
 
         <div className="space-y-2 pt-2">
           <Button type="submit" name="intent" value="close" disabled={pending} className="w-full justify-center">
-            {pending ? "Saving…" : "Save entry"}
+            {pending ? "Saving…" : isEdit ? "Save changes" : "Save entry"}
           </Button>
-          <Button
-            type="submit"
-            name="intent"
-            value="continue"
-            variant="secondary"
-            disabled={pending}
-            className="w-full justify-center"
-          >
-            {pending ? "Saving…" : "Save & add another"}
-          </Button>
+          {!isEdit && (
+            <Button
+              type="submit"
+              name="intent"
+              value="continue"
+              variant="secondary"
+              disabled={pending}
+              className="w-full justify-center"
+            >
+              {pending ? "Saving…" : "Save & add another"}
+            </Button>
+          )}
         </div>
       </form>
     </Drawer>

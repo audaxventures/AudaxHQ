@@ -1,6 +1,5 @@
-import { CheckSquare, Eye, EyeOff } from "lucide-react";
+import { CheckSquare } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { LinkButton } from "@/components/ui/Button";
 import { TaskFilterBar } from "@/components/todos/TaskFilterBar";
 import { TodoWorkspace } from "@/components/todos/TodoWorkspace";
 import { listAllTags, listTasks } from "@/lib/data/todos";
@@ -134,12 +133,6 @@ export default async function TodosPage({
         eyebrow="To-Dos"
         title="To-Dos"
         description="Everything on your plate  — sorted by what's due soonest"
-        action={
-          <LinkButton variant="secondary" href={buildCompletedHref(!showAllCompleted)}>
-            {showAllCompleted ? <EyeOff size={16} /> : <Eye size={16} />}
-            {showAllCompleted ? "Show fewer" : "View completed"}
-          </LinkButton>
-        }
       />
 
       <TaskFilterBar filters={filterParams} allTags={allTags} todoTypes={todoTypes} />
