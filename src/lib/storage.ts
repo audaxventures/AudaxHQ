@@ -10,13 +10,16 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 }
 
 export const DOCUMENTS_BUCKET = "client-documents";
-/** Public bucket (unlike DOCUMENTS_BUCKET) — the business logo is rendered directly via its public URL on every page load, no signed URL needed. */
+/** Same private/signed-URL model as DOCUMENTS_BUCKET, just a separate bucket so client and lead files never mix. */
+export const LEAD_DOCUMENTS_BUCKET = "lead-documents";
+/** Public bucket (unlike the two above) — the business logo is rendered directly via its public URL on every page load, no signed URL needed. */
 export const BUSINESS_ASSETS_BUCKET = "business-assets";
 
 // Server-only: the service_role key bypasses row-level security, so this
-// client must never be imported into client components. The bucket itself
-// is private — every download goes through a signed URL minted on request
-// (see getDocumentDownloadUrl in clients/actions.ts), never a public link.
+// client must never be imported into client components. Both document
+// buckets are private — every download goes through a signed URL minted
+// on request (see getDocumentDownloadUrl in lib/actions/documents.ts),
+// never a public link.
 export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: { persistSession: false },
 });

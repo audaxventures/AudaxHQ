@@ -14,7 +14,7 @@ import type {
 } from "@/lib/types";
 import { listFollowUpsForClient } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
-import { listDocuments } from "@/lib/data/documents";
+import { listDocumentsForClient } from "@/lib/data/documents";
 
 function mapClient(row: Record<string, unknown>): Client {
   return {
@@ -141,7 +141,7 @@ export async function getClient(id: string): Promise<ClientWithRelations | null>
       listTasks({ clientId: id }),
       listFollowUpsForClient(id),
       listMeetingNotes({ clientId: id }),
-      listDocuments(id),
+      listDocumentsForClient(id),
     ]);
 
   if (clientRows.length === 0) return null;

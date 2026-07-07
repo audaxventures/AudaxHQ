@@ -87,9 +87,10 @@ export interface MeetingNote {
   ownerColor?: EntityColor | null;
 }
 
-export interface ClientDocument {
+export interface Document {
   id: string;
-  clientId: string;
+  clientId: string | null;
+  leadId: string | null;
   fileName: string;
   filePath: string;
   fileType: string;
@@ -153,7 +154,7 @@ export interface ClientWithRelations extends Client {
   invoices: Invoice[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
-  documents: ClientDocument[];
+  documents: Document[];
 }
 
 export interface Lead {
@@ -182,6 +183,7 @@ export interface LeadWithRelations extends Lead {
   tasks: Task[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
+  documents: Document[];
 }
 
 export interface TeamMember {

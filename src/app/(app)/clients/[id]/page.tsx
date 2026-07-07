@@ -29,7 +29,7 @@ import { InvoicesList } from "@/components/clients/InvoicesList";
 import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { EmailSection } from "@/components/EmailSection";
-import { DocumentsSection } from "@/components/clients/DocumentsSection";
+import { DocumentsSection } from "@/components/DocumentsSection";
 import { CostSummarySection } from "@/components/CostSummarySection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
@@ -166,7 +166,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={FileText} tone="slate" title="Documents" />
-            <DocumentsSection clientId={id} documents={client.documents} />
+            <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
           </Card>
 
           <Card className="p-6">

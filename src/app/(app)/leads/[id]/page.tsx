@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ArrowRight, IdCard, CalendarClock, NotebookPen, StickyNote, BarChart3, CheckSquare } from "lucide-react";
+import { ArrowRight, IdCard, CalendarClock, NotebookPen, FileText, StickyNote, BarChart3, CheckSquare } from "lucide-react";
 import { getLead, listLeads } from "@/lib/data/leads";
 import { listClients } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
@@ -18,6 +18,7 @@ import { CostSummarySection } from "@/components/CostSummarySection";
 import { NotesLog } from "@/components/NotesLog";
 import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
+import { DocumentsSection } from "@/components/DocumentsSection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { SuccessBanner } from "@/components/ui/Toast";
@@ -159,6 +160,11 @@ export default async function LeadDetailPage({
           <Card className="p-6">
             <PanelHeading icon={NotebookPen} tone="slate" title="Meeting notes" />
             <MeetingNotesSection owner={owner} notes={lead.meetingNotes} />
+          </Card>
+
+          <Card className="p-6">
+            <PanelHeading icon={FileText} tone="slate" title="Documents" />
+            <DocumentsSection owner={{ leadId: id }} documents={lead.documents} />
           </Card>
 
           <Card className="p-6">
