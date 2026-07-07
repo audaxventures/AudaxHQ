@@ -62,7 +62,7 @@ function parseClientForm(formData: FormData, fallbackRate = 0) {
 export async function createClient(formData: FormData) {
   const user = await requireCurrentUser();
   const input = parseClientForm(formData);
-  const client = await clients.createClient(input, await getBusinessToday(user.businessId));
+  const client = await clients.createClient(user.businessId, input, await getBusinessToday(user.businessId));
 
   revalidatePath("/clients");
   revalidatePath("/");
@@ -71,58 +71,58 @@ export async function createClient(formData: FormData) {
 
 export async function updateClient(id: string, formData: FormData) {
   const user = await requireClientAccess(id);
-  const fallbackRate = formData.get("rate") === null ? await clients.getClientRate(id) : 0;
+  const fallbackRate = formData.get("rate") === null ? await clients.getClientRate(id, user.businessId) : 0;
   const input = parseClientForm(formData, fallbackRate);
-  await clients.updateClient(id, input, await getBusinessToday(user.businessId));
+  await clients.updateClient(id, user.businessId, input, await getBusinessToday(user.businessId));
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");
 }
 
 export async function archiveClient(id: string) {
-  await requireClientAccess(id);
-  await clients.setClientStatus(id, "CHURNED");
+  const user = await requireClientAccess(id);
+  await clients.setClientStatus(id, user.businessId, "CHURNED");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");
 }
 
 export async function activateClient(id: string) {
-  await requireClientAccess(id);
-  await clients.setClientStatus(id, "ACTIVE");
+  const user = await requireClientAccess(id);
+  await clients.setClientStatus(id, user.businessId, "ACTIVE");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");
 }
 
 export async function setClientColor(id: string, color: EntityColor | null) {
-  await requireClientAccess(id);
-  await clients.setClientColor(id, color);
+  const user = await requireClientAccess(id);
+  await clients.setClientColor(id, user.businessId, color);
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");
 }
 
 export async function addClientNote(clientId: string, formData: FormData) {
-  await requireClientAccess(clientId);
+  const user = await requireClientAccess(clientId);
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
-  await clients.addClientNote(clientId, body);
+  await clients.addClientNote(clientId, user.businessId, body);
   revalidatePath(`/clients/${clientId}`);
 }
 
 export async function addClientLink(clientId: string, formData: FormData) {
-  await requireClientAccess(clientId);
+  const user = await requireClientAccess(clientId);
   const label = String(formData.get("label") ?? "").trim();
   const url = String(formData.get("url") ?? "").trim();
   if (!label || !url) return;
-  await clients.addClientLink(clientId, label, url);
+  await clients.addClientLink(clientId, user.businessId, label, url);
   revalidatePath(`/clients/${clientId}`);
 }
 
 export async function deleteClientLink(clientId: string, linkId: string) {
-  await requireClientAccess(clientId);
-  await clients.deleteClientLink(linkId);
+  const user = await requireClientAccess(clientId);
+  await clients.deleteClientLink(linkId, user.businessId);
   revalidatePath(`/clients/${clientId}`);
 }
 
@@ -151,25 +151,33 @@ function parseInvoiceForm(formData: FormData) {
   };
 }
 
+async function requireOwnerClientAccess(clientId: string) {
+  const user = await requireOwner();
+  if (!(await clients.clientBelongsToBusiness(clientId, user.businessId))) {
+    throw new Error("You don't have access to that client.");
+  }
+  return user;
+}
+
 export async function addInvoice(clientId: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwnerClientAccess(clientId);
   const input = parseInvoiceForm(formData);
-  await clients.addInvoice(clientId, input);
+  await clients.addInvoice(clientId, user.businessId, input);
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/");
 }
 
 export async function updateInvoice(clientId: string, invoiceId: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwnerClientAccess(clientId);
   const input = parseInvoiceForm(formData);
-  await clients.updateInvoice(invoiceId, input);
+  await clients.updateInvoice(invoiceId, user.businessId, input);
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/");
 }
 
 export async function deleteInvoice(clientId: string, invoiceId: string) {
-  await requireOwner();
-  await clients.deleteInvoice(invoiceId);
+  const user = await requireOwnerClientAccess(clientId);
+  await clients.deleteInvoice(invoiceId, user.businessId);
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/");
 }

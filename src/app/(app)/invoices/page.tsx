@@ -32,6 +32,7 @@ export default async function InvoiceAgingPage({
   const thresholds = { underDays: user.business.invoiceAgingUnderDays, overDays: user.business.invoiceAgingOverDays };
   const bracketLabels = invoiceAgeBracketLabels(thresholds.underDays, thresholds.overDays);
   const invoices = await listOutstandingInvoices(
+    user.businessId,
     {
       clientType: clientType as ClientType | undefined,
       bracket: bracket as InvoiceAgeBracket | undefined,

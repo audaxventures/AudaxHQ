@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MeetingNotesList } from "@/components/meetingnotes/MeetingNotesList";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import { cn } from "@/lib/cn";
 
 export default async function MeetingNotesPage({
@@ -15,9 +15,9 @@ export default async function MeetingNotesPage({
   searchParams: Promise<{ owner?: string }>;
 }) {
   const { owner } = await searchParams;
-  const user = await getCurrentUser();
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
-  const allNotes = await listMeetingNotes({ accessibleClientIds });
+  const user = await requireCurrentUser();
+  const accessibleClientIds = await accessibleClientIdsFor(user);
+  const allNotes = await listMeetingNotes(user.businessId, { accessibleClientIds });
   const notes = allNotes.filter((n) => {
     if (owner === "client") return Boolean(n.clientId);
     if (owner === "lead") return Boolean(n.leadId);

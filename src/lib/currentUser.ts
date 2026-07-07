@@ -3,6 +3,8 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 import { getTeamMember } from "@/lib/data/teamMembers";
 import { getClientAccessIds } from "@/lib/data/clientAccess";
 import { getBusiness } from "@/lib/data/businesses";
+import { clientBelongsToBusiness } from "@/lib/data/clients";
+import { leadBelongsToBusiness } from "@/lib/data/leads";
 import type { CurrentUser } from "@/lib/types";
 
 /** Resolves the signed session cookie into a full current-user record. Null if unauthenticated or the team member's login was revoked since the cookie was issued. */
@@ -14,7 +16,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const business = await getBusiness(claims.businessId);
   if (claims.role === "OWNER") return { role: "OWNER", businessId: claims.businessId, business };
 
-  const teamMember = await getTeamMember(claims.teamMemberId!);
+  const teamMember = await getTeamMember(claims.teamMemberId!, claims.businessId);
   if (!teamMember || !teamMember.active || !teamMember.hasLogin) return null;
   return { role: "TEAM_MEMBER", businessId: claims.businessId, business, teamMember };
 }
@@ -35,12 +37,34 @@ export async function requireOwner(): Promise<CurrentUser & { role: "OWNER" }> {
   return user;
 }
 
-/** Throws if the current session is a team member without access to this client — defense in depth against a direct server-action call bypassing the UI's already-filtered client list. Owners always pass. Returns the resolved user so callers can branch on role without a second lookup. */
+/**
+ * Throws unless the current session belongs to the client's own business
+ * AND (for a team member) has that client in their access list — defense
+ * in depth against a direct server-action call bypassing the UI's
+ * already-filtered client list, and the tenant-isolation boundary that
+ * stops one business's session from touching another business's client
+ * by id. Owners still pass the access-list check automatically, but not
+ * the business-ownership one. Returns the resolved user so callers can
+ * branch on role without a second lookup.
+ */
 export async function requireClientAccess(clientId: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
+  if (!(await clientBelongsToBusiness(clientId, user.businessId))) {
+    throw new Error("You don't have access to that client.");
+  }
   if (user.role === "OWNER") return user;
-  const ids = await getClientAccessIds(user.teamMember.id);
+  const ids = await getClientAccessIds(user.teamMember.id, user.businessId);
   if (!ids.includes(clientId)) throw new Error("You don't have access to that client.");
+  return user;
+}
+
+/** Throws unless the current session's business owns this lead — leads have no per-team-member access-list concept, so this is purely the tenant-isolation boundary. Returns the resolved user so callers can read businessId without a second lookup. */
+export async function requireLeadAccess(leadId: string): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  if (!(await leadBelongsToBusiness(leadId, user.businessId))) {
+    throw new Error("You don't have access to that lead.");
+  }
   return user;
 }

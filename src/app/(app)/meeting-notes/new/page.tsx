@@ -4,12 +4,15 @@ import { NewMeetingNoteForm } from "@/components/meetingnotes/NewMeetingNoteForm
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 
 export default async function NewMeetingNotePage() {
-  const user = await getCurrentUser();
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
-  const [clients, leads] = await Promise.all([listClients({ accessibleClientIds }), listLeads()]);
+  const user = await requireCurrentUser();
+  const accessibleClientIds = await accessibleClientIdsFor(user);
+  const [clients, leads] = await Promise.all([
+    listClients(user.businessId, { accessibleClientIds }),
+    listLeads(user.businessId),
+  ]);
 
   return (
     <div>

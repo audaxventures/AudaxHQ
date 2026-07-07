@@ -21,22 +21,22 @@ function mapDocument(row: Record<string, unknown>): Document {
   };
 }
 
-export async function listDocumentsForClient(clientId: string): Promise<Document[]> {
+export async function listDocumentsForClient(clientId: string, businessId: string): Promise<Document[]> {
   const rows = await sql`
-    select * from documents where client_id = ${clientId} order by created_at desc
+    select * from documents where client_id = ${clientId} and business_id = ${businessId} order by created_at desc
   `;
   return rows.map((r) => mapDocument(r as Record<string, unknown>));
 }
 
-export async function listDocumentsForLead(leadId: string): Promise<Document[]> {
+export async function listDocumentsForLead(leadId: string, businessId: string): Promise<Document[]> {
   const rows = await sql`
-    select * from documents where lead_id = ${leadId} order by created_at desc
+    select * from documents where lead_id = ${leadId} and business_id = ${businessId} order by created_at desc
   `;
   return rows.map((r) => mapDocument(r as Record<string, unknown>));
 }
 
-export async function getDocument(id: string): Promise<Document | null> {
-  const rows = await sql`select * from documents where id = ${id}`;
+export async function getDocument(id: string, businessId: string): Promise<Document | null> {
+  const rows = await sql`select * from documents where id = ${id} and business_id = ${businessId}`;
   return rows.length > 0 ? mapDocument(rows[0] as Record<string, unknown>) : null;
 }
 
@@ -50,14 +50,15 @@ export interface DocumentInput {
 
 export async function createDocument(
   owner: { clientId: string } | { leadId: string },
+  businessId: string,
   input: DocumentInput
 ): Promise<Document> {
   const clientId = "clientId" in owner ? owner.clientId : null;
   const leadId = "leadId" in owner ? owner.leadId : null;
   const rows = await sql`
-    insert into documents (client_id, lead_id, file_name, file_path, file_type, file_size, label, uploaded_by)
+    insert into documents (client_id, lead_id, business_id, file_name, file_path, file_type, file_size, label, uploaded_by)
     values (
-      ${clientId}, ${leadId}, ${input.fileName}, ${input.filePath}, ${input.fileType},
+      ${clientId}, ${leadId}, ${businessId}, ${input.fileName}, ${input.filePath}, ${input.fileType},
       ${input.fileSize}, ${input.label}, ${DEFAULT_UPLOADED_BY}
     )
     returning *
@@ -65,12 +66,14 @@ export async function createDocument(
   return mapDocument(rows[0] as Record<string, unknown>);
 }
 
-export async function deleteDocumentRecord(id: string): Promise<void> {
-  await sql`delete from documents where id = ${id}`;
+export async function deleteDocumentRecord(id: string, businessId: string): Promise<void> {
+  await sql`delete from documents where id = ${id} and business_id = ${businessId}`;
 }
 
-// Namespaced by owner so a bucket listing groups by client/lead, and given a
-// random prefix so two uploads of the same filename never collide.
-export function newDocumentStoragePath(ownerId: string, fileName: string): string {
-  return `${ownerId}/${randomUUID()}-${fileName}`;
+// Namespaced by business then owner, so a bucket listing groups by tenant
+// first (a future "export all of business X's files" operation stays
+// trivial) and then by client/lead, with a random prefix so two uploads of
+// the same filename never collide.
+export function newDocumentStoragePath(businessId: string, ownerId: string, fileName: string): string {
+  return `${businessId}/${ownerId}/${randomUUID()}-${fileName}`;
 }

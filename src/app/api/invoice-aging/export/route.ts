@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const today = await getBusinessToday(user.businessId);
   const thresholds = { underDays: user.business.invoiceAgingUnderDays, overDays: user.business.invoiceAgingOverDays };
   const bracketLabels = invoiceAgeBracketLabels(thresholds.underDays, thresholds.overDays);
-  const invoices = await listOutstandingInvoices({ clientType, bracket }, thresholds, today);
+  const invoices = await listOutstandingInvoices(user.businessId, { clientType, bracket }, thresholds, today);
 
   const lines: string[] = [];
   lines.push(csvRow(["Client", "Type", "Invoice", "Amount", "Invoiced Date", "Days Outstanding", "Age"]));

@@ -12,7 +12,7 @@ import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { FIXED_COST_CATEGORY_LABELS } from "@/lib/types";
@@ -36,10 +36,10 @@ export default async function TrackerPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const user = await getCurrentUser();
-  const isOwner = user?.role === "OWNER";
-  const teamMember = user?.role === "TEAM_MEMBER" ? user.teamMember : null;
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const user = await requireCurrentUser();
+  const isOwner = user.role === "OWNER";
+  const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
+  const accessibleClientIds = await accessibleClientIdsFor(user);
 
   const filters = {
     clientId: sp.clientId || undefined,
@@ -58,11 +58,11 @@ export default async function TrackerPage({
   const page = Math.max(1, Number(sp.page) || 1);
 
   const [allEntries, teamMembers, workCategories, clients, leads] = await Promise.all([
-    listCostEntries(filters),
-    listTeamMembers({ includeInactive: true }),
-    listWorkCategories({ includeInactive: true }),
-    listClients({ accessibleClientIds }),
-    listLeads(),
+    listCostEntries(user.businessId, filters),
+    listTeamMembers(user.businessId, { includeInactive: true }),
+    listWorkCategories(user.businessId, { includeInactive: true }),
+    listClients(user.businessId, { accessibleClientIds }),
+    listLeads(user.businessId),
   ]);
 
   const inactiveTeamMemberIds = new Set(teamMembers.filter((t) => !t.active).map((t) => t.id));

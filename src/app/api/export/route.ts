@@ -12,12 +12,12 @@ import { FIXED_TASK_TYPE_LABELS } from "@/lib/types";
 const ENTITIES = ["clients", "leads", "invoices", "tasks", "time-entries", "fixed-costs"] as const;
 type Entity = (typeof ENTITIES)[number];
 
-async function buildCsv(entity: Entity): Promise<string> {
+async function buildCsv(entity: Entity, businessId: string): Promise<string> {
   const lines: string[] = [];
 
   switch (entity) {
     case "clients": {
-      const clients = await listClients();
+      const clients = await listClients(businessId);
       lines.push(
         csvRow(["Company Name", "Contact Name", "Email", "Phone", "Type", "Status", "Rate", "Work Type", "Start Date", "Budgeted Hours"])
       );
@@ -40,7 +40,7 @@ async function buildCsv(entity: Entity): Promise<string> {
       break;
     }
     case "leads": {
-      const leads = await listLeads();
+      const leads = await listLeads(businessId);
       lines.push(
         csvRow(["Company Name", "Contact Name", "Email", "Phone", "Status", "Estimated Value", "Work Type", "Source", "Created At"])
       );
@@ -62,7 +62,7 @@ async function buildCsv(entity: Entity): Promise<string> {
       break;
     }
     case "invoices": {
-      const invoices = await listAllInvoicesForExport();
+      const invoices = await listAllInvoicesForExport(businessId);
       lines.push(csvRow(["Client", "Label", "Amount", "Status", "Invoiced Date", "Paid Date", "Period"]));
       for (const i of invoices) {
         lines.push(
@@ -80,7 +80,7 @@ async function buildCsv(entity: Entity): Promise<string> {
       break;
     }
     case "tasks": {
-      const tasks = await listTasks();
+      const tasks = await listTasks(businessId);
       lines.push(csvRow(["Title", "Description", "Due Date", "Status", "Type", "Client", "Lead", "Tags", "Created At"]));
       for (const t of tasks) {
         lines.push(
@@ -100,7 +100,7 @@ async function buildCsv(entity: Entity): Promise<string> {
       break;
     }
     case "time-entries": {
-      const entries = (await listCostEntries()).filter((e) => e.entryType === "TIME");
+      const entries = (await listCostEntries(businessId)).filter((e) => e.entryType === "TIME");
       lines.push(csvRow(["Date", "Client / Lead", "Team Member", "Category", "Hours", "Rate", "Billable", "Description", "Amount"]));
       for (const e of entries) {
         lines.push(
@@ -120,7 +120,7 @@ async function buildCsv(entity: Entity): Promise<string> {
       break;
     }
     case "fixed-costs": {
-      const entries = (await listCostEntries()).filter((e) => e.entryType === "FIXED_COST");
+      const entries = (await listCostEntries(businessId)).filter((e) => e.entryType === "FIXED_COST");
       lines.push(csvRow(["Date", "Client / Lead", "Description", "Category", "Amount"]));
       for (const e of entries) {
         lines.push(csvRow([formatDateInput(e.date), e.ownerName, e.description ?? "", e.category ?? "", e.amount.toFixed(2)]));
@@ -145,7 +145,7 @@ export async function GET(request: Request) {
   }
   const entity = entityParam as Entity;
 
-  const csv = await buildCsv(entity);
+  const csv = await buildCsv(entity, user.businessId);
   const filename = `audax-hq-${entity}-${new Date().toISOString().slice(0, 10)}.csv`;
 
   return new NextResponse(csv, { headers: csvResponseHeaders(filename) });

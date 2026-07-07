@@ -84,7 +84,7 @@ export default async function TodosPage({
   const accessibleClientIds = await accessibleClientIdsFor(user);
   const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const [allTasks, allTags, clients, leads, todoTypes, teamMembers, today] = await Promise.all([
-    listTasks({
+    listTasks(user.businessId, {
       search: sp.q,
       tag: sp.tag,
       type: sp.type as TaskType | undefined,
@@ -95,11 +95,11 @@ export default async function TodosPage({
       // a colleague's unrelated to-dos.
       visibleTo: selfAssigneeId,
     }),
-    listAllTags(),
-    listClients({ accessibleClientIds }),
-    listLeads(),
-    listTodoTypes({ includeInactive: true }),
-    listTeamMembers(),
+    listAllTags(user.businessId),
+    listClients(user.businessId, { accessibleClientIds }),
+    listLeads(user.businessId),
+    listTodoTypes(user.businessId, { includeInactive: true }),
+    listTeamMembers(user.businessId),
     getBusinessToday(user.businessId),
   ]);
   const assignOptions = buildAssignOptions(user, teamMembers, user.business.ownerName);

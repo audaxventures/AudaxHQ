@@ -49,7 +49,7 @@ function sortStats(stats: ConversionStat[]): ConversionStat[] {
   });
 }
 
-export async function getConversionBySource(): Promise<ConversionStat[]> {
+export async function getConversionBySource(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
     select
       l.source_id, ls.name as source_name,
@@ -60,6 +60,7 @@ export async function getConversionBySource(): Promise<ConversionStat[]> {
       coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join lead_sources ls on ls.id = l.source_id
+    where l.business_id = ${businessId}
     group by l.source_id, ls.name
   `;
   const stats = rows.map((r) => {
@@ -71,7 +72,7 @@ export async function getConversionBySource(): Promise<ConversionStat[]> {
   return sortStats(stats);
 }
 
-export async function getConversionByWorkType(): Promise<ConversionStat[]> {
+export async function getConversionByWorkType(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
     select
       l.work_type_id, wt.name as work_type_name,
@@ -82,6 +83,7 @@ export async function getConversionByWorkType(): Promise<ConversionStat[]> {
       coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join work_types wt on wt.id = l.work_type_id
+    where l.business_id = ${businessId}
     group by l.work_type_id, wt.name
   `;
   const stats = rows.map((r) => {

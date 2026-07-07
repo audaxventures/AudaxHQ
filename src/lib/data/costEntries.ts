@@ -45,7 +45,7 @@ export interface CostEntryFilters {
  * the filter. The same is true of restrictToTeamMemberId (team-member-role
  * scoping) — fixed costs are always excluded once that's set.
  */
-export async function listCostEntries(filters: CostEntryFilters = {}): Promise<CostEntry[]> {
+export async function listCostEntries(businessId: string, filters: CostEntryFilters = {}): Promise<CostEntry[]> {
   const rows = await sql`
     select * from (
       select
@@ -60,7 +60,8 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
       left join work_categories wc on wc.id = te.category_id
       left join clients c on c.id = te.client_id
       left join leads l on l.id = te.lead_id
-      where (${filters.clientId ?? null}::uuid is null or te.client_id = ${filters.clientId ?? null})
+      where te.business_id = ${businessId}
+        and (${filters.clientId ?? null}::uuid is null or te.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or te.lead_id = ${filters.leadId ?? null})
         and (${filters.teamMemberId ?? null}::uuid is null or te.team_member_id = ${filters.teamMemberId ?? null})
         and (${filters.workCategoryId ?? null}::uuid is null or te.category_id = ${filters.workCategoryId ?? null})
@@ -86,7 +87,8 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
       from fixed_costs fc
       left join clients c on c.id = fc.client_id
       left join leads l on l.id = fc.lead_id
-      where (${filters.clientId ?? null}::uuid is null or fc.client_id = ${filters.clientId ?? null})
+      where fc.business_id = ${businessId}
+        and (${filters.clientId ?? null}::uuid is null or fc.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or fc.lead_id = ${filters.leadId ?? null})
         and ${filters.teamMemberId ?? null}::uuid is null
         and ${filters.workCategoryId ?? null}::uuid is null
@@ -192,21 +194,21 @@ export interface TimeEntryInput {
   description: string | null;
 }
 
-export async function createTimeEntry(input: TimeEntryInput): Promise<void> {
+export async function createTimeEntry(businessId: string, input: TimeEntryInput): Promise<void> {
   await sql`
-    insert into time_entries (client_id, lead_id, team_member_id, category_id, date, hours, rate, billable, description)
+    insert into time_entries (client_id, lead_id, business_id, team_member_id, category_id, date, hours, rate, billable, description)
     values (
-      ${input.clientId}, ${input.leadId}, ${input.teamMemberId}, ${input.categoryId}, ${input.date},
+      ${input.clientId}, ${input.leadId}, ${businessId}, ${input.teamMemberId}, ${input.categoryId}, ${input.date},
       ${input.hours}, ${input.rate}, ${input.billable}, ${input.description}
     )
   `;
 }
 
 /** `restrictToTeamMemberId` (team-member role) makes this a silent no-op against another team member's entry, rather than trusting the caller's claimed ownership. */
-export async function deleteTimeEntry(id: string, restrictToTeamMemberId?: string | null): Promise<void> {
+export async function deleteTimeEntry(id: string, businessId: string, restrictToTeamMemberId?: string | null): Promise<void> {
   await sql`
     delete from time_entries
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
       and (${restrictToTeamMemberId ?? null}::uuid is null or team_member_id = ${restrictToTeamMemberId ?? null})
   `;
 }
@@ -214,6 +216,7 @@ export async function deleteTimeEntry(id: string, restrictToTeamMemberId?: strin
 /** `restrictToTeamMemberId` (team-member role) makes this a silent no-op against another team member's entry, matching deleteTimeEntry's scoping. */
 export async function updateTimeEntry(
   id: string,
+  businessId: string,
   input: TimeEntryInput,
   restrictToTeamMemberId?: string | null
 ): Promise<void> {
@@ -228,7 +231,7 @@ export async function updateTimeEntry(
       rate = ${input.rate},
       billable = ${input.billable},
       description = ${input.description}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
       and (${restrictToTeamMemberId ?? null}::uuid is null or team_member_id = ${restrictToTeamMemberId ?? null})
   `;
 }
@@ -242,14 +245,14 @@ export interface FixedCostInput {
   category: FixedCostCategory | null;
 }
 
-export async function createFixedCost(input: FixedCostInput): Promise<void> {
+export async function createFixedCost(businessId: string, input: FixedCostInput): Promise<void> {
   await sql`
-    insert into fixed_costs (client_id, lead_id, date, description, amount, category)
-    values (${input.clientId}, ${input.leadId}, ${input.date}, ${input.description}, ${input.amount}, ${input.category})
+    insert into fixed_costs (client_id, lead_id, business_id, date, description, amount, category)
+    values (${input.clientId}, ${input.leadId}, ${businessId}, ${input.date}, ${input.description}, ${input.amount}, ${input.category})
   `;
 }
 
-export async function updateFixedCost(id: string, input: FixedCostInput): Promise<void> {
+export async function updateFixedCost(id: string, businessId: string, input: FixedCostInput): Promise<void> {
   await sql`
     update fixed_costs set
       client_id = ${input.clientId},
@@ -258,10 +261,10 @@ export async function updateFixedCost(id: string, input: FixedCostInput): Promis
       description = ${input.description},
       amount = ${input.amount},
       category = ${input.category}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function deleteFixedCost(id: string): Promise<void> {
-  await sql`delete from fixed_costs where id = ${id}`;
+export async function deleteFixedCost(id: string, businessId: string): Promise<void> {
+  await sql`delete from fixed_costs where id = ${id} and business_id = ${businessId}`;
 }

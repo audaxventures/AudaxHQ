@@ -2,9 +2,11 @@ import { Card } from "@/components/ui/Card";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { WorkCategoriesPanel } from "@/components/settings/WorkCategoriesPanel";
 import { listWorkCategories } from "@/lib/data/workCategories";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function WorkCategoriesSettingsPage() {
-  const categories = await listWorkCategories({ includeInactive: true });
+  const user = await requireOwner();
+  const categories = await listWorkCategories(user.businessId, { includeInactive: true });
   return (
     <Card className="p-6">
       <SettingsPanelHeader

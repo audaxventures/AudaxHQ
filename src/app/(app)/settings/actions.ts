@@ -28,86 +28,86 @@ function revalidateTodoTypes() {
 }
 
 export async function createWorkType(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await workTypes.createWorkType(name);
+  await workTypes.createWorkType(user.businessId, name);
   revalidateWorkTypes();
 }
 
 export async function updateWorkType(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await workTypes.updateWorkType(id, name);
+  await workTypes.updateWorkType(id, user.businessId, name);
   revalidateWorkTypes();
 }
 
 export async function activateWorkType(id: string) {
-  await requireOwner();
-  await workTypes.setWorkTypeActive(id, true);
+  const user = await requireOwner();
+  await workTypes.setWorkTypeActive(id, user.businessId, true);
   revalidateWorkTypes();
 }
 
 export async function deactivateWorkType(id: string) {
-  await requireOwner();
-  await workTypes.setWorkTypeActive(id, false);
+  const user = await requireOwner();
+  await workTypes.setWorkTypeActive(id, user.businessId, false);
   revalidateWorkTypes();
 }
 
 export async function createLeadSource(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await leadSources.createLeadSource(name);
+  await leadSources.createLeadSource(user.businessId, name);
   revalidateLeadSources();
 }
 
 export async function updateLeadSource(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await leadSources.updateLeadSource(id, name);
+  await leadSources.updateLeadSource(id, user.businessId, name);
   revalidateLeadSources();
 }
 
 export async function activateLeadSource(id: string) {
-  await requireOwner();
-  await leadSources.setLeadSourceActive(id, true);
+  const user = await requireOwner();
+  await leadSources.setLeadSourceActive(id, user.businessId, true);
   revalidateLeadSources();
 }
 
 export async function deactivateLeadSource(id: string) {
-  await requireOwner();
-  await leadSources.setLeadSourceActive(id, false);
+  const user = await requireOwner();
+  await leadSources.setLeadSourceActive(id, user.businessId, false);
   revalidateLeadSources();
 }
 
 export async function createTodoType(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await todoTypes.createTodoType(name);
+  await todoTypes.createTodoType(user.businessId, name);
   revalidateTodoTypes();
 }
 
 export async function updateTodoType(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  await todoTypes.updateTodoType(id, name);
+  await todoTypes.updateTodoType(id, user.businessId, name);
   revalidateTodoTypes();
 }
 
 export async function activateTodoType(id: string) {
-  await requireOwner();
-  await todoTypes.setTodoTypeActive(id, true);
+  const user = await requireOwner();
+  await todoTypes.setTodoTypeActive(id, user.businessId, true);
   revalidateTodoTypes();
 }
 
 export async function deactivateTodoType(id: string) {
-  await requireOwner();
-  await todoTypes.setTodoTypeActive(id, false);
+  const user = await requireOwner();
+  await todoTypes.setTodoTypeActive(id, user.businessId, false);
   revalidateTodoTypes();
 }
 
@@ -136,7 +136,7 @@ export async function uploadBusinessLogo(formData: FormData) {
   }
 
   const previousPath = await businesses.getBusinessLogoPath(user.businessId);
-  const path = newLogoStoragePath(file.name);
+  const path = newLogoStoragePath(user.businessId, file.name);
   const { error } = await supabase.storage
     .from(BUSINESS_ASSETS_BUCKET)
     .upload(path, file, { contentType: file.type || undefined });
@@ -161,34 +161,34 @@ export async function removeBusinessLogo() {
 }
 
 export async function createBillingEntity(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const address = String(formData.get("address") ?? "").trim() || null;
   const contactInfo = String(formData.get("contactInfo") ?? "").trim() || null;
-  await billingEntities.createBillingEntity({ name, address, contactInfo });
+  await billingEntities.createBillingEntity(user.businessId, { name, address, contactInfo });
   revalidatePath("/settings/business");
 }
 
 export async function updateBillingEntity(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const address = String(formData.get("address") ?? "").trim() || null;
   const contactInfo = String(formData.get("contactInfo") ?? "").trim() || null;
-  await billingEntities.updateBillingEntity(id, { name, address, contactInfo });
+  await billingEntities.updateBillingEntity(id, user.businessId, { name, address, contactInfo });
   revalidatePath("/settings/business");
 }
 
 export async function activateBillingEntity(id: string) {
-  await requireOwner();
-  await billingEntities.setBillingEntityActive(id, true);
+  const user = await requireOwner();
+  await billingEntities.setBillingEntityActive(id, user.businessId, true);
   revalidatePath("/settings/business");
 }
 
 export async function deactivateBillingEntity(id: string) {
-  await requireOwner();
-  await billingEntities.setBillingEntityActive(id, false);
+  const user = await requireOwner();
+  await billingEntities.setBillingEntityActive(id, user.businessId, false);
   revalidatePath("/settings/business");
 }
 

@@ -34,7 +34,7 @@ export default async function CalendarPage({
   const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
   const accessibleClientIds = await accessibleClientIdsFor(user);
 
-  const allEvents = await listCalendarEvents(grid[0].date, grid[grid.length - 1].date, {
+  const allEvents = await listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, {
     restrictToTeamMemberId: teamMember?.id,
     accessibleClientIds,
   });

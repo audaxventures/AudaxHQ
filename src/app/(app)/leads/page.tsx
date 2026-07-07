@@ -24,12 +24,12 @@ export default async function LeadsPage({
   const user = await requireCurrentUser();
 
   const [leads, total, today] = await Promise.all([
-    listLeads({
+    listLeads(user.businessId, {
       status: status as LeadStatus | undefined,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     }),
-    countLeads({ status: status as LeadStatus | undefined }),
+    countLeads(user.businessId, { status: status as LeadStatus | undefined }),
     getBusinessToday(user.businessId),
   ]);
 

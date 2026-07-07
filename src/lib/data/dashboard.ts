@@ -69,7 +69,7 @@ export async function getDashboardData(
 
   // Lazily create this month's recurring invoice rows for active recurring
   // clients so the dashboard/invoicing views always reflect the current month.
-  await ensureRecurringInvoicesForAllActiveClients(today);
+  await ensureRecurringInvoicesForAllActiveClients(businessId, today);
 
   const [
     activeRows,
@@ -84,7 +84,7 @@ export async function getDashboardData(
   ] = await Promise.all([
     sql`
       select * from clients
-      where status = 'ACTIVE'
+      where business_id = ${businessId} and status = 'ACTIVE'
         and (${accessibleClientIds ?? null}::uuid[] is null or id = any(${accessibleClientIds ?? null}::uuid[]))
       order by company_name asc
     `,
@@ -93,14 +93,15 @@ export async function getDashboardData(
           select coalesce(sum(i.amount), 0) as total
           from invoices i
           join clients c on c.id = i.client_id
-          where c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
+          where i.business_id = ${businessId} and c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
         `
       : Promise.resolve([{ total: 0 }]),
-    listHotFollowUps(today, accessibleClientIds),
+    listHotFollowUps(businessId, today, accessibleClientIds),
     sql`
       select l.id, l.company_name
       from leads l
-      where l.status not in ('WON', 'LOST')
+      where l.business_id = ${businessId}
+        and l.status not in ('WON', 'LOST')
         and not exists (select 1 from follow_ups f where f.lead_id = l.id and f.status = 'UPCOMING')
       order by l.created_at desc
     `,
@@ -109,7 +110,7 @@ export async function getDashboardData(
           select c.id as client_id, c.company_name as client_name
           from invoices i
           join clients c on c.id = i.client_id
-          where c.status = 'ACTIVE'
+          where i.business_id = ${businessId} and c.status = 'ACTIVE'
             and i.status = 'NOT_INVOICED'
             and i.period_year = extract(year from ${today}::date)
             and i.period_month = extract(month from ${today}::date)
@@ -123,20 +124,23 @@ export async function getDashboardData(
       left join todo_tags tt on tt.todo_id = t.id
       left join tags tg on tg.id = tt.tag_id
       left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
-      where t.status <> 'COMPLETED'
+      where t.business_id = ${businessId}
+        and t.status <> 'COMPLETED'
         and t.assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
       group by t.id, creator_tm.name
       order by (t.due_date is null), t.due_date asc, t.created_at desc
       limit 5
     `,
-    getLeadPipelineSummary(today),
+    getLeadPipelineSummary(businessId, today),
     sql`
       select count(*)::int as count from todos
-      where status <> 'COMPLETED' and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+      where business_id = ${businessId}
+        and status <> 'COMPLETED' and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
     `,
     sql`
       select count(*)::int as count from todos
-      where status <> 'COMPLETED' and due_date = ${today}::date
+      where business_id = ${businessId}
+        and status <> 'COMPLETED' and due_date = ${today}::date
         and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
     `,
   ]);

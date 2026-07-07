@@ -79,9 +79,10 @@ export interface ClientFilters {
   accessibleClientIds?: string[] | null;
 }
 
-export async function listClients(filters: ClientFilters = {}): Promise<
-  (Client & { unpaidInvoiceCount: number; invoiceCount: number })[]
-> {
+export async function listClients(
+  businessId: string,
+  filters: ClientFilters = {}
+): Promise<(Client & { unpaidInvoiceCount: number; invoiceCount: number })[]> {
   const rows = await sql`
     select
       c.*,
@@ -96,9 +97,11 @@ export async function listClients(filters: ClientFilters = {}): Promise<
         count(*) filter (where status <> 'PAID') as unpaid_count,
         count(*) as total_count
       from invoices
+      where business_id = ${businessId}
       group by client_id
     ) inv on inv.client_id = c.id
-    where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
+    where c.business_id = ${businessId}
+      and (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
       and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
       and (${filters.accessibleClientIds ?? null}::uuid[] is null or c.id = any(${filters.accessibleClientIds ?? null}::uuid[]))
     order by c.status = 'ACTIVE' desc, c.company_name asc
@@ -113,35 +116,50 @@ export async function listClients(filters: ClientFilters = {}): Promise<
 }
 
 export async function countClients(
+  businessId: string,
   filters: Pick<ClientFilters, "status" | "type" | "accessibleClientIds"> = {}
 ): Promise<number> {
   const rows = await sql`
     select count(*) as count
     from clients c
-    where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
+    where c.business_id = ${businessId}
+      and (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
       and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
       and (${filters.accessibleClientIds ?? null}::uuid[] is null or c.id = any(${filters.accessibleClientIds ?? null}::uuid[]))
   `;
   return Number((rows[0] as Record<string, unknown>).count);
 }
 
+/** Whether `clientId` belongs to `businessId` — the tenant-isolation check behind requireClientAccess, independent of any team-member access-list scoping. */
+export async function clientBelongsToBusiness(clientId: string, businessId: string): Promise<boolean> {
+  const rows = await sql`select 1 from clients where id = ${clientId} and business_id = ${businessId}`;
+  return rows.length > 0;
+}
+
 /** Cheap single-column lookup — used as a fallback when a team member's edit form doesn't submit a rate at all (see ClientForm's hideRate). */
-export async function getClientRate(id: string): Promise<number> {
-  const rows = await sql`select rate from clients where id = ${id}`;
+export async function getClientRate(id: string, businessId: string): Promise<number> {
+  const rows = await sql`select rate from clients where id = ${id} and business_id = ${businessId}`;
   return rows[0] ? Number((rows[0] as Record<string, unknown>).rate) : 0;
 }
 
-export async function getClient(id: string): Promise<ClientWithRelations | null> {
+export async function getClient(id: string, businessId: string): Promise<ClientWithRelations | null> {
   const [clientRows, noteRows, linkRows, invoiceRows, tasks, followUps, meetingNotes, documents] =
     await Promise.all([
-      sql`select c.*, wt.name as work_type_name from clients c left join work_types wt on wt.id = c.work_type_id where c.id = ${id}`,
-      sql`select * from client_notes where client_id = ${id} order by created_at desc`,
-      sql`select * from client_links where client_id = ${id} order by created_at asc`,
-      sql`select * from invoices where client_id = ${id} order by period_year desc nulls last, period_month desc nulls last, created_at desc`,
-      listTasks({ clientId: id }),
-      listFollowUpsForClient(id),
-      listMeetingNotes({ clientId: id }),
-      listDocumentsForClient(id),
+      sql`
+        select c.*, wt.name as work_type_name from clients c
+        left join work_types wt on wt.id = c.work_type_id
+        where c.id = ${id} and c.business_id = ${businessId}
+      `,
+      sql`select * from client_notes where client_id = ${id} and business_id = ${businessId} order by created_at desc`,
+      sql`select * from client_links where client_id = ${id} and business_id = ${businessId} order by created_at asc`,
+      sql`
+        select * from invoices where client_id = ${id} and business_id = ${businessId}
+        order by period_year desc nulls last, period_month desc nulls last, created_at desc
+      `,
+      listTasks(businessId, { clientId: id }),
+      listFollowUpsForClient(id, businessId),
+      listMeetingNotes(businessId, { clientId: id }),
+      listDocumentsForClient(id, businessId),
     ]);
 
   if (clientRows.length === 0) return null;
@@ -173,11 +191,11 @@ export interface ClientInput {
   color?: EntityColor | null;
 }
 
-export async function createClient(input: ClientInput, today: string): Promise<Client> {
+export async function createClient(businessId: string, input: ClientInput, today: string): Promise<Client> {
   const rows = await sql`
-    insert into clients (company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours, color)
+    insert into clients (business_id, company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours, color)
     values (
-      ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
+      ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.type}, ${input.status}, ${input.rate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
       ${input.budgetedHours ?? null}, ${input.color ?? null}
     )
@@ -186,13 +204,13 @@ export async function createClient(input: ClientInput, today: string): Promise<C
   const client = mapClient(rows[0] as Record<string, unknown>);
 
   if (client.type === "RECURRING") {
-    await ensureCurrentMonthRecurringInvoice(client.id, input.rate, today);
+    await ensureCurrentMonthRecurringInvoice(businessId, client.id, input.rate, today);
   }
 
   return client;
 }
 
-export async function updateClient(id: string, input: ClientInput, today: string): Promise<void> {
+export async function updateClient(id: string, businessId: string, input: ClientInput, today: string): Promise<void> {
   await sql`
     update clients set
       company_name = ${input.companyName},
@@ -208,40 +226,41 @@ export async function updateClient(id: string, input: ClientInput, today: string
       budgeted_hours = ${input.budgetedHours ?? null},
       color = ${input.color ?? null},
       updated_at = now()
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 
   if (input.type === "RECURRING") {
-    await ensureCurrentMonthRecurringInvoice(id, input.rate, today);
+    await ensureCurrentMonthRecurringInvoice(businessId, id, input.rate, today);
   }
 }
 
-export async function setClientStatus(id: string, status: ClientStatus): Promise<void> {
-  await sql`update clients set status = ${status}, updated_at = now() where id = ${id}`;
+export async function setClientStatus(id: string, businessId: string, status: ClientStatus): Promise<void> {
+  await sql`update clients set status = ${status}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function setClientColor(id: string, color: EntityColor | null): Promise<void> {
-  await sql`update clients set color = ${color}, updated_at = now() where id = ${id}`;
+export async function setClientColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {
+  await sql`update clients set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
 // --- Notes ---
 
-export async function addClientNote(clientId: string, body: string): Promise<void> {
-  await sql`insert into client_notes (client_id, body) values (${clientId}, ${body})`;
+export async function addClientNote(clientId: string, businessId: string, body: string): Promise<void> {
+  await sql`insert into client_notes (client_id, business_id, body) values (${clientId}, ${businessId}, ${body})`;
 }
 
 // --- Links ---
 
 export async function addClientLink(
   clientId: string,
+  businessId: string,
   label: string,
   url: string
 ): Promise<void> {
-  await sql`insert into client_links (client_id, label, url) values (${clientId}, ${label}, ${url})`;
+  await sql`insert into client_links (client_id, business_id, label, url) values (${clientId}, ${businessId}, ${label}, ${url})`;
 }
 
-export async function deleteClientLink(id: string): Promise<void> {
-  await sql`delete from client_links where id = ${id}`;
+export async function deleteClientLink(id: string, businessId: string): Promise<void> {
+  await sql`delete from client_links where id = ${id} and business_id = ${businessId}`;
 }
 
 // --- Invoices ---
@@ -254,14 +273,14 @@ export interface InvoiceInput {
   paidDate: string | null;
 }
 
-export async function addInvoice(clientId: string, input: InvoiceInput): Promise<void> {
+export async function addInvoice(clientId: string, businessId: string, input: InvoiceInput): Promise<void> {
   await sql`
-    insert into invoices (client_id, label, amount, status, invoiced_date, paid_date)
-    values (${clientId}, ${input.label}, ${input.amount}, ${input.status}, ${input.invoicedDate}, ${input.paidDate})
+    insert into invoices (client_id, business_id, label, amount, status, invoiced_date, paid_date)
+    values (${clientId}, ${businessId}, ${input.label}, ${input.amount}, ${input.status}, ${input.invoicedDate}, ${input.paidDate})
   `;
 }
 
-export async function updateInvoice(id: string, input: InvoiceInput): Promise<void> {
+export async function updateInvoice(id: string, businessId: string, input: InvoiceInput): Promise<void> {
   await sql`
     update invoices set
       label = ${input.label},
@@ -269,22 +288,23 @@ export async function updateInvoice(id: string, input: InvoiceInput): Promise<vo
       status = ${input.status},
       invoiced_date = ${input.invoicedDate},
       paid_date = ${input.paidDate}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function deleteInvoice(id: string): Promise<void> {
-  await sql`delete from invoices where id = ${id}`;
+export async function deleteInvoice(id: string, businessId: string): Promise<void> {
+  await sql`delete from invoices where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function markInvoicePaid(id: string, today: string): Promise<void> {
+export async function markInvoicePaid(id: string, businessId: string, today: string): Promise<void> {
   await sql`
     update invoices set status = 'PAID', paid_date = coalesce(paid_date, ${today}::date)
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
 export async function ensureCurrentMonthRecurringInvoice(
+  businessId: string,
   clientId: string,
   rate: number,
   today: string
@@ -292,19 +312,20 @@ export async function ensureCurrentMonthRecurringInvoice(
   const [year, month] = today.split("-").map(Number);
   const label = `${monthName(month)} ${year}`;
   await sql`
-    insert into invoices (client_id, label, amount, status, period_month, period_year)
-    values (${clientId}, ${label}, ${rate}, 'NOT_INVOICED', ${month}, ${year})
+    insert into invoices (client_id, business_id, label, amount, status, period_month, period_year)
+    values (${clientId}, ${businessId}, ${label}, ${rate}, 'NOT_INVOICED', ${month}, ${year})
     on conflict (client_id, period_year, period_month) where period_month is not null do nothing
   `;
 }
 
-export async function ensureRecurringInvoicesForAllActiveClients(today: string): Promise<void> {
+export async function ensureRecurringInvoicesForAllActiveClients(businessId: string, today: string): Promise<void> {
   const clients = await sql`
-    select id, rate from clients where type = 'RECURRING' and status = 'ACTIVE'
+    select id, rate from clients where business_id = ${businessId} and type = 'RECURRING' and status = 'ACTIVE'
   `;
   await Promise.all(
     clients.map((c) =>
       ensureCurrentMonthRecurringInvoice(
+        businessId,
         (c as Record<string, unknown>).id as string,
         Number((c as Record<string, unknown>).rate),
         today

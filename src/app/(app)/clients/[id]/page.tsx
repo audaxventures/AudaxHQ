@@ -54,15 +54,17 @@ export default async function ClientDetailPage({
     if (!accessibleClientIds?.includes(id)) notFound();
   }
   const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads] = await Promise.all([
-    getClient(id),
-    isOwner ? listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
-    listWorkTypes({ includeInactive: true }),
+    getClient(id, user.businessId),
+    isOwner
+      ? listCostEntries(user.businessId, { clientId: id, dateFrom: costFrom, dateTo: costTo })
+      : Promise.resolve([]),
+    listWorkTypes(user.businessId, { includeInactive: true }),
     getBusinessToday(user.businessId),
     // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
-    listTeamMembers(),
-    isOwner ? listWorkCategories() : Promise.resolve([]),
-    isOwner ? listClients() : Promise.resolve([]),
-    isOwner ? listLeads() : Promise.resolve([]),
+    listTeamMembers(user.businessId),
+    isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
+    isOwner ? listClients(user.businessId) : Promise.resolve([]),
+    isOwner ? listLeads(user.businessId) : Promise.resolve([]),
   ]);
   if (!client) notFound();
 

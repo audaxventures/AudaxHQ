@@ -8,9 +8,11 @@ import {
   deactivateTodoType,
   updateTodoType,
 } from "@/app/(app)/settings/actions";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function TodoTypesSettingsPage() {
-  const todoTypes = await listTodoTypes({ includeInactive: true });
+  const user = await requireOwner();
+  const todoTypes = await listTodoTypes(user.businessId, { includeInactive: true });
   return (
     <Card className="p-6">
       <SettingsPanelHeader

@@ -70,7 +70,7 @@ export interface TaskFilters {
   visibleTo?: string | null;
 }
 
-export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
+export async function listTasks(businessId: string, filters: TaskFilters = {}): Promise<Task[]> {
   const searchPattern = filters.search ? `%${filters.search}%` : null;
   const hasVisibleToFilter = "visibleTo" in filters;
   const visibleToValue = filters.visibleTo ?? null;
@@ -90,7 +90,8 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
     left join clients c on c.id = t.client_id
     left join leads l on l.id = t.lead_id
     left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
-    where (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
+    where t.business_id = ${businessId}
+      and (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
       and (${filters.priority ?? null}::task_priority is null or t.priority = ${filters.priority ?? null})
       and (${filters.type ?? null}::text is null or t.type = ${filters.type ?? null})
       and (${filters.todoTypeId ?? null}::uuid is null or t.todo_type_id = ${filters.todoTypeId ?? null})
@@ -120,17 +121,17 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   return rows.map(mapTask);
 }
 
-export async function listAllTags(): Promise<string[]> {
-  const rows = await sql`select name from tags order by name asc`;
+export async function listAllTags(businessId: string): Promise<string[]> {
+  const rows = await sql`select name from tags where business_id = ${businessId} order by name asc`;
   return rows.map((r) => (r as Record<string, unknown>).name as string);
 }
 
-async function upsertTags(tagNames: string[]): Promise<string[]> {
+async function upsertTags(businessId: string, tagNames: string[]): Promise<string[]> {
   const ids: string[] = [];
   for (const name of tagNames) {
     const rows = await sql`
-      insert into tags (name) values (${name})
-      on conflict (name) do update set name = excluded.name
+      insert into tags (business_id, name) values (${businessId}, ${name})
+      on conflict (business_id, name) do update set name = excluded.name
       returning id
     `;
     ids.push((rows[0] as Record<string, unknown>).id as string);
@@ -148,11 +149,11 @@ function normalizeTags(tags: string[]): string[] {
   return Array.from(set);
 }
 
-async function setTaskTags(taskId: string, tags: string[]): Promise<void> {
-  await sql`delete from todo_tags where todo_id = ${taskId}`;
-  const tagIds = await upsertTags(normalizeTags(tags));
+async function setTaskTags(taskId: string, businessId: string, tags: string[]): Promise<void> {
+  await sql`delete from todo_tags where todo_id = ${taskId} and business_id = ${businessId}`;
+  const tagIds = await upsertTags(businessId, normalizeTags(tags));
   for (const tagId of tagIds) {
-    await sql`insert into todo_tags (todo_id, tag_id) values (${taskId}, ${tagId}) on conflict do nothing`;
+    await sql`insert into todo_tags (todo_id, tag_id, business_id) values (${taskId}, ${tagId}, ${businessId}) on conflict do nothing`;
   }
 }
 
@@ -172,11 +173,11 @@ export interface TaskInput {
   assignedToTeamMemberId?: string | null;
 }
 
-export async function createTask(input: TaskInput, createdByTeamMemberId: string | null): Promise<string> {
+export async function createTask(businessId: string, input: TaskInput, createdByTeamMemberId: string | null): Promise<string> {
   const rows = await sql`
-    insert into todos (title, description, due_date, type, todo_type_id, client_id, lead_id, status, priority, assigned_to_team_member_id, created_by_team_member_id)
+    insert into todos (business_id, title, description, due_date, type, todo_type_id, client_id, lead_id, status, priority, assigned_to_team_member_id, created_by_team_member_id)
     values (
-      ${input.title}, ${input.description ?? null}, ${input.dueDate ?? null},
+      ${businessId}, ${input.title}, ${input.description ?? null}, ${input.dueDate ?? null},
       ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null},
       ${input.status ?? "TO_BE_DONE"}, ${input.priority ?? "MEDIUM"},
       ${input.assignedToTeamMemberId ?? null}, ${createdByTeamMemberId}
@@ -184,7 +185,7 @@ export async function createTask(input: TaskInput, createdByTeamMemberId: string
     returning id
   `;
   const taskId = (rows[0] as Record<string, unknown>).id as string;
-  await setTaskTags(taskId, input.tags);
+  await setTaskTags(taskId, businessId, input.tags);
   return taskId;
 }
 
@@ -196,7 +197,7 @@ export async function createTask(input: TaskInput, createdByTeamMemberId: string
  * A mismatch is a silent no-op rather than an error, since the row simply
  * isn't reachable to this caller.
  */
-export async function updateTask(id: string, input: TaskInput, callerTeamMemberId: string | null): Promise<void> {
+export async function updateTask(id: string, businessId: string, input: TaskInput, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     update todos set
       title = ${input.title},
@@ -206,19 +207,19 @@ export async function updateTask(id: string, input: TaskInput, callerTeamMemberI
       status = ${input.status ?? "TO_BE_DONE"},
       assigned_to_team_member_id = ${input.assignedToTeamMemberId ?? null},
       updated_at = now()
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
       and (
         assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
         or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
       )
   `;
-  await setTaskTags(id, input.tags);
+  await setTaskTags(id, businessId, input.tags);
 }
 
-export async function setTaskStatus(id: string, status: TaskStatus, callerTeamMemberId: string | null): Promise<void> {
+export async function setTaskStatus(id: string, businessId: string, status: TaskStatus, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     update todos set status = ${status}, updated_at = now()
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
       and (
         assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
         or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
@@ -226,10 +227,10 @@ export async function setTaskStatus(id: string, status: TaskStatus, callerTeamMe
   `;
 }
 
-export async function deleteTask(id: string, callerTeamMemberId: string | null): Promise<void> {
+export async function deleteTask(id: string, businessId: string, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     delete from todos
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
       and (
         assigned_to_team_member_id is not distinct from ${callerTeamMemberId}::uuid
         or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid

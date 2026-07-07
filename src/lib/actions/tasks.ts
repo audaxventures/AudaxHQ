@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import * as tasks from "@/lib/data/todos";
-import * as clientAccess from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser, requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
 import type { CurrentUser, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 const taskSchema = z.object({
@@ -30,19 +29,10 @@ function resolveAssignee(formData: FormData, user: CurrentUser): string | null {
   return String(raw);
 }
 
-async function requireCurrentUser(): Promise<CurrentUser> {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Not authorized.");
-  return user;
-}
-
-/** Defense in depth against a team member posting a clientId they can't see, bypassing the already-scoped dropdown in the UI. */
-async function assertClientAccess(user: CurrentUser, clientId: string | undefined): Promise<void> {
-  if (!clientId || user.role !== "TEAM_MEMBER") return;
-  const accessibleIds = await clientAccess.getClientAccessIds(user.teamMember.id);
-  if (!accessibleIds.includes(clientId)) {
-    throw new Error("You don't have access to that client.");
-  }
+/** Defense in depth against posting a clientId/leadId outside the current business or (for team members) their access list — bypassing the already-scoped dropdown in the UI. */
+async function assertOwnerAccess(clientId: string | undefined, leadId: string | undefined): Promise<void> {
+  if (clientId) await requireClientAccess(clientId);
+  else if (leadId) await requireLeadAccess(leadId);
 }
 
 /** The type <select> submits "CLIENT"/"LEAD" literally, or a todo_types row id for everything else. */
@@ -91,9 +81,9 @@ export async function createTask(formData: FormData) {
   const input = parseTaskForm(formData);
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
-  await assertClientAccess(user, clientId);
+  await assertOwnerAccess(clientId, leadId);
   const assignedToTeamMemberId = resolveAssignee(formData, user);
-  await tasks.createTask({ ...input, clientId, leadId, assignedToTeamMemberId }, selfId(user));
+  await tasks.createTask(user.businessId, { ...input, clientId, leadId, assignedToTeamMemberId }, selfId(user));
   revalidateForTask(clientId, leadId);
 }
 
@@ -101,8 +91,8 @@ export async function createScopedTask(
   owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
   formData: FormData
 ) {
-  const user = await requireCurrentUser();
-  if (owner.type === "CLIENT") await assertClientAccess(user, owner.clientId);
+  const user =
+    owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
   const tagsRaw = String(formData.get("tags") ?? "");
@@ -111,6 +101,7 @@ export async function createScopedTask(
     .map((t) => t.trim())
     .filter(Boolean);
   await tasks.createTask(
+    user.businessId,
     {
       title,
       description: (formData.get("description") as string) || null,
@@ -139,9 +130,14 @@ export async function updateTask(
   const input = parseTaskForm(formData);
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
-  await assertClientAccess(user, clientId);
+  await assertOwnerAccess(clientId, leadId);
   const assignedToTeamMemberId = resolveAssignee(formData, user);
-  await tasks.updateTask(id, { ...input, clientId: clientId ?? null, leadId: leadId ?? null, assignedToTeamMemberId }, selfId(user));
+  await tasks.updateTask(
+    id,
+    user.businessId,
+    { ...input, clientId: clientId ?? null, leadId: leadId ?? null, assignedToTeamMemberId },
+    selfId(user)
+  );
   // Revalidate both the previous and (possibly changed) new owner's page, so
   // reassigning a task's client/lead doesn't leave stale data on either.
   revalidateForTask(previousClientId, previousLeadId);
@@ -155,12 +151,12 @@ export async function setTaskStatus(
   status: TaskStatus
 ) {
   const user = await requireCurrentUser();
-  await tasks.setTaskStatus(id, status, selfId(user));
+  await tasks.setTaskStatus(id, user.businessId, status, selfId(user));
   revalidateForTask(clientId, leadId);
 }
 
 export async function deleteTask(id: string, clientId: string | null, leadId: string | null) {
   const user = await requireCurrentUser();
-  await tasks.deleteTask(id, selfId(user));
+  await tasks.deleteTask(id, user.businessId, selfId(user));
   revalidateForTask(clientId, leadId);
 }

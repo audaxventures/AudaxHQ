@@ -29,6 +29,7 @@ export interface CalendarEventFilters {
 }
 
 export async function listCalendarEvents(
+  businessId: string,
   from: string,
   to: string,
   filters: CalendarEventFilters = {}
@@ -40,7 +41,8 @@ export async function listCalendarEvents(
       from follow_ups f
       left join clients c on c.id = f.client_id
       left join leads l on l.id = f.lead_id
-      where f.status = 'UPCOMING' and f.date between ${from} and ${to}
+      where f.business_id = ${businessId}
+        and f.status = 'UPCOMING' and f.date between ${from} and ${to}
         and (
           ${filters.accessibleClientIds ?? null}::uuid[] is null
           or f.client_id is null
@@ -53,7 +55,8 @@ export async function listCalendarEvents(
       from meeting_notes m
       left join clients c on c.id = m.client_id
       left join leads l on l.id = m.lead_id
-      where m.meeting_date between ${from} and ${to}
+      where m.business_id = ${businessId}
+        and m.meeting_date between ${from} and ${to}
         and (
           ${filters.accessibleClientIds ?? null}::uuid[] is null
           or m.client_id is null
@@ -66,7 +69,8 @@ export async function listCalendarEvents(
       from todos t
       left join clients c on c.id = t.client_id
       left join leads l on l.id = t.lead_id
-      where t.due_date is not null and t.due_date between ${from} and ${to}
+      where t.business_id = ${businessId}
+        and t.due_date is not null and t.due_date between ${from} and ${to}
         and (${filters.restrictToTeamMemberId ?? null}::uuid is null or t.assigned_to_team_member_id = ${filters.restrictToTeamMemberId ?? null})
     `,
   ]);

@@ -44,6 +44,7 @@ export interface LeadFilters {
 }
 
 export async function listLeads(
+  businessId: string,
   filters: LeadFilters = {}
 ): Promise<(Lead & { nextFollowUpDate: string | null })[]> {
   const rows = await sql`
@@ -54,10 +55,11 @@ export async function listLeads(
     left join (
       select lead_id, min(date) as next_date
       from follow_ups
-      where status = 'UPCOMING'
+      where status = 'UPCOMING' and business_id = ${businessId}
       group by lead_id
     ) f on f.lead_id = l.id
-    where (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
+    where l.business_id = ${businessId}
+      and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
     order by
       case when f.next_date is null then 1 else 0 end asc,
       f.next_date asc,
@@ -71,11 +73,12 @@ export async function listLeads(
   }));
 }
 
-export async function countLeads(filters: Pick<LeadFilters, "status"> = {}): Promise<number> {
+export async function countLeads(businessId: string, filters: Pick<LeadFilters, "status"> = {}): Promise<number> {
   const rows = await sql`
     select count(*) as count
     from leads l
-    where (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
+    where l.business_id = ${businessId}
+      and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
   `;
   return Number((rows[0] as Record<string, unknown>).count);
 }
@@ -92,7 +95,7 @@ export interface LeadPipelineSummary {
 }
 
 /** Lead counts by pipeline stage + total active pipeline value, for the dashboard. */
-export async function getLeadPipelineSummary(today: string): Promise<LeadPipelineSummary> {
+export async function getLeadPipelineSummary(businessId: string, today: string): Promise<LeadPipelineSummary> {
   const monthStart = `${today.slice(0, 7)}-01`;
   const rows = await sql`
     select
@@ -102,6 +105,7 @@ export async function getLeadPipelineSummary(today: string): Promise<LeadPipelin
       count(*) filter (where status = 'WON' and updated_at >= ${monthStart}::date) as won_count,
       coalesce(sum(estimated_value) filter (where status in ('NEW', 'CONTACTED', 'PROPOSAL_SENT', 'NEGOTIATING')), 0) as pipeline_value
     from leads
+    where business_id = ${businessId}
   `;
   const row = rows[0] as Record<string, unknown>;
   return {
@@ -113,20 +117,26 @@ export async function getLeadPipelineSummary(today: string): Promise<LeadPipelin
   };
 }
 
-export async function getLead(id: string): Promise<LeadWithRelations | null> {
+/** Whether `leadId` belongs to `businessId` — the tenant-isolation check for lead-scoped actions with no other access-list concept. */
+export async function leadBelongsToBusiness(leadId: string, businessId: string): Promise<boolean> {
+  const rows = await sql`select 1 from leads where id = ${leadId} and business_id = ${businessId}`;
+  return rows.length > 0;
+}
+
+export async function getLead(id: string, businessId: string): Promise<LeadWithRelations | null> {
   const [leadRows, noteRows, tasks, followUps, meetingNotes, documents] = await Promise.all([
     sql`
       select l.*, wt.name as work_type_name, ls.name as source_name
       from leads l
       left join work_types wt on wt.id = l.work_type_id
       left join lead_sources ls on ls.id = l.source_id
-      where l.id = ${id}
+      where l.id = ${id} and l.business_id = ${businessId}
     `,
-    sql`select * from lead_notes where lead_id = ${id} order by created_at desc`,
-    listTasks({ leadId: id }),
-    listFollowUpsForLead(id),
-    listMeetingNotes({ leadId: id }),
-    listDocumentsForLead(id),
+    sql`select * from lead_notes where lead_id = ${id} and business_id = ${businessId} order by created_at desc`,
+    listTasks(businessId, { leadId: id }),
+    listFollowUpsForLead(id, businessId),
+    listMeetingNotes(businessId, { leadId: id }),
+    listDocumentsForLead(id, businessId),
   ]);
   if (leadRows.length === 0) return null;
   return {
@@ -153,11 +163,11 @@ export interface LeadInput {
   color?: EntityColor | null;
 }
 
-export async function createLead(input: LeadInput): Promise<Lead> {
+export async function createLead(businessId: string, input: LeadInput): Promise<Lead> {
   const rows = await sql`
-    insert into leads (company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color)
+    insert into leads (business_id, company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color)
     values (
-      ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
+      ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.status}, ${input.estimatedValue ?? null}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null},
       ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}
     )
@@ -175,10 +185,11 @@ export async function createLead(input: LeadInput): Promise<Lead> {
  */
 export async function updateLead(
   id: string,
+  businessId: string,
   input: LeadInput,
   today: string
 ): Promise<{ convertedClientId: string | null }> {
-  const existingRows = await sql`select status, converted_client_id from leads where id = ${id}`;
+  const existingRows = await sql`select status, converted_client_id from leads where id = ${id} and business_id = ${businessId}`;
   const existing = existingRows[0] as Record<string, unknown> | undefined;
   const wasAlreadyConverted = Boolean(existing?.converted_client_id);
 
@@ -196,28 +207,29 @@ export async function updateLead(
       source_other = ${input.sourceOther ?? null},
       color = ${input.color ?? null},
       updated_at = now()
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 
   if (input.status === "WON" && !wasAlreadyConverted) {
-    const clientId = await convertLeadToClient(id, today);
+    const clientId = await convertLeadToClient(id, businessId, today);
     return { convertedClientId: clientId };
   }
 
   return { convertedClientId: null };
 }
 
-export async function setLeadColor(id: string, color: EntityColor | null): Promise<void> {
-  await sql`update leads set color = ${color}, updated_at = now() where id = ${id}`;
+export async function setLeadColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {
+  await sql`update leads set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
 /** Creates a Client from a lead's current data, copies its notes, and links the two. */
-export async function convertLeadToClient(leadId: string, today: string): Promise<string> {
-  const leadRows = await sql`select * from leads where id = ${leadId}`;
+export async function convertLeadToClient(leadId: string, businessId: string, today: string): Promise<string> {
+  const leadRows = await sql`select * from leads where id = ${leadId} and business_id = ${businessId}`;
   if (leadRows.length === 0) throw new Error("Lead not found");
   const lead = mapLead(leadRows[0] as Record<string, unknown>);
 
   const client = await createClient(
+    businessId,
     {
       companyName: lead.companyName,
       contactName: lead.contactName,
@@ -233,23 +245,23 @@ export async function convertLeadToClient(leadId: string, today: string): Promis
     today
   );
 
-  await sql`update leads set converted_client_id = ${client.id}, updated_at = now() where id = ${leadId}`;
+  await sql`update leads set converted_client_id = ${client.id}, updated_at = now() where id = ${leadId} and business_id = ${businessId}`;
 
-  await sql`insert into client_notes (client_id, body) values (${client.id}, ${"Converted from lead — activity history below carried over."})`;
+  await sql`insert into client_notes (client_id, business_id, body) values (${client.id}, ${businessId}, ${"Converted from lead — activity history below carried over."})`;
 
-  const leadNotes = await sql`select body, created_at from lead_notes where lead_id = ${leadId} order by created_at asc`;
+  const leadNotes = await sql`select body, created_at from lead_notes where lead_id = ${leadId} and business_id = ${businessId} order by created_at asc`;
   for (const note of leadNotes) {
     const n = note as Record<string, unknown>;
-    await sql`insert into client_notes (client_id, body, created_at) values (${client.id}, ${n.body as string}, ${n.created_at as string})`;
+    await sql`insert into client_notes (client_id, business_id, body, created_at) values (${client.id}, ${businessId}, ${n.body as string}, ${n.created_at as string})`;
   }
 
   return client.id;
 }
 
-export async function deleteLead(id: string): Promise<void> {
-  await sql`delete from leads where id = ${id}`;
+export async function deleteLead(id: string, businessId: string): Promise<void> {
+  await sql`delete from leads where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function addLeadNote(leadId: string, body: string): Promise<void> {
-  await sql`insert into lead_notes (lead_id, body) values (${leadId}, ${body})`;
+export async function addLeadNote(leadId: string, businessId: string, body: string): Promise<void> {
+  await sql`insert into lead_notes (lead_id, business_id, body) values (${leadId}, ${businessId}, ${body})`;
 }

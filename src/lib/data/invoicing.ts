@@ -19,6 +19,7 @@ export interface InvoiceAgingFilters {
 }
 
 export async function listOutstandingInvoices(
+  businessId: string,
   filters: InvoiceAgingFilters = {},
   thresholds: { underDays: number; overDays: number },
   today: string
@@ -30,7 +31,8 @@ export async function listOutstandingInvoices(
       (${today}::date - coalesce(i.invoiced_date, ${today}::date))::int as days_outstanding
     from invoices i
     join clients c on c.id = i.client_id
-    where i.status = 'INVOICED'
+    where i.business_id = ${businessId}
+      and i.status = 'INVOICED'
       and (${filters.clientType ?? null}::client_type is null or c.type = ${filters.clientType ?? null})
       and (
         ${filters.bracket ?? null}::text is null or
@@ -71,11 +73,12 @@ export interface InvoiceExportRow {
 }
 
 /** All invoices regardless of status, for the Settings → Data Export CSV. */
-export async function listAllInvoicesForExport(): Promise<InvoiceExportRow[]> {
+export async function listAllInvoicesForExport(businessId: string): Promise<InvoiceExportRow[]> {
   const rows = await sql`
     select i.*, c.company_name as client_name
     from invoices i
     join clients c on c.id = i.client_id
+    where i.business_id = ${businessId}
     order by c.company_name asc, i.period_year desc nulls last, i.period_month desc nulls last, i.created_at desc
   `;
   return rows.map((r) => {
@@ -99,13 +102,13 @@ export interface InvoiceAgingSummary {
   overdueCount: number;
 }
 
-export async function getInvoiceAgingSummary(overDays: number, today: string): Promise<InvoiceAgingSummary> {
+export async function getInvoiceAgingSummary(businessId: string, overDays: number, today: string): Promise<InvoiceAgingSummary> {
   const rows = await sql`
     select
       coalesce(sum(i.amount), 0) as total_outstanding,
       count(*) filter (where (${today}::date - coalesce(i.invoiced_date, ${today}::date)) >= ${overDays}) as overdue_count
     from invoices i
-    where i.status = 'INVOICED'
+    where i.business_id = ${businessId} and i.status = 'INVOICED'
   `;
   const row = rows[0] as Record<string, unknown>;
   return {

@@ -12,10 +12,10 @@ function mapBillingEntity(row: Record<string, unknown>): BillingEntity {
   };
 }
 
-export async function listBillingEntities(opts: { includeInactive?: boolean } = {}): Promise<BillingEntity[]> {
+export async function listBillingEntities(businessId: string, opts: { includeInactive?: boolean } = {}): Promise<BillingEntity[]> {
   const rows = opts.includeInactive
-    ? await sql`select * from billing_entities order by active desc, name asc`
-    : await sql`select * from billing_entities where active order by name asc`;
+    ? await sql`select * from billing_entities where business_id = ${businessId} order by active desc, name asc`
+    : await sql`select * from billing_entities where business_id = ${businessId} and active order by name asc`;
   return rows.map((r) => mapBillingEntity(r as Record<string, unknown>));
 }
 
@@ -25,22 +25,22 @@ export interface BillingEntityInput {
   contactInfo: string | null;
 }
 
-export async function createBillingEntity(input: BillingEntityInput): Promise<BillingEntity> {
+export async function createBillingEntity(businessId: string, input: BillingEntityInput): Promise<BillingEntity> {
   const rows = await sql`
-    insert into billing_entities (name, address, contact_info)
-    values (${input.name}, ${input.address}, ${input.contactInfo})
+    insert into billing_entities (business_id, name, address, contact_info)
+    values (${businessId}, ${input.name}, ${input.address}, ${input.contactInfo})
     returning *
   `;
   return mapBillingEntity(rows[0] as Record<string, unknown>);
 }
 
-export async function updateBillingEntity(id: string, input: BillingEntityInput): Promise<void> {
+export async function updateBillingEntity(id: string, businessId: string, input: BillingEntityInput): Promise<void> {
   await sql`
     update billing_entities set name = ${input.name}, address = ${input.address}, contact_info = ${input.contactInfo}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function setBillingEntityActive(id: string, active: boolean): Promise<void> {
-  await sql`update billing_entities set active = ${active} where id = ${id}`;
+export async function setBillingEntityActive(id: string, businessId: string, active: boolean): Promise<void> {
+  await sql`update billing_entities set active = ${active} where id = ${id} and business_id = ${businessId}`;
 }

@@ -12,8 +12,8 @@ export function isAllowedLogoExtension(fileName: string): boolean {
   return ALLOWED_LOGO_EXTENSIONS.includes(getFileExtension(fileName));
 }
 
-/** Timestamped filename so replacing the logo naturally busts any cached copy of the old public URL. */
-export function newLogoStoragePath(fileName: string): string {
+/** Namespaced by business, with a timestamped filename so replacing the logo naturally busts any cached copy of the old public URL. */
+export function newLogoStoragePath(businessId: string, fileName: string): string {
   const ext = getFileExtension(fileName) || "png";
-  return `logo-${Date.now()}.${ext}`;
+  return `${businessId}/logo-${Date.now()}.${ext}`;
 }

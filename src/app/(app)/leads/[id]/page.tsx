@@ -41,16 +41,18 @@ export default async function LeadDetailPage({
   const isOwner = user.role === "OWNER";
   const [lead, costEntries, workTypes, leadSources, today, teamMembers, workCategories, clients, allLeads] =
     await Promise.all([
-      getLead(id),
-      isOwner ? listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
-      listWorkTypes({ includeInactive: true }),
-      listLeadSources({ includeInactive: true }),
+      getLead(id, user.businessId),
+      isOwner
+        ? listCostEntries(user.businessId, { leadId: id, dateFrom: costFrom, dateTo: costTo })
+        : Promise.resolve([]),
+      listWorkTypes(user.businessId, { includeInactive: true }),
+      listLeadSources(user.businessId, { includeInactive: true }),
       getBusinessToday(user.businessId),
       // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
-      listTeamMembers(),
-      isOwner ? listWorkCategories() : Promise.resolve([]),
-      isOwner ? listClients() : Promise.resolve([]),
-      isOwner ? listLeads() : Promise.resolve([]),
+      listTeamMembers(user.businessId),
+      isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
+      isOwner ? listClients(user.businessId) : Promise.resolve([]),
+      isOwner ? listLeads(user.businessId) : Promise.resolve([]),
     ]);
   if (!lead) notFound();
 

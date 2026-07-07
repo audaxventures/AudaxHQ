@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as leads from "@/lib/data/leads";
 import { getBusinessToday } from "@/lib/data/businesses";
-import { requireCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser, requireLeadAccess } from "@/lib/currentUser";
 import type { EntityColor } from "@/lib/types";
 
 const leadSchema = z.object({
@@ -53,17 +53,18 @@ function parseLeadForm(formData: FormData) {
 }
 
 export async function createLead(formData: FormData) {
+  const user = await requireCurrentUser();
   const input = parseLeadForm(formData);
-  const lead = await leads.createLead(input);
+  const lead = await leads.createLead(user.businessId, input);
   revalidatePath("/leads");
   revalidatePath("/");
   redirect(`/leads/${lead.id}`);
 }
 
 export async function updateLead(id: string, formData: FormData) {
-  const user = await requireCurrentUser();
+  const user = await requireLeadAccess(id);
   const input = parseLeadForm(formData);
-  const result = await leads.updateLead(id, input, await getBusinessToday(user.businessId));
+  const result = await leads.updateLead(id, user.businessId, input, await getBusinessToday(user.businessId));
   revalidatePath(`/leads/${id}`);
   revalidatePath("/leads");
   revalidatePath("/");
@@ -80,29 +81,32 @@ export async function updateLead(id: string, formData: FormData) {
 }
 
 export async function setLeadColor(id: string, color: EntityColor | null) {
-  await leads.setLeadColor(id, color);
+  const user = await requireLeadAccess(id);
+  await leads.setLeadColor(id, user.businessId, color);
   revalidatePath(`/leads/${id}`);
   revalidatePath("/leads");
   revalidatePath("/");
 }
 
 export async function deleteLead(id: string) {
-  await leads.deleteLead(id);
+  const user = await requireLeadAccess(id);
+  await leads.deleteLead(id, user.businessId);
   revalidatePath("/leads");
   revalidatePath("/");
   redirect("/leads");
 }
 
 export async function addLeadNote(leadId: string, formData: FormData) {
+  const user = await requireLeadAccess(leadId);
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
-  await leads.addLeadNote(leadId, body);
+  await leads.addLeadNote(leadId, user.businessId, body);
   revalidatePath(`/leads/${leadId}`);
 }
 
 export async function convertLeadToClient(leadId: string) {
-  const user = await requireCurrentUser();
-  const clientId = await leads.convertLeadToClient(leadId, await getBusinessToday(user.businessId));
+  const user = await requireLeadAccess(leadId);
+  const clientId = await leads.convertLeadToClient(leadId, user.businessId, await getBusinessToday(user.businessId));
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/leads");
   revalidatePath("/clients");

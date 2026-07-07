@@ -14,15 +14,15 @@ function mapTeamMember(row: Record<string, unknown>): TeamMember {
   };
 }
 
-export async function listTeamMembers(opts: { includeInactive?: boolean } = {}): Promise<TeamMember[]> {
+export async function listTeamMembers(businessId: string, opts: { includeInactive?: boolean } = {}): Promise<TeamMember[]> {
   const rows = opts.includeInactive
-    ? await sql`select * from team_members order by active desc, name asc`
-    : await sql`select * from team_members where active order by name asc`;
+    ? await sql`select * from team_members where business_id = ${businessId} order by active desc, name asc`
+    : await sql`select * from team_members where business_id = ${businessId} and active order by name asc`;
   return rows.map((r) => mapTeamMember(r as Record<string, unknown>));
 }
 
-export async function getTeamMember(id: string): Promise<TeamMember | null> {
-  const rows = await sql`select * from team_members where id = ${id}`;
+export async function getTeamMember(id: string, businessId: string): Promise<TeamMember | null> {
+  const rows = await sql`select * from team_members where id = ${id} and business_id = ${businessId}`;
   return rows[0] ? mapTeamMember(rows[0] as Record<string, unknown>) : null;
 }
 
@@ -31,24 +31,24 @@ export interface TeamMemberInput {
   defaultHourlyRate: number;
 }
 
-export async function createTeamMember(input: TeamMemberInput): Promise<TeamMember> {
+export async function createTeamMember(businessId: string, input: TeamMemberInput): Promise<TeamMember> {
   const rows = await sql`
-    insert into team_members (name, default_hourly_rate)
-    values (${input.name}, ${input.defaultHourlyRate})
+    insert into team_members (business_id, name, default_hourly_rate)
+    values (${businessId}, ${input.name}, ${input.defaultHourlyRate})
     returning *
   `;
   return mapTeamMember(rows[0] as Record<string, unknown>);
 }
 
-export async function updateTeamMember(id: string, input: TeamMemberInput): Promise<void> {
+export async function updateTeamMember(id: string, businessId: string, input: TeamMemberInput): Promise<void> {
   await sql`
     update team_members set name = ${input.name}, default_hourly_rate = ${input.defaultHourlyRate}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function setTeamMemberActive(id: string, active: boolean): Promise<void> {
-  await sql`update team_members set active = ${active} where id = ${id}`;
+export async function setTeamMemberActive(id: string, businessId: string, active: boolean): Promise<void> {
+  await sql`update team_members set active = ${active} where id = ${id} and business_id = ${businessId}`;
 }
 
 export interface TeamMemberCredentials {
@@ -95,13 +95,13 @@ export async function setTeamMemberLogin(id: string, businessId: string, email: 
   ]);
 }
 
-export async function removeTeamMemberLogin(id: string): Promise<void> {
+export async function removeTeamMemberLogin(id: string, businessId: string): Promise<void> {
   await sql.transaction([
     sql`
       update team_members
       set email = null, passcode_hash = null, passcode_salt = null,
           passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
-      where id = ${id}
+      where id = ${id} and business_id = ${businessId}
     `,
     sql`delete from account_emails where team_member_id = ${id}`,
   ]);

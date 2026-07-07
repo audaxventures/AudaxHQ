@@ -8,9 +8,11 @@ import {
   deactivateWorkType,
   updateWorkType,
 } from "@/app/(app)/settings/actions";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function WorkTypesSettingsPage() {
-  const workTypes = await listWorkTypes({ includeInactive: true });
+  const user = await requireOwner();
+  const workTypes = await listWorkTypes(user.businessId, { includeInactive: true });
   return (
     <Card className="p-6">
       <SettingsPanelHeader
