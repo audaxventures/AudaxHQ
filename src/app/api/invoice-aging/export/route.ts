@@ -4,6 +4,7 @@ import { getAppSettings } from "@/lib/data/appSettings";
 import { getToday } from "@/lib/data/profile";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
 import { formatDateInput } from "@/lib/format";
+import { getCurrentUser } from "@/lib/currentUser";
 import { CLIENT_TYPE_LABELS, invoiceAgeBracket, invoiceAgeBracketLabels } from "@/lib/types";
 import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
 
@@ -12,6 +13,11 @@ import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
 // page, respecting its Client Type / Age filters — distinct from the
 // Settings -> Data Export "all invoices ever" backup CSV.
 export async function GET(request: Request) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "OWNER") {
+    return new NextResponse("Not authorized", { status: 403 });
+  }
+
   const params = new URL(request.url).searchParams;
   const clientType = (params.get("clientType") as ClientType | null) ?? undefined;
   const bracket = (params.get("bracket") as InvoiceAgeBracket | null) ?? undefined;

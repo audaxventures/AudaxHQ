@@ -30,6 +30,10 @@ export interface CostEntryFilters {
   billable?: boolean;
   dateFrom?: string;
   dateTo?: string;
+  /** Team-member-role scoping: when set, only that team member's own time entries are returned — fixed costs are excluded entirely (they're business-level expenses with no team-member concept). Undefined/null = no restriction (owner view). */
+  restrictToTeamMemberId?: string | null;
+  /** Team-member-role scoping: when set (a non-null array), only time entries with no client (lead-owned) or whose client is in this list are returned. Undefined/null = no restriction. */
+  restrictToClientIds?: string[] | null;
 }
 
 /**
@@ -37,7 +41,8 @@ export interface CostEntryFilters {
  * team-member, work-category, and billable filters only apply to time
  * entries (fixed costs have none of those concepts), so setting any of
  * them narrows the fixed-cost branch to nothing rather than ignoring
- * the filter.
+ * the filter. The same is true of restrictToTeamMemberId (team-member-role
+ * scoping) — fixed costs are always excluded once that's set.
  */
 export async function listCostEntries(filters: CostEntryFilters = {}): Promise<CostEntry[]> {
   const rows = await sql`
@@ -61,6 +66,12 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         and (${filters.billable ?? null}::boolean is null or te.billable = ${filters.billable ?? null})
         and (${filters.dateFrom ?? null}::date is null or te.date >= ${filters.dateFrom ?? null})
         and (${filters.dateTo ?? null}::date is null or te.date <= ${filters.dateTo ?? null})
+        and (${filters.restrictToTeamMemberId ?? null}::uuid is null or te.team_member_id = ${filters.restrictToTeamMemberId ?? null})
+        and (
+          ${filters.restrictToClientIds ?? null}::uuid[] is null
+          or te.client_id is null
+          or te.client_id = any(${filters.restrictToClientIds ?? null}::uuid[])
+        )
 
       union all
 
@@ -81,6 +92,7 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         and ${filters.billable ?? null}::boolean is null
         and (${filters.dateFrom ?? null}::date is null or fc.date >= ${filters.dateFrom ?? null})
         and (${filters.dateTo ?? null}::date is null or fc.date <= ${filters.dateTo ?? null})
+        and ${filters.restrictToTeamMemberId ?? null}::uuid is null
     ) combined
     order by date desc, created_at desc
   `;
@@ -189,8 +201,13 @@ export async function createTimeEntry(input: TimeEntryInput): Promise<void> {
   `;
 }
 
-export async function deleteTimeEntry(id: string): Promise<void> {
-  await sql`delete from time_entries where id = ${id}`;
+/** `restrictToTeamMemberId` (team-member role) makes this a silent no-op against another team member's entry, rather than trusting the caller's claimed ownership. */
+export async function deleteTimeEntry(id: string, restrictToTeamMemberId?: string | null): Promise<void> {
+  await sql`
+    delete from time_entries
+    where id = ${id}
+      and (${restrictToTeamMemberId ?? null}::uuid is null or team_member_id = ${restrictToTeamMemberId ?? null})
+  `;
 }
 
 export interface FixedCostInput {

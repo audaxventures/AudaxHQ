@@ -9,8 +9,10 @@ import type { Client } from "@/lib/types";
 
 export function ClientGridCard({
   client,
+  hideBilling = false,
 }: {
   client: Client & { unpaidInvoiceCount: number; invoiceCount: number };
+  hideBilling?: boolean;
 }) {
   return (
     <Link
@@ -34,7 +36,7 @@ export function ClientGridCard({
       <div className="flex flex-wrap items-center gap-2">
         <ClientStatusBadge status={client.status} />
         <Badge tone="navy">{client.type === "PROJECT" ? "Project" : "Recurring"}</Badge>
-        {client.invoiceCount > 0 && (
+        {!hideBilling && client.invoiceCount > 0 && (
           <Badge tone={client.unpaidInvoiceCount > 0 ? "gold" : "sage"}>
             {client.unpaidInvoiceCount > 0
               ? `${client.unpaidInvoiceCount} unpaid invoice${client.unpaidInvoiceCount === 1 ? "" : "s"}`
@@ -43,10 +45,14 @@ export function ClientGridCard({
         )}
       </div>
       <div className="flex items-end justify-between border-t border-navy-100 pt-3">
-        <div>
-          <p className="font-heading text-lg text-navy-900">{formatCurrency(client.rate)}</p>
-          <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
-        </div>
+        {hideBilling ? (
+          <span />
+        ) : (
+          <div>
+            <p className="font-heading text-lg text-navy-900">{formatCurrency(client.rate)}</p>
+            <p className="text-xs text-navy-400">{client.type === "RECURRING" ? "/ month" : "total"}</p>
+          </div>
+        )}
         <ChevronRight
           size={18}
           className="text-navy-300 group-hover:text-navy-500 transition-colors shrink-0"

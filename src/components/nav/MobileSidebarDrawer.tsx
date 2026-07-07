@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SidebarNavList } from "@/components/nav/SidebarNavList";
+import type { SessionRole } from "@/lib/types";
 
 /** Only ever rendered while open — the caller conditionally mounts it (`{drawerOpen && <MobileSidebarDrawer .../>}`). */
-export function MobileSidebarDrawer({ onClose }: { onClose: () => void }) {
+export function MobileSidebarDrawer({ role, onClose }: { role: SessionRole; onClose: () => void }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export function MobileSidebarDrawer({ onClose }: { onClose: () => void }) {
             <X size={20} />
           </button>
         </div>
-        <SidebarNavList onNavigate={onClose} />
+        <SidebarNavList role={role} onNavigate={onClose} />
       </div>
     </div>
   );

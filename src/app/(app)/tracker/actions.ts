@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
 import * as teamMembers from "@/lib/data/teamMembers";
 import * as workCategories from "@/lib/data/workCategories";
+import { getCurrentUser, requireOwner } from "@/lib/currentUser";
 import type { FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -20,17 +22,41 @@ function parseOwner(raw: string): { clientId: string | null; leadId: string | nu
 }
 
 export async function createTimeEntry(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
-  const teamMemberId = String(formData.get("teamMemberId") ?? "");
   const categoryId = String(formData.get("categoryId") ?? "") || null;
   const date = String(formData.get("date") ?? "");
   const hours = Number(formData.get("hours"));
-  const rate = Number(formData.get("rate"));
   const billable = formData.get("billable") === "on";
   const description = String(formData.get("description") ?? "").trim() || null;
 
-  if (!teamMemberId || !date || !(hours > 0) || !(rate >= 0)) {
-    throw new Error("Fill in team member, date, and hours.");
+  if (!date || !(hours > 0)) {
+    throw new Error("Fill in date and hours.");
+  }
+
+  let teamMemberId: string;
+  let rate: number;
+
+  if (user.role === "OWNER") {
+    teamMemberId = String(formData.get("teamMemberId") ?? "");
+    rate = Number(formData.get("rate"));
+    if (!teamMemberId || !(rate >= 0)) {
+      throw new Error("Fill in team member and rate.");
+    }
+  } else {
+    // Team members can only log their own hours, at their own rate — both are
+    // pinned server-side rather than trusted from the form, which also keeps
+    // the rate ($) figure out of their hands entirely.
+    teamMemberId = user.teamMember.id;
+    rate = Number(user.teamMember.defaultHourlyRate);
+    if (clientId) {
+      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId);
+      if (!accessibleIds.includes(clientId)) {
+        throw new Error("You don't have access to that client.");
+      }
+    }
   }
 
   await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
@@ -38,11 +64,14 @@ export async function createTimeEntry(formData: FormData) {
 }
 
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
-  await costEntries.deleteTimeEntry(id);
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  await costEntries.deleteTimeEntry(id, user.role === "TEAM_MEMBER" ? user.teamMember.id : null);
   revalidateOwner(clientId, leadId);
 }
 
 export async function createFixedCost(formData: FormData) {
+  await requireOwner();
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const date = String(formData.get("date") ?? "");
   const description = String(formData.get("description") ?? "").trim();
@@ -58,6 +87,7 @@ export async function createFixedCost(formData: FormData) {
 }
 
 export async function deleteFixedCost(id: string, clientId: string | null, leadId: string | null) {
+  await requireOwner();
   await costEntries.deleteFixedCost(id);
   revalidateOwner(clientId, leadId);
 }
@@ -73,6 +103,7 @@ function revalidateWorkCategories() {
 }
 
 export async function createTeamMember(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -81,6 +112,7 @@ export async function createTeamMember(formData: FormData) {
 }
 
 export async function updateTeamMember(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -89,16 +121,53 @@ export async function updateTeamMember(id: string, formData: FormData) {
 }
 
 export async function activateTeamMember(id: string) {
+  await requireOwner();
   await teamMembers.setTeamMemberActive(id, true);
   revalidateTeamMembers();
 }
 
 export async function deactivateTeamMember(id: string) {
+  await requireOwner();
   await teamMembers.setTeamMemberActive(id, false);
   revalidateTeamMembers();
 }
 
+export async function enableTeamMemberLogin(id: string, formData: FormData) {
+  await requireOwner();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const passcode = String(formData.get("passcode") ?? "");
+  if (!email || passcode.length < 4) {
+    throw new Error("Enter an email and a passcode of at least 4 characters.");
+  }
+  await teamMembers.setTeamMemberLogin(id, email, passcode);
+  revalidateTeamMembers();
+}
+
+export async function disableTeamMemberLogin(id: string) {
+  await requireOwner();
+  await teamMembers.removeTeamMemberLogin(id);
+  revalidateTeamMembers();
+}
+
+export async function resetTeamMemberPasscode(id: string, formData: FormData) {
+  await requireOwner();
+  const passcode = String(formData.get("passcode") ?? "");
+  if (passcode.length < 4) {
+    throw new Error("Passcode must be at least 4 characters.");
+  }
+  await teamMembers.setTeamMemberPasscode(id, passcode);
+  revalidateTeamMembers();
+}
+
+export async function updateClientAccess(teamMemberId: string, formData: FormData) {
+  await requireOwner();
+  const clientIds = formData.getAll("clientId").map((v) => String(v));
+  await clientAccess.setClientAccess(teamMemberId, clientIds);
+  revalidateTeamMembers();
+}
+
 export async function createWorkCategory(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -107,6 +176,7 @@ export async function createWorkCategory(formData: FormData) {
 }
 
 export async function updateWorkCategory(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -115,11 +185,13 @@ export async function updateWorkCategory(id: string, formData: FormData) {
 }
 
 export async function activateWorkCategory(id: string) {
+  await requireOwner();
   await workCategories.setWorkCategoryActive(id, true);
   revalidateWorkCategories();
 }
 
 export async function deactivateWorkCategory(id: string) {
+  await requireOwner();
   await workCategories.setWorkCategoryActive(id, false);
   revalidateWorkCategories();
 }

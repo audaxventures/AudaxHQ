@@ -11,7 +11,10 @@ import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import { FIXED_COST_CATEGORY_LABELS } from "@/lib/types";
 import type { Tone } from "@/lib/tone";
 
@@ -33,14 +36,22 @@ export default async function TrackerPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
+  const user = await getCurrentUser();
+  const isOwner = user?.role === "OWNER";
+  const teamMember = user?.role === "TEAM_MEMBER" ? user.teamMember : null;
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+
   const filters = {
     clientId: sp.clientId || undefined,
     leadId: sp.leadId || undefined,
-    teamMemberId: sp.teamMemberId || undefined,
+    // Team members only ever see their own log, so the "who" filter is owner-only.
+    teamMemberId: isOwner ? sp.teamMemberId || undefined : undefined,
     workCategoryId: sp.workCategoryId || undefined,
     billable: sp.billable === "true" ? true : sp.billable === "false" ? false : undefined,
     dateFrom: sp.dateFrom || undefined,
     dateTo: sp.dateTo || undefined,
+    restrictToTeamMemberId: teamMember?.id,
+    restrictToClientIds: teamMember ? accessibleClientIds : undefined,
   };
   const showArchived = sp.archived === "true";
   const search = (sp.q ?? "").trim().toLowerCase();
@@ -50,7 +61,7 @@ export default async function TrackerPage({
     listCostEntries(filters),
     listTeamMembers({ includeInactive: true }),
     listWorkCategories({ includeInactive: true }),
-    listClients(),
+    listClients({ accessibleClientIds }),
     listLeads(),
   ]);
 
@@ -88,7 +99,10 @@ export default async function TrackerPage({
 
   const total = entries.length;
   const start = (page - 1) * PAGE_SIZE;
-  const pageEntries = entries.slice(start, start + PAGE_SIZE);
+  // CostEntryTable is a Client Component — its props (including rate/amount)
+  // are serialized to the browser regardless of which columns get rendered,
+  // so strip the $ fields here rather than trusting hideFinancials alone.
+  const pageEntries = entries.slice(start, start + PAGE_SIZE).map((e) => (isOwner ? e : { ...e, rate: null, amount: 0 }));
 
   const filterParams: Record<string, string | undefined> = {
     clientId: filters.clientId,
@@ -137,20 +151,23 @@ export default async function TrackerPage({
         description="Log time and expenses against clients and leads to see real profitability"
         action={
           <div className="flex items-center gap-3">
-            <LinkButton variant="secondary" href={`/api/reports?${reportQuery.toString()}`}>
-              <Download size={16} /> Export report
-            </LinkButton>
+            {isOwner && (
+              <LinkButton variant="secondary" href={`/api/reports?${reportQuery.toString()}`}>
+                <Download size={16} /> Export report
+              </LinkButton>
+            )}
             <LogTimeEntryButton
               clients={clients}
               leads={leads}
               teamMembers={activeTeamMembers}
               workCategories={activeWorkCategories}
+              lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
             />
           </div>
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className={cn("mb-6 grid grid-cols-2 gap-4", isOwner ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-2")}>
         <StatTile label="Hours logged" value={rollup.totalHours.toFixed(1)} tone="navy" />
         <StatTile
           label="Billable hours"
@@ -158,14 +175,18 @@ export default async function TrackerPage({
           subtext={billablePercent !== null ? `${billablePercent.toFixed(1)}% of total` : undefined}
           tone="slate"
         />
-        <StatTile label="Revenue" value={formatCurrency(revenue)} subtext="From billable hours" tone="sage" />
-        <StatTile label="Costs" value={formatCurrency(costs)} subtext="Total cost" tone="burnt" />
-        <StatTile
-          label="Profit"
-          value={formatCurrency(profit)}
-          subtext={marginPercent !== null ? `${marginPercent.toFixed(1)}% margin` : undefined}
-          tone="gold"
-        />
+        {isOwner && (
+          <>
+            <StatTile label="Revenue" value={formatCurrency(revenue)} subtext="From billable hours" tone="sage" />
+            <StatTile label="Costs" value={formatCurrency(costs)} subtext="Total cost" tone="burnt" />
+            <StatTile
+              label="Profit"
+              value={formatCurrency(profit)}
+              subtext={marginPercent !== null ? `${marginPercent.toFixed(1)}% margin` : undefined}
+              tone="gold"
+            />
+          </>
+        )}
       </div>
 
       <Card className="mb-6 p-6">
@@ -175,12 +196,13 @@ export default async function TrackerPage({
           teamMembers={filterTeamMembers}
           workCategories={filterWorkCategories}
           filters={filterParams}
+          hideTeamMemberFilter={!isOwner}
         />
       </Card>
 
       <Card className="p-6">
         <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Entry log</h3>
-        <CostEntryTable entries={pageEntries} showOwner deletable />
+        <CostEntryTable entries={pageEntries} showOwner deletable hideFinancials={!isOwner} />
         <Pagination page={page} pageSize={PAGE_SIZE} total={total} itemLabel="entries" buildHref={buildPageHref} />
       </Card>
     </div>

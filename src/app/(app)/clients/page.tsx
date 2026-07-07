@@ -6,6 +6,8 @@ import { ClientFilterBar } from "@/components/clients/ClientFilterBar";
 import { ClientListRow } from "@/components/clients/ClientListRow";
 import { ClientGridCard } from "@/components/clients/ClientGridCard";
 import { listClients, countClients } from "@/lib/data/clients";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 import type { ClientStatus, ClientType } from "@/lib/types";
 import { Plus, Users } from "lucide-react";
 
@@ -20,16 +22,22 @@ export default async function ClientsPage({
   const page = Math.max(1, Number(pageParam) || 1);
   const isGrid = view === "grid";
 
+  const user = await getCurrentUser();
+  const isTeamMember = user?.role === "TEAM_MEMBER";
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+
   const [clients, total] = await Promise.all([
     listClients({
       status: status as ClientStatus | undefined,
       type: type as ClientType | undefined,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
+      accessibleClientIds,
     }),
     countClients({
       status: status as ClientStatus | undefined,
       type: type as ClientType | undefined,
+      accessibleClientIds,
     }),
   ]);
 
@@ -67,13 +75,13 @@ export default async function ClientsPage({
       ) : isGrid ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {clients.map((client) => (
-            <ClientGridCard key={client.id} client={client} />
+            <ClientGridCard key={client.id} client={client} hideBilling={isTeamMember} />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
           {clients.map((client) => (
-            <ClientListRow key={client.id} client={client} />
+            <ClientListRow key={client.id} client={client} hideBilling={isTeamMember} />
           ))}
         </div>
       )}

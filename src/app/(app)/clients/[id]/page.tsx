@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { getClient } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -42,13 +44,24 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { costFrom, costTo } = await searchParams;
+  const user = await getCurrentUser();
+  const isOwner = user?.role === "OWNER";
+  if (user && !isOwner) {
+    const accessibleClientIds = await accessibleClientIdsFor(user);
+    if (!accessibleClientIds?.includes(id)) notFound();
+  }
   const [client, costEntries, workTypes, today] = await Promise.all([
     getClient(id),
-    listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }),
+    isOwner ? listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
     listWorkTypes({ includeInactive: true }),
     getToday(),
   ]);
   if (!client) notFound();
+
+  // Every to-do board is private — a client's Tasks panel only ever shows
+  // the current viewer's own to-dos for that client, never a colleague's.
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const myTasks = client.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
 
   const isArchived = client.status === "CHURNED";
   const boundArchiveClient = archiveClient.bind(null, id);
@@ -93,35 +106,40 @@ export default async function ClientDetailPage({
               workTypes={workTypes}
               submitLabel="Save changes"
               variant="compact"
+              hideRate={!isOwner}
             />
           </Card>
 
-          <Card className="p-6">
-            <PanelHeading icon={Receipt} tone="slate" title="Invoices" />
-            <p className="text-sm text-navy-500 mb-4">
-              {client.type === "RECURRING"
-                ? "One entry per month, created automatically — add one-off invoices any time."
-                : "Split the project total across deposits, milestones, or however you invoice this client."}
-            </p>
-            <InvoicesList clientId={id} invoices={client.invoices} />
-          </Card>
+          {isOwner && (
+            <>
+              <Card className="p-6">
+                <PanelHeading icon={Receipt} tone="slate" title="Invoices" />
+                <p className="text-sm text-navy-500 mb-4">
+                  {client.type === "RECURRING"
+                    ? "One entry per month, created automatically — add one-off invoices any time."
+                    : "Split the project total across deposits, milestones, or however you invoice this client."}
+                </p>
+                <InvoicesList clientId={id} invoices={client.invoices} />
+              </Card>
 
-          <CostSummarySection
-            entries={costEntries}
-            totalInvoiced={client.invoices
-              .filter((i) => i.status !== "NOT_INVOICED")
-              .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
-              .reduce((sum, i) => sum + Number(i.amount), 0)}
-            budgetedHours={client.budgetedHours}
-            reportHref={`/api/reports?${new URLSearchParams({
-              clientId: id,
-              summary: "1",
-              ...(costFrom ? { dateFrom: costFrom } : {}),
-              ...(costTo ? { dateTo: costTo } : {}),
-            }).toString()}`}
-            dateFrom={costFrom}
-            dateTo={costTo}
-          />
+              <CostSummarySection
+                entries={costEntries}
+                totalInvoiced={client.invoices
+                  .filter((i) => i.status !== "NOT_INVOICED")
+                  .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
+                  .reduce((sum, i) => sum + Number(i.amount), 0)}
+                budgetedHours={client.budgetedHours}
+                reportHref={`/api/reports?${new URLSearchParams({
+                  clientId: id,
+                  summary: "1",
+                  ...(costFrom ? { dateFrom: costFrom } : {}),
+                  ...(costTo ? { dateTo: costTo } : {}),
+                }).toString()}`}
+                dateFrom={costFrom}
+                dateTo={costTo}
+              />
+            </>
+          )}
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
@@ -145,15 +163,17 @@ export default async function ClientDetailPage({
         </div>
 
         <div className="space-y-6">
-          <Card tone="burnt" variant="solid" className="p-6">
-            <PanelHeading
-              icon={DollarSign}
-              tone="burnt"
-              title={client.type === "RECURRING" ? "Monthly fee" : "Project total"}
-            />
-            <p className="font-heading text-2xl text-navy-900">{formatCurrency(client.rate)}</p>
-            {client.type === "RECURRING" && <p className="text-xs text-navy-500">/ month</p>}
-          </Card>
+          {isOwner && (
+            <Card tone="burnt" variant="solid" className="p-6">
+              <PanelHeading
+                icon={DollarSign}
+                tone="burnt"
+                title={client.type === "RECURRING" ? "Monthly fee" : "Project total"}
+              />
+              <p className="font-heading text-2xl text-navy-900">{formatCurrency(client.rate)}</p>
+              {client.type === "RECURRING" && <p className="text-xs text-navy-500">/ month</p>}
+            </Card>
+          )}
 
           <EmailSection
             contactEmail={client.contactEmail}
@@ -163,7 +183,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={client.tasks} today={today} />
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
           </Card>
 
           <Card className="p-6">

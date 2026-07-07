@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Building2, Circle, Flag, List, Tag as TagIcon, Target, Trash2 } from "lucide-react";
+import { Building2, Circle, Flag, List, Tag as TagIcon, Target, Trash2, UserCircle2 } from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
@@ -41,6 +41,7 @@ export function TaskFormDrawer({
   leads,
   todoTypes,
   defaultTypeSelection,
+  assignOptions,
   onClose,
 }: {
   mode: "create" | "edit";
@@ -50,6 +51,8 @@ export function TaskFormDrawer({
   leads: OwnerOption[];
   todoTypes: TodoType[];
   defaultTypeSelection: string;
+  /** "Me" plus whoever else you're allowed to hand a to-do to. A to-do is only ever editable while it's on your own board, so "Me" is always the correct default here even in edit mode. */
+  assignOptions: { value: string; label: string }[];
   onClose: () => void;
 }) {
   const [typeSelection, setTypeSelection] = useState(task ? taskTypeSelection(task) : defaultTypeSelection);
@@ -126,6 +129,19 @@ export function TaskFormDrawer({
             placeholder="What needs to get done?"
           />
         </FieldGroup>
+
+        {assignOptions.length > 1 && (
+          <FieldGroup>
+            <Label htmlFor="task-assigned-to">Assign to</Label>
+            <Select id="task-assigned-to" name="assignedTo" defaultValue="" icon={UserCircle2}>
+              {assignOptions.map((opt) => (
+                <option key={opt.value || "self"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>

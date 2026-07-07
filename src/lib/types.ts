@@ -116,6 +116,12 @@ export interface Task {
   // present when returned from a query that joins in the owner's name
   clientName?: string;
   leadName?: string;
+  /** Whose board this to-do is currently on — null means the workspace owner. */
+  assignedToTeamMemberId: string | null;
+  /** Who originally created it — null means the workspace owner. Differs from assignedToTeamMemberId once a to-do has been handed off to someone else. */
+  createdByTeamMemberId: string | null;
+  /** "Owner" or the creating team member's name — only meaningful (and only shown by the UI) when it differs from who the to-do is assigned to now. */
+  createdByName: string;
 }
 
 export interface Client {
@@ -182,7 +188,22 @@ export interface TeamMember {
   defaultHourlyRate: string;
   active: boolean;
   createdAt: string;
+  /** Null when this row is just a cost-tracking label with no login. */
+  email: string | null;
+  /** True once a passcode has been set for this person — they can sign in. */
+  hasLogin: boolean;
 }
+
+export type SessionRole = "OWNER" | "TEAM_MEMBER";
+
+/** The signed session cookie's payload — decoded on every request, so keep it minimal. */
+export interface SessionClaims {
+  role: SessionRole;
+  teamMemberId?: string;
+}
+
+/** Resolved current-user context for a request — the team member's full record is looked up once claims are verified. */
+export type CurrentUser = { role: "OWNER" } | { role: "TEAM_MEMBER"; teamMember: TeamMember };
 
 export interface WorkCategory {
   id: string;

@@ -3,7 +3,7 @@
 import { useRef, useTransition } from "react";
 import Link from "next/link";
 import { motion, type PanInfo } from "framer-motion";
-import { Check, Flag, Hourglass } from "lucide-react";
+import { Check, Flag, Hourglass, Send } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Badge, TaskTypeBadge } from "@/components/ui/Badge";
 import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
@@ -59,6 +59,8 @@ export function TaskCard({
   const dueToday = !completed && isDueToday(task.dueDate, today);
   const ownerHref = task.clientId ? `/clients/${task.clientId}` : task.leadId ? `/leads/${task.leadId}` : null;
   const ownerName = task.clientName ?? task.leadName;
+  // Someone handed this off to you rather than you creating it yourself.
+  const handedOff = task.createdByTeamMemberId !== task.assignedToTeamMemberId;
 
   function toggleComplete(e: React.MouseEvent) {
     e.stopPropagation();
@@ -134,6 +136,11 @@ export function TaskCard({
         {task.status === "AWAITING_CLIENT_FEEDBACK" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-600">
             <Hourglass size={11} /> Waiting on client
+          </span>
+        )}
+        {handedOff && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
+            <Send size={11} /> From {task.createdByName}
           </span>
         )}
         {task.tags.map((tag) => (

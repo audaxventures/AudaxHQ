@@ -17,12 +17,15 @@ export function TrackerFilters({
   teamMembers,
   workCategories,
   filters,
+  hideTeamMemberFilter = false,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
   filters: Record<string, string | undefined>;
+  /** Team members only ever see their own entries, so filtering by "who" is moot for them. */
+  hideTeamMemberFilter?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -80,22 +83,24 @@ export function TrackerFilters({
             ))}
           </Select>
         </FieldGroup>
-        <FieldGroup>
-          <Label htmlFor="filter-team-member">Team member</Label>
-          <Select
-            id="filter-team-member"
-            value={filters.teamMemberId ?? ""}
-            onChange={(e) => update("teamMemberId", e.target.value)}
-            icon={User}
-          >
-            <option value="">Everyone</option>
-            {teamMembers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </FieldGroup>
+        {!hideTeamMemberFilter && (
+          <FieldGroup>
+            <Label htmlFor="filter-team-member">Team member</Label>
+            <Select
+              id="filter-team-member"
+              value={filters.teamMemberId ?? ""}
+              onChange={(e) => update("teamMemberId", e.target.value)}
+              icon={User}
+            >
+              <option value="">Everyone</option>
+              {teamMembers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        )}
         <FieldGroup>
           <Label htmlFor="filter-category">Category</Label>
           <Select

@@ -4,9 +4,10 @@ import { BackLink } from "@/components/ui/BackLink";
 import { InfoNote } from "@/components/ui/InfoNote";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { listWorkTypes } from "@/lib/data/workTypes";
+import { getCurrentUser } from "@/lib/currentUser";
 
 export default async function NewClientPage() {
-  const workTypes = await listWorkTypes({ includeInactive: true });
+  const [workTypes, user] = await Promise.all([listWorkTypes({ includeInactive: true }), getCurrentUser()]);
   return (
     <div>
       <BackLink href="/clients" label="Back to clients" />
@@ -22,7 +23,12 @@ export default async function NewClientPage() {
         }
       />
       <Card className="p-6">
-        <ClientForm workTypes={workTypes} submitLabel="Create client" cancelHref="/clients" />
+        <ClientForm
+          workTypes={workTypes}
+          submitLabel="Create client"
+          cancelHref="/clients"
+          hideRate={user?.role === "TEAM_MEMBER"}
+        />
       </Card>
     </div>
   );

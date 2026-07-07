@@ -41,6 +41,7 @@ export function ClientForm({
   submitLabel = "Save client",
   cancelHref,
   variant = "full",
+  hideRate = false,
 }: {
   client?: Client;
   workTypes: WorkType[];
@@ -48,6 +49,8 @@ export function ClientForm({
   cancelHref?: string;
   /** "compact" drops the icons/uppercase labels/required-asterisks for the in-place edit panel on the client detail page; "full" (default) is the fuller treatment used by the standalone New Client page. */
   variant?: "full" | "compact";
+  /** Team members don't see client billing figures — omit the rate field entirely (it's submitted as 0/unchanged rather than shown). */
+  hideRate?: boolean;
 }) {
   const [type, setType] = useState<ClientType>(client?.type ?? "PROJECT");
   const selectableWorkTypes = workTypes.filter((w) => w.active || w.id === client?.workTypeId);
@@ -141,21 +144,23 @@ export function ClientForm({
             <option value="CHURNED">Archived</option>
           </Select>
         </FieldGroup>
-        <FieldGroup>
-          <Label htmlFor="rate" compact={compact}>
-            {type === "RECURRING" ? "Monthly fee ($)" : "Project total ($)"}
-          </Label>
-          <Input
-            id="rate"
-            name="rate"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={client?.rate ?? ""}
-            placeholder="e.g. 0.00"
-            icon={fieldIcon(DollarSign)}
-          />
-        </FieldGroup>
+        {!hideRate && (
+          <FieldGroup>
+            <Label htmlFor="rate" compact={compact}>
+              {type === "RECURRING" ? "Monthly fee ($)" : "Project total ($)"}
+            </Label>
+            <Input
+              id="rate"
+              name="rate"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={client?.rate ?? ""}
+              placeholder="e.g. 0.00"
+              icon={fieldIcon(DollarSign)}
+            />
+          </FieldGroup>
+        )}
         <FieldGroup>
           <Label htmlFor="startDate" compact={compact}>
             Start date

@@ -6,8 +6,9 @@ import { LogOut, Menu, Settings } from "lucide-react";
 import { MOBILE_TAB_LINKS } from "@/components/nav/nav-links";
 import { NavLink } from "@/components/nav/NavLink";
 import { MobileSidebarDrawer } from "@/components/nav/MobileSidebarDrawer";
+import type { SessionRole } from "@/lib/types";
 
-export function MobileTopBar() {
+export function MobileTopBar({ role }: { role: SessionRole }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -25,13 +26,15 @@ export function MobileTopBar() {
           Audax HQ
         </p>
         <div className="flex items-center gap-1">
-          <Link
-            href="/settings"
-            aria-label="Settings"
-            className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
-          >
-            <Settings size={18} strokeWidth={1.75} />
-          </Link>
+          {role === "OWNER" && (
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
+            >
+              <Settings size={18} strokeWidth={1.75} />
+            </Link>
+          )}
           <form action="/api/logout" method="post">
             <button
               type="submit"
@@ -43,7 +46,7 @@ export function MobileTopBar() {
           </form>
         </div>
       </header>
-      {drawerOpen && <MobileSidebarDrawer onClose={() => setDrawerOpen(false)} />}
+      {drawerOpen && <MobileSidebarDrawer role={role} onClose={() => setDrawerOpen(false)} />}
     </>
   );
 }

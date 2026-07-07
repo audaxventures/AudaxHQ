@@ -8,6 +8,7 @@ import * as documents from "@/lib/data/documents";
 import { getToday } from "@/lib/data/profile";
 import { supabase, DOCUMENTS_BUCKET } from "@/lib/storage";
 import { MAX_DOCUMENT_SIZE_BYTES, getFileExtension, isAllowedDocumentExtension } from "@/lib/documents";
+import { requireClientAccess, requireOwner } from "@/lib/currentUser";
 import type { EntityColor } from "@/lib/types";
 
 const clientSchema = z.object({
@@ -25,7 +26,14 @@ const clientSchema = z.object({
   color: z.enum(["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "violet"]).optional(),
 });
 
-function parseClientForm(formData: FormData) {
+/**
+ * `fallbackRate` covers team members editing a client with the rate field
+ * hidden (ClientForm's hideRate) — formData.get("rate") is null (never
+ * submitted) rather than an empty string, so without a fallback the client's
+ * existing rate would silently get zeroed out by an unrelated edit.
+ */
+function parseClientForm(formData: FormData, fallbackRate = 0) {
+  const rate = formData.get("rate");
   const parsed = clientSchema.parse({
     companyName: formData.get("companyName"),
     contactName: formData.get("contactName") || undefined,
@@ -33,7 +41,7 @@ function parseClientForm(formData: FormData) {
     contactPhone: formData.get("contactPhone") || undefined,
     type: formData.get("type"),
     status: formData.get("status"),
-    rate: formData.get("rate") || 0,
+    rate: rate !== null ? rate || 0 : fallbackRate,
     workTypeId: formData.get("workTypeId") || undefined,
     // Only ever submitted by the form when the "Other" fallback work type is selected.
     workTypeOther: formData.get("workTypeOther") || undefined,
@@ -64,7 +72,9 @@ export async function createClient(formData: FormData) {
 }
 
 export async function updateClient(id: string, formData: FormData) {
-  const input = parseClientForm(formData);
+  await requireClientAccess(id);
+  const fallbackRate = formData.get("rate") === null ? await clients.getClientRate(id) : 0;
+  const input = parseClientForm(formData, fallbackRate);
   await clients.updateClient(id, input, await getToday());
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
@@ -72,6 +82,7 @@ export async function updateClient(id: string, formData: FormData) {
 }
 
 export async function archiveClient(id: string) {
+  await requireClientAccess(id);
   await clients.setClientStatus(id, "CHURNED");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
@@ -79,6 +90,7 @@ export async function archiveClient(id: string) {
 }
 
 export async function activateClient(id: string) {
+  await requireClientAccess(id);
   await clients.setClientStatus(id, "ACTIVE");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
@@ -86,6 +98,7 @@ export async function activateClient(id: string) {
 }
 
 export async function setClientColor(id: string, color: EntityColor | null) {
+  await requireClientAccess(id);
   await clients.setClientColor(id, color);
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
@@ -93,6 +106,7 @@ export async function setClientColor(id: string, color: EntityColor | null) {
 }
 
 export async function addClientNote(clientId: string, formData: FormData) {
+  await requireClientAccess(clientId);
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
   await clients.addClientNote(clientId, body);
@@ -100,6 +114,7 @@ export async function addClientNote(clientId: string, formData: FormData) {
 }
 
 export async function addClientLink(clientId: string, formData: FormData) {
+  await requireClientAccess(clientId);
   const label = String(formData.get("label") ?? "").trim();
   const url = String(formData.get("url") ?? "").trim();
   if (!label || !url) return;
@@ -108,6 +123,7 @@ export async function addClientLink(clientId: string, formData: FormData) {
 }
 
 export async function deleteClientLink(clientId: string, linkId: string) {
+  await requireClientAccess(clientId);
   await clients.deleteClientLink(linkId);
   revalidatePath(`/clients/${clientId}`);
 }
@@ -138,6 +154,7 @@ function parseInvoiceForm(formData: FormData) {
 }
 
 export async function addInvoice(clientId: string, formData: FormData) {
+  await requireOwner();
   const input = parseInvoiceForm(formData);
   await clients.addInvoice(clientId, input);
   revalidatePath(`/clients/${clientId}`);
@@ -145,6 +162,7 @@ export async function addInvoice(clientId: string, formData: FormData) {
 }
 
 export async function updateInvoice(clientId: string, invoiceId: string, formData: FormData) {
+  await requireOwner();
   const input = parseInvoiceForm(formData);
   await clients.updateInvoice(invoiceId, input);
   revalidatePath(`/clients/${clientId}`);
@@ -152,6 +170,7 @@ export async function updateInvoice(clientId: string, invoiceId: string, formDat
 }
 
 export async function deleteInvoice(clientId: string, invoiceId: string) {
+  await requireOwner();
   await clients.deleteInvoice(invoiceId);
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/");
@@ -160,6 +179,7 @@ export async function deleteInvoice(clientId: string, invoiceId: string) {
 // --- Documents ---
 
 export async function uploadDocument(clientId: string, formData: FormData) {
+  await requireClientAccess(clientId);
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a file to upload.");
@@ -190,6 +210,7 @@ export async function uploadDocument(clientId: string, formData: FormData) {
 }
 
 export async function deleteDocument(clientId: string, documentId: string) {
+  await requireClientAccess(clientId);
   const doc = await documents.getDocument(documentId);
   if (!doc) return;
   await supabase.storage.from(DOCUMENTS_BUCKET).remove([doc.filePath]);
@@ -200,6 +221,7 @@ export async function deleteDocument(clientId: string, documentId: string) {
 export async function getDocumentDownloadUrl(documentId: string): Promise<string> {
   const doc = await documents.getDocument(documentId);
   if (!doc) throw new Error("Document not found.");
+  await requireClientAccess(doc.clientId);
   const { data, error } = await supabase.storage
     .from(DOCUMENTS_BUCKET)
     .createSignedUrl(doc.filePath, 60, { download: doc.fileName });

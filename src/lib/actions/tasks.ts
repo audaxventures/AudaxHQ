@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import * as tasks from "@/lib/data/todos";
-import type { TaskPriority, TaskStatus, TaskType } from "@/lib/types";
+import * as clientAccess from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
+import type { CurrentUser, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -15,6 +17,33 @@ const taskSchema = z.object({
   status: z.enum(["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK", "COMPLETED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
 });
+
+function selfId(user: CurrentUser): string | null {
+  return user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+}
+
+/** The "Assign to" <select> submits "OWNER" or a team-member row id; "" (not present) means "me" (the current user). */
+function resolveAssignee(formData: FormData, user: CurrentUser): string | null {
+  const raw = formData.get("assignedTo");
+  if (raw === null || raw === "") return selfId(user);
+  if (raw === "OWNER") return null;
+  return String(raw);
+}
+
+async function requireCurrentUser(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  return user;
+}
+
+/** Defense in depth against a team member posting a clientId they can't see, bypassing the already-scoped dropdown in the UI. */
+async function assertClientAccess(user: CurrentUser, clientId: string | undefined): Promise<void> {
+  if (!clientId || user.role !== "TEAM_MEMBER") return;
+  const accessibleIds = await clientAccess.getClientAccessIds(user.teamMember.id);
+  if (!accessibleIds.includes(clientId)) {
+    throw new Error("You don't have access to that client.");
+  }
+}
 
 /** The type <select> submits "CLIENT"/"LEAD" literally, or a todo_types row id for everything else. */
 function resolveTypeSelection(typeSelection: string): { type: TaskType; todoTypeId: string | null } {
@@ -58,10 +87,13 @@ function revalidateForTask(clientId?: string | null, leadId?: string | null) {
 }
 
 export async function createTask(formData: FormData) {
+  const user = await requireCurrentUser();
   const input = parseTaskForm(formData);
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
-  await tasks.createTask({ ...input, clientId, leadId });
+  await assertClientAccess(user, clientId);
+  const assignedToTeamMemberId = resolveAssignee(formData, user);
+  await tasks.createTask({ ...input, clientId, leadId, assignedToTeamMemberId }, selfId(user));
   revalidateForTask(clientId, leadId);
 }
 
@@ -69,6 +101,8 @@ export async function createScopedTask(
   owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
   formData: FormData
 ) {
+  const user = await requireCurrentUser();
+  if (owner.type === "CLIENT") await assertClientAccess(user, owner.clientId);
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
   const tagsRaw = String(formData.get("tags") ?? "");
@@ -76,15 +110,19 @@ export async function createScopedTask(
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-  await tasks.createTask({
-    title,
-    description: (formData.get("description") as string) || null,
-    dueDate: (formData.get("dueDate") as string) || null,
-    tags,
-    type: owner.type,
-    clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
-    leadId: owner.type === "LEAD" ? owner.leadId : undefined,
-  });
+  await tasks.createTask(
+    {
+      title,
+      description: (formData.get("description") as string) || null,
+      dueDate: (formData.get("dueDate") as string) || null,
+      tags,
+      type: owner.type,
+      clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
+      leadId: owner.type === "LEAD" ? owner.leadId : undefined,
+      assignedToTeamMemberId: selfId(user),
+    },
+    selfId(user)
+  );
   revalidateForTask(
     owner.type === "CLIENT" ? owner.clientId : undefined,
     owner.type === "LEAD" ? owner.leadId : undefined
@@ -97,10 +135,13 @@ export async function updateTask(
   previousLeadId: string | null,
   formData: FormData
 ) {
+  const user = await requireCurrentUser();
   const input = parseTaskForm(formData);
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
-  await tasks.updateTask(id, { ...input, clientId: clientId ?? null, leadId: leadId ?? null });
+  await assertClientAccess(user, clientId);
+  const assignedToTeamMemberId = resolveAssignee(formData, user);
+  await tasks.updateTask(id, { ...input, clientId: clientId ?? null, leadId: leadId ?? null, assignedToTeamMemberId }, selfId(user));
   // Revalidate both the previous and (possibly changed) new owner's page, so
   // reassigning a task's client/lead doesn't leave stale data on either.
   revalidateForTask(previousClientId, previousLeadId);
@@ -113,11 +154,13 @@ export async function setTaskStatus(
   leadId: string | null,
   status: TaskStatus
 ) {
-  await tasks.setTaskStatus(id, status);
+  const user = await requireCurrentUser();
+  await tasks.setTaskStatus(id, status, selfId(user));
   revalidateForTask(clientId, leadId);
 }
 
 export async function deleteTask(id: string, clientId: string | null, leadId: string | null) {
-  await tasks.deleteTask(id);
+  const user = await requireCurrentUser();
+  await tasks.deleteTask(id, selfId(user));
   revalidateForTask(clientId, leadId);
 }

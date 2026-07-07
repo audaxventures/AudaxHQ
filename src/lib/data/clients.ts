@@ -75,6 +75,8 @@ export interface ClientFilters {
   type?: ClientType;
   limit?: number;
   offset?: number;
+  /** Team-member scoping: restrict results to these client IDs. Undefined/null = no restriction (owner). */
+  accessibleClientIds?: string[] | null;
 }
 
 export async function listClients(filters: ClientFilters = {}): Promise<
@@ -98,6 +100,7 @@ export async function listClients(filters: ClientFilters = {}): Promise<
     ) inv on inv.client_id = c.id
     where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
       and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
+      and (${filters.accessibleClientIds ?? null}::uuid[] is null or c.id = any(${filters.accessibleClientIds ?? null}::uuid[]))
     order by c.status = 'ACTIVE' desc, c.company_name asc
     limit ${filters.limit ?? null}
     offset ${filters.offset ?? 0}
@@ -110,15 +113,22 @@ export async function listClients(filters: ClientFilters = {}): Promise<
 }
 
 export async function countClients(
-  filters: Pick<ClientFilters, "status" | "type"> = {}
+  filters: Pick<ClientFilters, "status" | "type" | "accessibleClientIds"> = {}
 ): Promise<number> {
   const rows = await sql`
     select count(*) as count
     from clients c
     where (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
       and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
+      and (${filters.accessibleClientIds ?? null}::uuid[] is null or c.id = any(${filters.accessibleClientIds ?? null}::uuid[]))
   `;
   return Number((rows[0] as Record<string, unknown>).count);
+}
+
+/** Cheap single-column lookup — used as a fallback when a team member's edit form doesn't submit a rate at all (see ClientForm's hideRate). */
+export async function getClientRate(id: string): Promise<number> {
+  const rows = await sql`select rate from clients where id = ${id}`;
+  return rows[0] ? Number((rows[0] as Record<string, unknown>).rate) : 0;
 }
 
 export async function getClient(id: string): Promise<ClientWithRelations | null> {

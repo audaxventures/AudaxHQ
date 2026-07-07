@@ -45,8 +45,13 @@ export interface HotFollowUp extends FollowUp {
   isOverdue: boolean;
 }
 
-/** Upcoming/overdue follow-ups (not completed) across all clients and leads, for the dashboard. */
-export async function listHotFollowUps(today: string): Promise<HotFollowUp[]> {
+/**
+ * Upcoming/overdue follow-ups (not completed) across all clients and leads,
+ * for the dashboard. `accessibleClientIds` (team-member scoping) restricts
+ * client-owned follow-ups to that list — lead-owned ones are always included,
+ * since leads aren't access-scoped.
+ */
+export async function listHotFollowUps(today: string, accessibleClientIds?: string[] | null): Promise<HotFollowUp[]> {
   const rows = await sql`
     select
       f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
@@ -57,6 +62,11 @@ export async function listHotFollowUps(today: string): Promise<HotFollowUp[]> {
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
     where f.status = 'UPCOMING' and f.date <= ${today}::date
+      and (
+        ${accessibleClientIds ?? null}::uuid[] is null
+        or f.client_id is null
+        or f.client_id = any(${accessibleClientIds ?? null}::uuid[])
+      )
     order by f.date asc
   `;
   return (

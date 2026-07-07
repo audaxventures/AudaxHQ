@@ -10,6 +10,8 @@ import { DashboardItem, DashboardStagger } from "@/components/dashboard/Dashboar
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { getProfile } from "@/lib/data/profile";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getCurrentUser } from "@/lib/currentUser";
 import { currentHourInTimezone } from "@/lib/timezone";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -31,7 +33,14 @@ function greetingWord(hour: number): string {
 }
 
 export default async function DashboardPage() {
-  const [data, profile] = await Promise.all([getDashboardData(), getProfile()]);
+  const user = await getCurrentUser();
+  const isOwner = user?.role === "OWNER";
+  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const [data, profile] = await Promise.all([
+    getDashboardData(isOwner, accessibleClientIds, selfAssigneeId),
+    getProfile(),
+  ]);
 
   const firstName = profile.name.trim().split(/\s+/)[0] || null;
   const hour = currentHourInTimezone(profile.timezone);
@@ -59,13 +68,15 @@ export default async function DashboardPage() {
           <QuickActionsRow />
         </DashboardItem>
 
-        <DashboardItem className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-          <StatCard
-            backgroundImage="/revenuebackground-card.png"
-            label="Projected revenue this month"
-            value={formatCurrency(data.projectedRevenue)}
-            caption={<span className="text-navy-500">Recurring fees & project work</span>}
-          />
+        <DashboardItem className={cn("grid grid-cols-1 gap-5 mb-6", isOwner ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+          {isOwner && (
+            <StatCard
+              backgroundImage="/revenuebackground-card.png"
+              label="Projected revenue this month"
+              value={formatCurrency(data.projectedRevenue ?? 0)}
+              caption={<span className="text-navy-500">Recurring fees & project work</span>}
+            />
+          )}
           <StatCard
             backgroundImage="/todobackground-card.png"
             label="To-Dos"
@@ -113,7 +124,11 @@ export default async function DashboardPage() {
         )}
 
         <DashboardItem className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ClientsPanel recurringClients={data.recurringClients} projectClients={data.projectClients} />
+          <ClientsPanel
+            recurringClients={data.recurringClients}
+            projectClients={data.projectClients}
+            hideRate={!isOwner}
+          />
 
           <Card tone="gold" className="p-5">
             <PanelHeading
