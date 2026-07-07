@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { ArrowRight, IdCard, CalendarClock, NotebookPen, StickyNote, BarChart3, CheckSquare } from "lucide-react";
-import { getLead } from "@/lib/data/leads";
+import { getLead, listLeads } from "@/lib/data/leads";
+import { listClients } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
+import { listTeamMembers } from "@/lib/data/teamMembers";
+import { listWorkCategories } from "@/lib/data/workCategories";
 import { getCurrentUser } from "@/lib/currentUser";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
@@ -35,13 +38,18 @@ export default async function LeadDetailPage({
   const { converted, costFrom, costTo } = await searchParams;
   const user = await getCurrentUser();
   const isOwner = user?.role === "OWNER";
-  const [lead, costEntries, workTypes, leadSources, today] = await Promise.all([
-    getLead(id),
-    isOwner ? listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
-    listWorkTypes({ includeInactive: true }),
-    listLeadSources({ includeInactive: true }),
-    getToday(),
-  ]);
+  const [lead, costEntries, workTypes, leadSources, today, teamMembers, workCategories, clients, allLeads] =
+    await Promise.all([
+      getLead(id),
+      isOwner ? listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
+      listWorkTypes({ includeInactive: true }),
+      listLeadSources({ includeInactive: true }),
+      getToday(),
+      isOwner ? listTeamMembers() : Promise.resolve([]),
+      isOwner ? listWorkCategories() : Promise.resolve([]),
+      isOwner ? listClients() : Promise.resolve([]),
+      isOwner ? listLeads() : Promise.resolve([]),
+    ]);
   if (!lead) notFound();
 
   // Every to-do board is private — a lead's Tasks panel only ever shows the
@@ -124,6 +132,10 @@ export default async function LeadDetailPage({
           {isOwner && (
             <CostSummarySection
               entries={costEntries}
+              clients={clients}
+              leads={allLeads}
+              teamMembers={teamMembers}
+              workCategories={workCategories}
               totalInvoiced={0}
               budgetedHours={null}
               reportHref={`/api/reports?${new URLSearchParams({

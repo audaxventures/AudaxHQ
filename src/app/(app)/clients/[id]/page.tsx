@@ -10,8 +10,11 @@ import {
   Link2,
   DollarSign,
 } from "lucide-react";
-import { getClient } from "@/lib/data/clients";
+import { getClient, listClients } from "@/lib/data/clients";
+import { listLeads } from "@/lib/data/leads";
 import { listCostEntries } from "@/lib/data/costEntries";
+import { listTeamMembers } from "@/lib/data/teamMembers";
+import { listWorkCategories } from "@/lib/data/workCategories";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { getCurrentUser } from "@/lib/currentUser";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
@@ -50,11 +53,15 @@ export default async function ClientDetailPage({
     const accessibleClientIds = await accessibleClientIdsFor(user);
     if (!accessibleClientIds?.includes(id)) notFound();
   }
-  const [client, costEntries, workTypes, today] = await Promise.all([
+  const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads] = await Promise.all([
     getClient(id),
     isOwner ? listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
     listWorkTypes({ includeInactive: true }),
     getToday(),
+    isOwner ? listTeamMembers() : Promise.resolve([]),
+    isOwner ? listWorkCategories() : Promise.resolve([]),
+    isOwner ? listClients() : Promise.resolve([]),
+    isOwner ? listLeads() : Promise.resolve([]),
   ]);
   if (!client) notFound();
 
@@ -124,6 +131,10 @@ export default async function ClientDetailPage({
 
               <CostSummarySection
                 entries={costEntries}
+                clients={allClients}
+                leads={leads}
+                teamMembers={teamMembers}
+                workCategories={workCategories}
                 totalInvoiced={client.invoices
                   .filter((i) => i.status !== "NOT_INVOICED")
                   .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
