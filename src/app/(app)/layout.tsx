@@ -25,10 +25,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col min-w-0">
         <MobileTopBar role={role} />
         <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
-          <div className="mb-4 hidden justify-end md:flex">
+          <div className="mb-4 flex justify-end">
             <Link href="/" className="transition-opacity hover:opacity-80">
               {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded or default logo, dimensions unknown */}
-              <img src={logoUrl ?? "/logo.png"} alt="Audax Ventures" className="h-16 w-auto" />
+              <img src={logoUrl ?? "/logo.png"} alt="Audax Ventures" className="h-10 w-auto sm:h-16" />
             </Link>
           </div>
           <PageTransition>{children}</PageTransition>
