@@ -49,7 +49,7 @@ function entryFinancials(entry: CostEntry): { revenue: number; cost: number; pro
   return { revenue: 0, cost: entry.amount, profit: -entry.amount };
 }
 
-function RowActions({ onDelete }: { onDelete: () => void }) {
+function RowActions({ onEdit, onDelete }: { onEdit?: () => void; onDelete?: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -64,13 +64,24 @@ function RowActions({ onDelete }: { onDelete: () => void }) {
       </button>
       {open && (
         <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-lg border border-navy-100 bg-white py-1 shadow-lg">
-          <button
-            type="button"
-            onClick={onDelete}
-            className="block w-full px-3 py-1.5 text-left text-sm text-brick-600 hover:bg-brick-100 cursor-pointer"
-          >
-            Delete
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="block w-full px-3 py-1.5 text-left text-sm text-navy-700 hover:bg-navy-100 cursor-pointer"
+            >
+              Edit
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="block w-full px-3 py-1.5 text-left text-sm text-brick-600 hover:bg-brick-100 cursor-pointer"
+            >
+              Delete
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -82,12 +93,15 @@ export function CostEntryTable({
   showOwner = false,
   deletable = false,
   hideFinancials = false,
+  onEdit,
 }: {
   entries: CostEntry[];
   showOwner?: boolean;
   deletable?: boolean;
   /** Team members don't see client billing figures — omit the Rate/Cost/Revenue/Profit columns. */
   hideFinancials?: boolean;
+  /** When set, an "Edit" action is added to each row's menu that calls this with the entry to edit. */
+  onEdit?: (entry: CostEntry) => void;
 }) {
   const [, startTransition] = useTransition();
 
@@ -135,14 +149,14 @@ export function CostEntryTable({
                   <th className="py-2 pr-4 text-right">Profit</th>
                 </>
               )}
-              {deletable && <th className="py-2 pl-2" />}
+              {(deletable || onEdit) && <th className="py-2 pl-2" />}
             </tr>
           </thead>
           {groups.map((group) => (
             <tbody key={group.date} className="divide-y divide-navy-100">
               <tr>
                 <td
-                  colSpan={(showOwner ? 1 : 0) + (hideFinancials ? 4 : 8) + (deletable ? 1 : 0)}
+                  colSpan={(showOwner ? 1 : 0) + (hideFinancials ? 4 : 8) + (deletable || onEdit ? 1 : 0)}
                   className="pt-4 pb-1.5 text-xs font-semibold uppercase tracking-wide text-navy-400"
                 >
                   {formatDate(group.date)}
@@ -188,9 +202,12 @@ export function CostEntryTable({
                         </td>
                       </>
                     )}
-                    {deletable && (
+                    {(deletable || onEdit) && (
                       <td className="py-2.5 pl-2 text-right">
-                        <RowActions onDelete={() => handleDelete(e)} />
+                        <RowActions
+                          onEdit={onEdit ? () => onEdit(e) : undefined}
+                          onDelete={deletable ? () => handleDelete(e) : undefined}
+                        />
                       </td>
                     )}
                   </tr>

@@ -1,4 +1,4 @@
-import { AlertTriangle, PieChart } from "lucide-react";
+import { AlertTriangle, PieChart, Plus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { CostEntryTable } from "@/components/tracker/CostEntryTable";
@@ -29,6 +29,7 @@ export function CostSummarySection({
   totalInvoiced,
   budgetedHours,
   reportHref,
+  logHref,
   dateFrom,
   dateTo,
 }: {
@@ -36,6 +37,8 @@ export function CostSummarySection({
   totalInvoiced: number;
   budgetedHours: number | null;
   reportHref: string;
+  /** Quick link to the Tracker's log-entry drawer, pre-selecting this client/lead as the owner. */
+  logHref: string;
   dateFrom?: string;
   dateTo?: string;
 }) {
@@ -48,9 +51,14 @@ export function CostSummarySection({
         tone="slate"
         title="Cost & profitability"
         action={
-          <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-            Download report
-          </a>
+          <div className="flex items-center gap-4">
+            <a href={logHref} className="inline-flex items-center gap-1 text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+              <Plus size={14} /> Log time / cost
+            </a>
+            <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+              Download report
+            </a>
+          </div>
         }
       />
 

@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { TrackerFilters } from "@/components/tracker/TrackerFilters";
-import { CostEntryTable } from "@/components/tracker/CostEntryTable";
+import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { LogTimeEntryButton } from "@/components/tracker/LogTimeEntryButton";
 import { Pagination } from "@/components/ui/Pagination";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
@@ -202,7 +202,16 @@ export default async function TrackerPage({
 
       <Card className="p-6">
         <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Entry log</h3>
-        <CostEntryTable entries={pageEntries} showOwner deletable hideFinancials={!isOwner} />
+        <CostEntryLog
+          entries={pageEntries}
+          clients={clients}
+          leads={leads}
+          teamMembers={activeTeamMembers}
+          workCategories={activeWorkCategories}
+          lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
+          showOwner
+          hideFinancials={!isOwner}
+        />
         <Pagination page={page} pageSize={PAGE_SIZE} total={total} itemLabel="entries" buildHref={buildPageHref} />
       </Card>
     </div>

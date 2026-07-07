@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
+import { requireClientAccess } from "@/lib/currentUser";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null) {
   revalidatePath("/meeting-notes");
@@ -17,6 +18,7 @@ export async function createMeetingNote(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
   if ((!clientId && !leadId) || !meetingDate || !notes) return;
+  if (clientId) await requireClientAccess(clientId);
 
   await meetingNotes.createMeetingNote({ clientId, leadId, meetingDate, attendees, notes });
   revalidateOwner(clientId, leadId);
@@ -27,6 +29,7 @@ export async function createScopedMeetingNote(
   owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
   formData: FormData
 ) {
+  if (owner.type === "CLIENT") await requireClientAccess(owner.clientId);
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
@@ -50,6 +53,7 @@ export async function updateMeetingNote(
   owner: { clientId?: string | null; leadId?: string | null },
   formData: FormData
 ) {
+  if (owner.clientId) await requireClientAccess(owner.clientId);
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
@@ -63,6 +67,7 @@ export async function deleteMeetingNote(
   id: string,
   owner: { clientId?: string | null; leadId?: string | null }
 ) {
+  if (owner.clientId) await requireClientAccess(owner.clientId);
   await meetingNotes.deleteMeetingNote(id);
   revalidateOwner(owner.clientId, owner.leadId);
 }

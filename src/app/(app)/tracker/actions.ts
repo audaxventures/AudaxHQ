@@ -63,6 +63,54 @@ export async function createTimeEntry(formData: FormData) {
   revalidateOwner(clientId, leadId);
 }
 
+export async function updateTimeEntry(id: string, previousClientId: string | null, previousLeadId: string | null, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+
+  const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
+  const categoryId = String(formData.get("categoryId") ?? "") || null;
+  const date = String(formData.get("date") ?? "");
+  const hours = Number(formData.get("hours"));
+  const billable = formData.get("billable") === "on";
+  const description = String(formData.get("description") ?? "").trim() || null;
+
+  if (!date || !(hours > 0)) {
+    throw new Error("Fill in date and hours.");
+  }
+
+  let teamMemberId: string;
+  let rate: number;
+  let restrictToTeamMemberId: string | null = null;
+
+  if (user.role === "OWNER") {
+    teamMemberId = String(formData.get("teamMemberId") ?? "");
+    rate = Number(formData.get("rate"));
+    if (!teamMemberId || !(rate >= 0)) {
+      throw new Error("Fill in team member and rate.");
+    }
+  } else {
+    // Team members can only edit their own entries, at their own rate — both
+    // are pinned server-side rather than trusted from the form.
+    teamMemberId = user.teamMember.id;
+    rate = Number(user.teamMember.defaultHourlyRate);
+    restrictToTeamMemberId = user.teamMember.id;
+    if (clientId) {
+      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId);
+      if (!accessibleIds.includes(clientId)) {
+        throw new Error("You don't have access to that client.");
+      }
+    }
+  }
+
+  await costEntries.updateTimeEntry(
+    id,
+    { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description },
+    restrictToTeamMemberId
+  );
+  revalidateOwner(previousClientId, previousLeadId);
+  revalidateOwner(clientId, leadId);
+}
+
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
@@ -83,6 +131,28 @@ export async function createFixedCost(formData: FormData) {
   }
 
   await costEntries.createFixedCost({ clientId, leadId, date, description, amount, category });
+  revalidateOwner(clientId, leadId);
+}
+
+export async function updateFixedCost(
+  id: string,
+  previousClientId: string | null,
+  previousLeadId: string | null,
+  formData: FormData
+) {
+  await requireOwner();
+  const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
+  const date = String(formData.get("date") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const amount = Number(formData.get("amount"));
+  const category = (String(formData.get("category") ?? "") || null) as FixedCostCategory | null;
+
+  if (!date || !description || !(amount >= 0)) {
+    throw new Error("Fill in date, description, and amount.");
+  }
+
+  await costEntries.updateFixedCost(id, { clientId, leadId, date, description, amount, category });
+  revalidateOwner(previousClientId, previousLeadId);
   revalidateOwner(clientId, leadId);
 }
 

@@ -132,6 +132,7 @@ export default async function LeadDetailPage({
                 ...(costFrom ? { dateFrom: costFrom } : {}),
                 ...(costTo ? { dateTo: costTo } : {}),
               }).toString()}`}
+              logHref={`/tracker?logTime=1&leadId=${id}`}
               dateFrom={costFrom}
               dateTo={costTo}
             />

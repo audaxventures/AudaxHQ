@@ -295,6 +295,8 @@ export interface CostEntry {
   hours: number | null;
   rate: number | null;
   billable: boolean | null;
+  /** Time entries only — needed to re-select the team member when editing. */
+  teamMemberId: string | null;
   teamMemberName: string | null;
   /** Work category (Admin Hours, Professional Development, ...) — time entries only. */
   workCategoryId: string | null;

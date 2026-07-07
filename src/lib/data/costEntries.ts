@@ -13,6 +13,7 @@ function mapCostEntry(row: Record<string, unknown>): CostEntry {
     hours: row.hours !== null ? Number(row.hours) : null,
     rate: row.rate !== null ? Number(row.rate) : null,
     billable: row.billable as boolean | null,
+    teamMemberId: row.team_member_id as string | null,
     teamMemberName: row.team_member_name as string | null,
     workCategoryId: row.work_category_id as string | null,
     workCategoryName: row.work_category_name as string | null,
@@ -51,7 +52,7 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         te.id, 'TIME' as entry_type, te.client_id, te.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name,
         te.date, te.description, te.hours, te.rate, te.billable,
-        tm.name as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
+        te.team_member_id, tm.name as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
         null::text as category,
         (te.hours * te.rate) as amount, te.created_at
       from time_entries te
@@ -79,7 +80,7 @@ export async function listCostEntries(filters: CostEntryFilters = {}): Promise<C
         fc.id, 'FIXED_COST' as entry_type, fc.client_id, fc.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name,
         fc.date, fc.description, null::numeric as hours, null::numeric as rate, null::boolean as billable,
-        null::text as team_member_name, null::uuid as work_category_id, null::text as work_category_name,
+        null::uuid as team_member_id, null::text as team_member_name, null::uuid as work_category_id, null::text as work_category_name,
         fc.category,
         fc.amount, fc.created_at
       from fixed_costs fc
@@ -210,6 +211,28 @@ export async function deleteTimeEntry(id: string, restrictToTeamMemberId?: strin
   `;
 }
 
+/** `restrictToTeamMemberId` (team-member role) makes this a silent no-op against another team member's entry, matching deleteTimeEntry's scoping. */
+export async function updateTimeEntry(
+  id: string,
+  input: TimeEntryInput,
+  restrictToTeamMemberId?: string | null
+): Promise<void> {
+  await sql`
+    update time_entries set
+      client_id = ${input.clientId},
+      lead_id = ${input.leadId},
+      team_member_id = ${input.teamMemberId},
+      category_id = ${input.categoryId},
+      date = ${input.date},
+      hours = ${input.hours},
+      rate = ${input.rate},
+      billable = ${input.billable},
+      description = ${input.description}
+    where id = ${id}
+      and (${restrictToTeamMemberId ?? null}::uuid is null or team_member_id = ${restrictToTeamMemberId ?? null})
+  `;
+}
+
 export interface FixedCostInput {
   clientId: string | null;
   leadId: string | null;
@@ -223,6 +246,19 @@ export async function createFixedCost(input: FixedCostInput): Promise<void> {
   await sql`
     insert into fixed_costs (client_id, lead_id, date, description, amount, category)
     values (${input.clientId}, ${input.leadId}, ${input.date}, ${input.description}, ${input.amount}, ${input.category})
+  `;
+}
+
+export async function updateFixedCost(id: string, input: FixedCostInput): Promise<void> {
+  await sql`
+    update fixed_costs set
+      client_id = ${input.clientId},
+      lead_id = ${input.leadId},
+      date = ${input.date},
+      description = ${input.description},
+      amount = ${input.amount},
+      category = ${input.category}
+    where id = ${id}
   `;
 }
 

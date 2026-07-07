@@ -135,6 +135,7 @@ export default async function ClientDetailPage({
                   ...(costFrom ? { dateFrom: costFrom } : {}),
                   ...(costTo ? { dateTo: costTo } : {}),
                 }).toString()}`}
+                logHref={`/tracker?logTime=1&clientId=${id}`}
                 dateFrom={costFrom}
                 dateTo={costTo}
               />
