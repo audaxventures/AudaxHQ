@@ -2,7 +2,7 @@ export const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/clients", label: "Clients", icon: "clients" },
   { href: "/leads", label: "Leads", icon: "leads" },
-  { href: "/lead-analytics", label: "Lead Analytics", tabLabel: "Analytics", icon: "leadAnalytics" },
+  { href: "/lead-analytics", label: "Lead Insights", tabLabel: "Insights", icon: "leadAnalytics" },
   { href: "/meeting-notes", label: "Meeting Notes", tabLabel: "Notes", icon: "meetingNotes" },
   { href: "/calendar", label: "Calendar", icon: "calendar" },
   { href: "/invoices", label: "Revenue Tracking", tabLabel: "Revenue", icon: "invoices" },

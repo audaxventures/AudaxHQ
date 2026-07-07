@@ -47,7 +47,7 @@ export default async function LeadsPage({
         tone="burnt"
         eyebrow="Leads"
         title="Leads"
-        description="Your pipeline of prospective clients, sorted by who needs a follow-up next."
+        description="Your pipeline of prospective clients"
         action={
           <LinkButton href="/leads/new">
             <Plus size={16} /> New lead

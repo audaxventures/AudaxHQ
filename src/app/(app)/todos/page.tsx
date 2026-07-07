@@ -109,7 +109,7 @@ export default async function TodosPage({
         tone="gold"
         eyebrow="To-Dos"
         title="To-Dos"
-        description="Everything on your plate — general, client, and lead tasks — sorted by what's due soonest."
+        description="Everything on your plate  — sorted by what's due soonest"
         action={
           <LinkButton variant="secondary" href={buildCompletedHref(!showAllCompleted)}>
             {showAllCompleted ? <EyeOff size={16} /> : <Eye size={16} />}

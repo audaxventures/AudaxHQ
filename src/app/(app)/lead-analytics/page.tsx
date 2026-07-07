@@ -17,8 +17,8 @@ export default async function LeadAnalyticsPage() {
         icon={BarChart3}
         tone="burnt"
         eyebrow="Leads"
-        title="Lead Analytics"
-        description="Win rate by source and by work type, so effort goes toward what's actually converting."
+        title="Lead Insights"
+        description="Know what's working, and where your clients come from"
       />
 
       <div className="space-y-6">

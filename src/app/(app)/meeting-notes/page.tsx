@@ -27,7 +27,7 @@ export default async function MeetingNotesPage({
         tone="slate"
         eyebrow="Meeting Notes"
         title="Meeting Notes"
-        description="Everything discussed with clients and leads, in one place."
+        description="Every conversation, captured and organized"
         action={
           <LinkButton href="/meeting-notes/new">
             <Plus size={16} /> New meeting note

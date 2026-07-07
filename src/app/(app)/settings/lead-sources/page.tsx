@@ -13,7 +13,7 @@ export default async function LeadSourcesSettingsPage() {
   const leadSources = await listLeadSources({ includeInactive: true });
   return (
     <Card className="p-6">
-      <SettingsPanelHeader title="Lead Sources" description="Where your leads come from. Used on the Lead form and Lead Analytics." />
+      <SettingsPanelHeader title="Lead Sources" description="Where your leads come from. Used on the Lead form and Lead Insights." />
       <NameListManager
         items={leadSources}
         addLabel="Add lead source"

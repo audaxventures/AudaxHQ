@@ -48,7 +48,7 @@ export default async function InvoiceAgingPage({
         tone="burnt"
         eyebrow="Invoicing"
         title="Revenue Tracking"
-        description="Every invoice that's been sent but not yet paid, oldest first."
+        description="A snapshot of your current revenue from your clients"
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

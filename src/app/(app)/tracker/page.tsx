@@ -134,7 +134,7 @@ export default async function TrackerPage({
         tone="navy"
         eyebrow="Time & Cost"
         title="Hour & Cost Tracker"
-        description="Log time and expenses against clients and leads to see real profitability, not just invoicing status."
+        description="Log time and expenses against clients and leads to see real profitability"
         action={
           <div className="flex items-center gap-3">
             <LinkButton variant="secondary" href={`/api/reports?${reportQuery.toString()}`}>

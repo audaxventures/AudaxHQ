@@ -50,7 +50,7 @@ export default async function ClientsPage({
         tone="slate"
         eyebrow="Clients"
         title="Clients"
-        description="Everyone you're currently working with, and everyone you used to."
+        description="Everyone you're actively doing business with"
         action={
           <LinkButton href="/clients/new">
             <Plus size={16} /> New client
