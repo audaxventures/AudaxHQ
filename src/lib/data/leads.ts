@@ -2,6 +2,7 @@ import { sql } from "@/lib/db";
 import { listTasks } from "@/lib/data/todos";
 import { listFollowUpsForLead } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
+import { listDocumentsForLead } from "@/lib/data/documents";
 import { createClient } from "@/lib/data/clients";
 import type { EntityColor, Lead, LeadNote, LeadStatus, LeadWithRelations } from "@/lib/types";
 
@@ -113,7 +114,7 @@ export async function getLeadPipelineSummary(today: string): Promise<LeadPipelin
 }
 
 export async function getLead(id: string): Promise<LeadWithRelations | null> {
-  const [leadRows, noteRows, tasks, followUps, meetingNotes] = await Promise.all([
+  const [leadRows, noteRows, tasks, followUps, meetingNotes, documents] = await Promise.all([
     sql`
       select l.*, wt.name as work_type_name, ls.name as source_name
       from leads l
@@ -125,6 +126,7 @@ export async function getLead(id: string): Promise<LeadWithRelations | null> {
     listTasks({ leadId: id }),
     listFollowUpsForLead(id),
     listMeetingNotes({ leadId: id }),
+    listDocumentsForLead(id),
   ]);
   if (leadRows.length === 0) return null;
   return {
@@ -133,6 +135,7 @@ export async function getLead(id: string): Promise<LeadWithRelations | null> {
     tasks,
     followUps,
     meetingNotes,
+    documents,
   };
 }
 

@@ -6,8 +6,8 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql`; query helpers in `src/lib/data/`
-- **Supabase Storage** — a private bucket for client document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql`; query helpers in `src/lib/data/`
+- **Supabase Storage** — private buckets for client and lead document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
 - **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
 - A single shared-passcode gate (`src/proxy.ts` + `src/lib/auth.ts`) — not a real auth system, just a lock on the front door
@@ -42,6 +42,9 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/011_client_lead_color.sql
    psql "$DATABASE_URL" -f migrations/012_business_logo.sql
    psql "$DATABASE_URL" -f migrations/013_passcode_reset.sql
+   psql "$DATABASE_URL" -f migrations/014_team_member_access.sql
+   psql "$DATABASE_URL" -f migrations/015_followup_assignment.sql
+   psql "$DATABASE_URL" -f migrations/016_lead_documents.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -73,13 +76,14 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 
 ### 2. Document storage setup (Supabase)
 
-Client file uploads (feature: Documents on a client's page) and the business logo (Settings → Profile) are stored in Supabase Storage, not Neon — Neon only keeps metadata and storage paths. Set this up once:
+Client and lead file uploads (feature: Documents on a client's or lead's page) and the business logo (Settings → Profile) are stored in Supabase Storage, not Neon — Neon only keeps metadata and storage paths. Set this up once:
 
 1. Create a free project at [supabase.com](https://supabase.com) (or use an existing one).
 2. Go to **Storage** and create a bucket named exactly `client-documents`. Leave **Public bucket** turned **off** — the app reads files through short-lived signed URLs it generates on request, never a public link.
-3. Create a second bucket named exactly `business-assets`. This one **should** have **Public bucket** turned **on** — the logo is rendered directly via its public URL on every page load.
-4. Go to **Project Settings → API** and copy the **Project URL** and the **`service_role` secret key** (not the `anon` key — the service role key is what lets the server upload/delete/sign URLs). Treat it like a password: it has full admin access to the project.
-5. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to those values wherever `DATABASE_URL` is configured (Vercel env vars, and `.env.local` for local dev).
+3. Create a second bucket named exactly `lead-documents`, also with **Public bucket** turned **off**. Same private/signed-URL model as `client-documents` — just kept separate so client and lead files never mix.
+4. Create a third bucket named exactly `business-assets`. This one **should** have **Public bucket** turned **on** — the logo is rendered directly via its public URL on every page load.
+5. Go to **Project Settings → API** and copy the **Project URL** and the **`service_role` secret key** (not the `anon` key — the service role key is what lets the server upload/delete/sign URLs). Treat it like a password: it has full admin access to the project.
+6. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to those values wherever `DATABASE_URL` is configured (Vercel env vars, and `.env.local` for local dev).
 
 ### 3. Passcode reset emails (Resend)
 
@@ -131,6 +135,9 @@ migrations/010_profile_timezone.sql  adds profile.timezone
 migrations/011_client_lead_color.sql  adds clients.color / leads.color
 migrations/012_business_logo.sql  adds app_settings.logo_path
 migrations/013_passcode_reset.sql  adds app_settings passcode reset token columns
+migrations/014_team_member_access.sql  adds team member logins + client_access + todo assignment columns
+migrations/015_followup_assignment.sql  adds follow_ups.assigned_to_team_member_id
+migrations/016_lead_documents.sql  extends documents to leads (nullable client_id + new lead_id column)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

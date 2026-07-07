@@ -3,10 +3,12 @@
 import { useRef, useState, useTransition } from "react";
 import { Download, File as FileIcon, FileSpreadsheet, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/Field";
-import type { ClientDocument } from "@/lib/types";
+import type { Document } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { ALLOWED_DOCUMENT_EXTENSIONS, MAX_DOCUMENT_SIZE_BYTES, getFileExtension } from "@/lib/documents";
-import { deleteDocument, getDocumentDownloadUrl, uploadDocument } from "@/app/(app)/clients/actions";
+import { deleteDocument, getDocumentDownloadUrl, uploadDocument } from "@/lib/actions/documents";
+
+type Owner = { clientId: string } | { leadId: string };
 
 const EXTENSION_ICONS: Record<string, typeof FileIcon> = {
   png: ImageIcon,
@@ -25,7 +27,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function DocumentRow({ clientId, doc }: { clientId: string; doc: ClientDocument }) {
+function DocumentRow({ owner, doc }: { owner: Owner; doc: Document }) {
   const [, startTransition] = useTransition();
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ function DocumentRow({ clientId, doc }: { clientId: string; doc: ClientDocument 
         </button>
         <button
           type="button"
-          onClick={() => startTransition(() => void deleteDocument(clientId, doc.id))}
+          onClick={() => startTransition(() => void deleteDocument(owner, doc.id))}
           className="p-1.5 text-navy-300 hover:text-brick-600 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
           aria-label="Delete document"
         >
@@ -78,7 +80,7 @@ function DocumentRow({ clientId, doc }: { clientId: string; doc: ClientDocument 
   );
 }
 
-function UploadForm({ clientId }: { clientId: string }) {
+function UploadForm({ owner }: { owner: Owner }) {
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -116,7 +118,7 @@ function UploadForm({ clientId }: { clientId: string }) {
         }
         startTransition(async () => {
           try {
-            await uploadDocument(clientId, formData);
+            await uploadDocument(owner, formData);
             formRef.current?.reset();
             setExpanded(false);
           } catch (e) {
@@ -159,23 +161,17 @@ function UploadForm({ clientId }: { clientId: string }) {
   );
 }
 
-export function DocumentsSection({
-  clientId,
-  documents,
-}: {
-  clientId: string;
-  documents: ClientDocument[];
-}) {
+export function DocumentsSection({ owner, documents }: { owner: Owner; documents: Document[] }) {
   return (
     <div>
       <div className="space-y-2 mb-4">
         {documents.length === 0 ? (
           <p className="text-sm text-navy-400">No documents yet.</p>
         ) : (
-          documents.map((doc) => <DocumentRow key={doc.id} clientId={clientId} doc={doc} />)
+          documents.map((doc) => <DocumentRow key={doc.id} owner={owner} doc={doc} />)
         )}
       </div>
-      <UploadForm clientId={clientId} />
+      <UploadForm owner={owner} />
     </div>
   );
 }
