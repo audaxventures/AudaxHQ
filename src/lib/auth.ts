@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { getPasscodeCredentials } from "@/lib/data/appSettings";
 import type { SessionClaims, SessionRole } from "@/lib/types";
 
 export const SESSION_COOKIE_NAME = "audax_session";
@@ -61,22 +60,6 @@ export function isCorrectPasscodeHash(candidate: string, hash: string, salt: str
   return crypto.timingSafeEqual(candidateHash, storedHash);
 }
 
-/**
- * Verifies a candidate passcode against the DB-stored passcode (set via
- * Settings) if one has been set, otherwise against the APP_PASSCODE env
- * var — so existing deployments keep working unchanged until someone
- * opts into managing the passcode from Settings.
- */
-export async function isCorrectPasscode(candidate: string): Promise<boolean> {
-  const stored = await getPasscodeCredentials();
-  if (stored) {
-    return isCorrectPasscodeHash(candidate, stored.hash, stored.salt);
-  }
-  const envPasscode = process.env.APP_PASSCODE;
-  if (!envPasscode) return false;
-  return timingSafeStringEqual(candidate, envPasscode);
-}
-
 export function hashPasscode(passcode: string): { hash: string; salt: string } {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(passcode, salt, 64).toString("hex");
@@ -90,8 +73,4 @@ export function generateResetToken(): string {
 
 export function hashResetToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-export function isValidResetToken(candidateTokenHash: string, storedTokenHash: string): boolean {
-  return timingSafeStringEqual(candidateTokenHash, storedTokenHash);
 }

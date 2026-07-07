@@ -4,21 +4,21 @@ import { useRef, useState, useTransition } from "react";
 import { Check, Pencil, Plus, X } from "lucide-react";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
-import type { BusinessEntity } from "@/lib/types";
+import type { BillingEntity } from "@/lib/types";
 import {
-  activateBusinessEntity,
-  createBusinessEntity,
-  deactivateBusinessEntity,
-  updateBusinessEntity,
+  activateBillingEntity,
+  createBillingEntity,
+  deactivateBillingEntity,
+  updateBillingEntity,
 } from "@/app/(app)/settings/actions";
 
-function EntityEditForm({ entity, onDone }: { entity: BusinessEntity; onDone: () => void }) {
+function EntityEditForm({ entity, onDone }: { entity: BillingEntity; onDone: () => void }) {
   const [, startTransition] = useTransition();
   return (
     <form
       action={(formData) => {
         startTransition(async () => {
-          await updateBusinessEntity(entity.id, formData);
+          await updateBillingEntity(entity.id, formData);
           onDone();
         });
       }}
@@ -55,7 +55,7 @@ function EntityEditForm({ entity, onDone }: { entity: BusinessEntity; onDone: ()
   );
 }
 
-function EntityRow({ entity }: { entity: BusinessEntity }) {
+function EntityRow({ entity }: { entity: BillingEntity }) {
   const [editing, setEditing] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -91,7 +91,7 @@ function EntityRow({ entity }: { entity: BusinessEntity }) {
           type="button"
           onClick={() =>
             startTransition(() => {
-              void (entity.active ? deactivateBusinessEntity(entity.id) : activateBusinessEntity(entity.id));
+              void (entity.active ? deactivateBillingEntity(entity.id) : activateBillingEntity(entity.id));
             })
           }
           className="rounded-md px-2 py-1 text-xs font-medium text-navy-600 hover:bg-navy-100 cursor-pointer"
@@ -125,7 +125,7 @@ function AddEntityForm() {
       ref={formRef}
       action={(formData) => {
         startTransition(async () => {
-          await createBusinessEntity(formData);
+          await createBillingEntity(formData);
         });
         formRef.current?.reset();
         setExpanded(false);
@@ -151,7 +151,7 @@ function AddEntityForm() {
   );
 }
 
-export function BusinessEntitiesPanel({ entities }: { entities: BusinessEntity[] }) {
+export function BillingEntitiesPanel({ entities }: { entities: BillingEntity[] }) {
   return (
     <div>
       {entities.length === 0 ? (

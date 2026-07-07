@@ -4,7 +4,6 @@ import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/ui/Footer";
-import { getAppSettings } from "@/lib/data/appSettings";
 import { getCurrentUser } from "@/lib/currentUser";
 
 // This app is a live daily-use tool backed by Postgres — every page here
@@ -13,11 +12,12 @@ import { getCurrentUser } from "@/lib/currentUser";
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [{ logoUrl }, currentUser] = await Promise.all([getAppSettings(), getCurrentUser()]);
+  const currentUser = await getCurrentUser();
   // proxy.ts already guarantees a valid session reaches this layout — a null
   // user here only means the team member's login was revoked mid-session,
   // so fail closed to the more restrictive role rather than crashing.
   const role = currentUser?.role ?? "TEAM_MEMBER";
+  const logoUrl = currentUser?.business.logoUrl ?? null;
 
   return (
     <div className="flex min-h-dvh w-full">

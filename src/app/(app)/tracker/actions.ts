@@ -203,13 +203,13 @@ export async function deactivateTeamMember(id: string) {
 }
 
 export async function enableTeamMemberLogin(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const passcode = String(formData.get("passcode") ?? "");
   if (!email || passcode.length < 4) {
     throw new Error("Enter an email and a passcode of at least 4 characters.");
   }
-  await teamMembers.setTeamMemberLogin(id, email, passcode);
+  await teamMembers.setTeamMemberLogin(id, user.businessId, email, passcode);
   revalidateTeamMembers();
 }
 

@@ -58,16 +58,11 @@ export interface TeamMemberCredentials {
   active: boolean;
 }
 
-export async function getTeamMemberIdByEmail(email: string): Promise<string | null> {
-  const rows = await sql`select id from team_members where email = ${email} and passcode_hash is not null`;
-  const row = rows[0] as Record<string, unknown> | undefined;
-  return row ? (row.id as string) : null;
-}
-
-export async function getTeamMemberCredentialsByEmail(email: string): Promise<TeamMemberCredentials | null> {
+/** Used by the login flow once account_emails has already resolved which team member an email belongs to. */
+export async function getTeamMemberCredentials(id: string): Promise<TeamMemberCredentials | null> {
   const rows = await sql`
     select id, passcode_hash, passcode_salt, active from team_members
-    where email = ${email} and passcode_hash is not null
+    where id = ${id} and passcode_hash is not null
   `;
   const row = rows[0] as Record<string, unknown> | undefined;
   if (!row) return null;
@@ -79,24 +74,37 @@ export async function getTeamMemberCredentialsByEmail(email: string): Promise<Te
   };
 }
 
-/** Gives a team member their first login credentials (or replaces existing ones outright). */
-export async function setTeamMemberLogin(id: string, email: string, passcode: string): Promise<void> {
+/**
+ * Gives a team member their first login credentials (or replaces existing
+ * ones outright). Keeps account_emails in sync atomically — it's the
+ * global login-resolution index, so it must never observe a team member
+ * with a stale or missing email.
+ */
+export async function setTeamMemberLogin(id: string, businessId: string, email: string, passcode: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
   const { hash, salt } = hashPasscode(passcode);
-  await sql`
-    update team_members
-    set email = ${email}, passcode_hash = ${hash}, passcode_salt = ${salt},
-        passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
-    where id = ${id}
-  `;
+  await sql.transaction([
+    sql`
+      update team_members
+      set email = ${normalizedEmail}, passcode_hash = ${hash}, passcode_salt = ${salt},
+          passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
+      where id = ${id}
+    `,
+    sql`delete from account_emails where team_member_id = ${id}`,
+    sql`insert into account_emails (email, business_id, role, team_member_id) values (${normalizedEmail}, ${businessId}, 'TEAM_MEMBER', ${id})`,
+  ]);
 }
 
 export async function removeTeamMemberLogin(id: string): Promise<void> {
-  await sql`
-    update team_members
-    set email = null, passcode_hash = null, passcode_salt = null,
-        passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
-    where id = ${id}
-  `;
+  await sql.transaction([
+    sql`
+      update team_members
+      set email = null, passcode_hash = null, passcode_salt = null,
+          passcode_reset_token_hash = null, passcode_reset_token_expires_at = null
+      where id = ${id}
+    `,
+    sql`delete from account_emails where team_member_id = ${id}`,
+  ]);
 }
 
 export async function setTeamMemberPasscode(id: string, passcode: string): Promise<void> {

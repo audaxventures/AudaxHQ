@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/Card";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { InvoiceAgingForm } from "@/components/settings/InvoiceAgingForm";
-import { getAppSettings } from "@/lib/data/appSettings";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function InvoiceAgingSettingsPage() {
-  const settings = await getAppSettings();
+  const user = await requireOwner();
+  const settings = user.business;
   return (
     <Card className="p-6">
       <SettingsPanelHeader

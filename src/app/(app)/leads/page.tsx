@@ -7,7 +7,8 @@ import { LeadFilterBar } from "@/components/leads/LeadFilterBar";
 import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { listLeads, countLeads } from "@/lib/data/leads";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
+import { requireCurrentUser } from "@/lib/currentUser";
 import type { LeadStatus } from "@/lib/types";
 
 const PAGE_SIZE = 6;
@@ -20,6 +21,7 @@ export default async function LeadsPage({
   const { status, view, page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
   const isGrid = view === "grid";
+  const user = await requireCurrentUser();
 
   const [leads, total, today] = await Promise.all([
     listLeads({
@@ -28,7 +30,7 @@ export default async function LeadsPage({
       offset: (page - 1) * PAGE_SIZE,
     }),
     countLeads({ status: status as LeadStatus | undefined }),
-    getToday(),
+    getBusinessToday(user.businessId),
   ]);
 
   const buildPageHref = (targetPage: number) => {

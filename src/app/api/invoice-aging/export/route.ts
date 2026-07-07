@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { listOutstandingInvoices } from "@/lib/data/invoicing";
-import { getAppSettings } from "@/lib/data/appSettings";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
 import { formatDateInput } from "@/lib/format";
 import { getCurrentUser } from "@/lib/currentUser";
@@ -22,8 +21,8 @@ export async function GET(request: Request) {
   const clientType = (params.get("clientType") as ClientType | null) ?? undefined;
   const bracket = (params.get("bracket") as InvoiceAgeBracket | null) ?? undefined;
 
-  const [settings, today] = await Promise.all([getAppSettings(), getToday()]);
-  const thresholds = { underDays: settings.invoiceAgingUnderDays, overDays: settings.invoiceAgingOverDays };
+  const today = await getBusinessToday(user.businessId);
+  const thresholds = { underDays: user.business.invoiceAgingUnderDays, overDays: user.business.invoiceAgingOverDays };
   const bracketLabels = invoiceAgeBracketLabels(thresholds.underDays, thresholds.overDays);
   const invoices = await listOutstandingInvoices({ clientType, bracket }, thresholds, today);
 

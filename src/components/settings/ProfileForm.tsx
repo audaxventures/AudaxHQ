@@ -3,13 +3,13 @@
 import { useState, useTransition } from "react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import type { Profile } from "@/lib/types";
+import type { Business } from "@/lib/types";
 import { updateProfile } from "@/app/(app)/settings/actions";
 import { listTimezones } from "@/lib/timezone";
 
 const TIMEZONES = listTimezones();
 
-export function ProfileForm({ profile }: { profile: Profile }) {
+export function ProfileForm({ business }: { business: Business }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -26,16 +26,16 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     >
       <FieldGroup>
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" defaultValue={profile.name} placeholder="Jane Doe" />
+        <Input id="name" name="name" defaultValue={business.ownerName} placeholder="Jane Doe" />
       </FieldGroup>
       <FieldGroup>
         <Label htmlFor="email" required>Email</Label>
-        <Input id="email" name="email" type="email" required defaultValue={profile.email} placeholder="jane@audaxventures.ca" />
+        <Input id="email" name="email" type="email" required defaultValue={business.ownerEmail} placeholder="jane@audaxventures.ca" />
         <p className="mt-1.5 text-xs text-navy-400">Required to sign in, along with your passcode.</p>
       </FieldGroup>
       <FieldGroup>
         <Label htmlFor="timezone">Timezone</Label>
-        <Select id="timezone" name="timezone" defaultValue={profile.timezone}>
+        <Select id="timezone" name="timezone" defaultValue={business.timezone}>
           {TIMEZONES.map((tz) => (
             <option key={tz} value={tz}>
               {tz.replace(/_/g, " ")}

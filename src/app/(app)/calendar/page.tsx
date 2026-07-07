@@ -5,9 +5,8 @@ import { CalendarControls } from "@/components/calendar/CalendarControls";
 import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
-import { getTimezone } from "@/lib/data/profile";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -25,15 +24,15 @@ export default async function CalendarPage({
   searchParams: Promise<{ month?: string; types?: string }>;
 }) {
   const { month: monthParamValue, types: typesParamValue } = await searchParams;
-  const timezone = await getTimezone();
+  const user = await requireCurrentUser();
+  const timezone = user.business.timezone;
   const { year, month } = parseMonthParam(monthParamValue, timezone);
   const activeTypes = parseTypesParam(typesParamValue);
   const grid = buildMonthGrid(year, month);
   const today = todayDateStr(timezone);
 
-  const user = await getCurrentUser();
-  const teamMember = user?.role === "TEAM_MEMBER" ? user.teamMember : null;
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
+  const accessibleClientIds = await accessibleClientIdsFor(user);
 
   const allEvents = await listCalendarEvents(grid[0].date, grid[grid.length - 1].date, {
     restrictToTeamMemberId: teamMember?.id,

@@ -208,11 +208,14 @@ export type SessionRole = "OWNER" | "TEAM_MEMBER";
 /** The signed session cookie's payload — decoded on every request, so keep it minimal. */
 export interface SessionClaims {
   role: SessionRole;
+  businessId: string;
   teamMemberId?: string;
 }
 
-/** Resolved current-user context for a request — the team member's full record is looked up once claims are verified. */
-export type CurrentUser = { role: "OWNER" } | { role: "TEAM_MEMBER"; teamMember: TeamMember };
+/** Resolved current-user context for a request — the business row and (for team members) their full record are looked up once claims are verified. */
+export type CurrentUser =
+  | { role: "OWNER"; businessId: string; business: Business }
+  | { role: "TEAM_MEMBER"; businessId: string; business: Business; teamMember: TeamMember };
 
 export interface WorkCategory {
   id: string;
@@ -249,29 +252,29 @@ export interface TodoType {
   createdAt: string;
 }
 
-export interface Profile {
+/** A tenant workspace. Safe to pass to client components — never includes the owner passcode hash/salt or reset token. */
+export interface Business {
+  id: string;
+  /** Workspace/company display name — set at signup, distinct from the owner's personal name. */
   name: string;
-  email: string;
+  ownerName: string;
+  ownerEmail: string;
   timezone: string;
+  /** Public URL of the uploaded business logo, or null to fall back to the static /logo.png. */
+  logoUrl: string | null;
+  invoiceAgingUnderDays: number;
+  invoiceAgingOverDays: number;
+  createdAt: string;
   updatedAt: string;
 }
 
-export interface BusinessEntity {
+export interface BillingEntity {
   id: string;
   name: string;
   address: string | null;
   contactInfo: string | null;
   active: boolean;
   createdAt: string;
-}
-
-/** Non-sensitive app settings safe to pass to client components — never includes the passcode hash/salt. */
-export interface AppSettings {
-  invoiceAgingUnderDays: number;
-  invoiceAgingOverDays: number;
-  hasCustomPasscode: boolean;
-  /** Public URL of the uploaded business logo, or null to fall back to the static /logo.png. */
-  logoUrl: string | null;
 }
 
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";

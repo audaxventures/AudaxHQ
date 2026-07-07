@@ -5,7 +5,7 @@ import { listClients } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -25,7 +25,7 @@ import { SuccessBanner } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
 import Link from "next/link";
 
 export default async function LeadDetailPage({
@@ -37,15 +37,15 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { converted, costFrom, costTo } = await searchParams;
-  const user = await getCurrentUser();
-  const isOwner = user?.role === "OWNER";
+  const user = await requireCurrentUser();
+  const isOwner = user.role === "OWNER";
   const [lead, costEntries, workTypes, leadSources, today, teamMembers, workCategories, clients, allLeads] =
     await Promise.all([
       getLead(id),
       isOwner ? listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
       listWorkTypes({ includeInactive: true }),
       listLeadSources({ includeInactive: true }),
-      getToday(),
+      getBusinessToday(user.businessId),
       // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
       listTeamMembers(),
       isOwner ? listWorkCategories() : Promise.resolve([]),
@@ -56,7 +56,7 @@ export default async function LeadDetailPage({
 
   // Every to-do board is private — a lead's Tasks panel only ever shows the
   // current viewer's own to-dos for that lead, never a colleague's.
-  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const myTasks = lead.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
 
   const boundDeleteLead = deleteLead.bind(null, id);

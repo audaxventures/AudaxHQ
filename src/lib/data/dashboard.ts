@@ -2,7 +2,7 @@ import { sql } from "@/lib/db";
 import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
 import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
@@ -60,11 +60,12 @@ function mapClient(row: Record<string, unknown>): Client {
  * reflect the viewer's own to-dos, never a colleague's.
  */
 export async function getDashboardData(
+  businessId: string,
   isOwner: boolean,
   accessibleClientIds: string[] | null,
   selfAssigneeId: string | null
 ): Promise<DashboardData> {
-  const today = await getToday();
+  const today = await getBusinessToday(businessId);
 
   // Lazily create this month's recurring invoice rows for active recurring
   // clients so the dashboard/invoicing views always reflect the current month.

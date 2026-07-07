@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
-import { getToday } from "@/lib/data/profile";
-import { requireClientAccess, requireOwner } from "@/lib/currentUser";
+import { getBusinessToday } from "@/lib/data/businesses";
+import { requireClientAccess, requireCurrentUser, requireOwner } from "@/lib/currentUser";
 import type { EntityColor } from "@/lib/types";
 
 const clientSchema = z.object({
@@ -60,8 +60,9 @@ function parseClientForm(formData: FormData, fallbackRate = 0) {
 }
 
 export async function createClient(formData: FormData) {
+  const user = await requireCurrentUser();
   const input = parseClientForm(formData);
-  const client = await clients.createClient(input, await getToday());
+  const client = await clients.createClient(input, await getBusinessToday(user.businessId));
 
   revalidatePath("/clients");
   revalidatePath("/");
@@ -69,10 +70,10 @@ export async function createClient(formData: FormData) {
 }
 
 export async function updateClient(id: string, formData: FormData) {
-  await requireClientAccess(id);
+  const user = await requireClientAccess(id);
   const fallbackRate = formData.get("rate") === null ? await clients.getClientRate(id) : 0;
   const input = parseClientForm(formData, fallbackRate);
-  await clients.updateClient(id, input, await getToday());
+  await clients.updateClient(id, input, await getBusinessToday(user.businessId));
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
   revalidatePath("/");

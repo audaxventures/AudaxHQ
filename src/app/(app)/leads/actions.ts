@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as leads from "@/lib/data/leads";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
+import { requireCurrentUser } from "@/lib/currentUser";
 import type { EntityColor } from "@/lib/types";
 
 const leadSchema = z.object({
@@ -60,8 +61,9 @@ export async function createLead(formData: FormData) {
 }
 
 export async function updateLead(id: string, formData: FormData) {
+  const user = await requireCurrentUser();
   const input = parseLeadForm(formData);
-  const result = await leads.updateLead(id, input, await getToday());
+  const result = await leads.updateLead(id, input, await getBusinessToday(user.businessId));
   revalidatePath(`/leads/${id}`);
   revalidatePath("/leads");
   revalidatePath("/");
@@ -99,7 +101,8 @@ export async function addLeadNote(leadId: string, formData: FormData) {
 }
 
 export async function convertLeadToClient(leadId: string) {
-  const clientId = await leads.convertLeadToClient(leadId, await getToday());
+  const user = await requireCurrentUser();
+  const clientId = await leads.convertLeadToClient(leadId, await getBusinessToday(user.businessId));
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/leads");
   revalidatePath("/clients");
