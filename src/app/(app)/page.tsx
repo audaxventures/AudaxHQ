@@ -79,6 +79,7 @@ export default async function DashboardPage() {
               label="Projected revenue this month"
               value={formatCurrency(data.projectedRevenue ?? 0)}
               caption={<span className="text-navy-500">Recurring fees & project work</span>}
+              href="/invoices"
             />
           )}
           <StatCard
@@ -90,6 +91,7 @@ export default async function DashboardPage() {
                 {data.dueTodayCount > 0 ? `${data.dueTodayCount} due today` : "Nothing due today"}
               </span>
             }
+            href="/todos"
           />
           <StatCard
             backgroundImage="/followupbackground-card.png"
@@ -100,6 +102,7 @@ export default async function DashboardPage() {
                 {overdueFollowUpCount > 0 ? `${overdueFollowUpCount} overdue` : "All caught up"}
               </span>
             }
+            href="/calendar?types=FOLLOW_UP"
           />
         </DashboardItem>
 
