@@ -7,11 +7,26 @@ import { listAllTags, listTasks } from "@/lib/data/todos";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { listTodoTypes } from "@/lib/data/todoTypes";
+import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getToday } from "@/lib/data/profile";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { getCurrentUser } from "@/lib/currentUser";
 import { formatDateInput } from "@/lib/format";
-import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
+import type { CurrentUser, Task, TaskPriority, TaskStatus, TaskType, TeamMember } from "@/lib/types";
+
+/** "Me" always comes first (value "" — omitted from the submitted form data means "assign to myself"); everyone else you can hand a to-do to follows. */
+function buildAssignOptions(user: CurrentUser | null, teamMembers: TeamMember[]): { value: string; label: string }[] {
+  const options = [{ value: "", label: "Me" }];
+  if (user?.role === "TEAM_MEMBER") {
+    options.push({ value: "OWNER", label: "Owner" });
+    for (const tm of teamMembers) {
+      if (tm.id !== user.teamMember.id) options.push({ value: tm.id, label: tm.name });
+    }
+  } else {
+    for (const tm of teamMembers) options.push({ value: tm.id, label: tm.name });
+  }
+  return options;
+}
 
 function matchesDuePreset(task: Task, due: string | undefined, today: string): boolean {
   if (!due) return true;
@@ -57,7 +72,8 @@ export default async function TodosPage({
   const sp = await searchParams;
   const user = await getCurrentUser();
   const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
-  const [allTasks, allTags, clients, leads, todoTypes, today] = await Promise.all([
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const [allTasks, allTags, clients, leads, todoTypes, teamMembers, today] = await Promise.all([
     listTasks({
       search: sp.q,
       tag: sp.tag,
@@ -65,13 +81,17 @@ export default async function TodosPage({
       todoTypeId: sp.todoTypeId,
       status: sp.status as TaskStatus | undefined,
       priority: sp.priority as TaskPriority | undefined,
+      // Everyone's board is private — this is always your own to-dos, never a colleague's.
+      assignedTo: selfAssigneeId,
     }),
     listAllTags(),
     listClients({ accessibleClientIds }),
     listLeads(),
     listTodoTypes({ includeInactive: true }),
+    listTeamMembers(),
     getToday(),
   ]);
+  const assignOptions = buildAssignOptions(user, teamMembers);
 
   const tasks = sortTasks(
     allTasks.filter((t) => matchesDuePreset(t, sp.due, today)),
@@ -133,6 +153,7 @@ export default async function TodosPage({
         leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
         todoTypes={todoTypes}
         defaultTypeSelection={defaultTypeSelection}
+        assignOptions={assignOptions}
         today={today}
       />
     </div>

@@ -58,6 +58,11 @@ export default async function ClientDetailPage({
   ]);
   if (!client) notFound();
 
+  // Every to-do board is private — a client's Tasks panel only ever shows
+  // the current viewer's own to-dos for that client, never a colleague's.
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const myTasks = client.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
+
   const isArchived = client.status === "CHURNED";
   const boundArchiveClient = archiveClient.bind(null, id);
   const boundActivateClient = activateClient.bind(null, id);
@@ -178,7 +183,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={client.tasks} today={today} />
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
           </Card>
 
           <Card className="p-6">

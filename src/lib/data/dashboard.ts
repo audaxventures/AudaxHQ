@@ -50,8 +50,20 @@ function mapClient(row: Record<string, unknown>): Client {
   };
 }
 
-/** `accessibleClientIds`: null for the owner (no restriction); a team member's exact client-access list otherwise. `isOwner` additionally gates client-billing figures (revenue, stale-invoice flags), which stay hidden from team members regardless of which clients they can see. */
-export async function getDashboardData(isOwner: boolean, accessibleClientIds: string[] | null): Promise<DashboardData> {
+/**
+ * `accessibleClientIds`: null for the owner (no restriction); a team member's
+ * exact client-access list otherwise. `isOwner` additionally gates
+ * client-billing figures (revenue, stale-invoice flags), which stay hidden
+ * from team members regardless of which clients they can see.
+ * `selfAssigneeId`: the caller's own to-do board identity — null for the
+ * owner, a team member's id otherwise — so the snapshot/counts only ever
+ * reflect the viewer's own to-dos, never a colleague's.
+ */
+export async function getDashboardData(
+  isOwner: boolean,
+  accessibleClientIds: string[] | null,
+  selfAssigneeId: string | null
+): Promise<DashboardData> {
   const today = await getToday();
 
   // Lazily create this month's recurring invoice rows for active recurring
@@ -104,18 +116,28 @@ export async function getDashboardData(isOwner: boolean, accessibleClientIds: st
         `
       : Promise.resolve([]),
     sql`
-      select t.*, coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags
+      select t.*, coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
+        creator_tm.name as created_by_name
       from todos t
       left join todo_tags tt on tt.todo_id = t.id
       left join tags tg on tg.id = tt.tag_id
+      left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
       where t.status <> 'COMPLETED'
-      group by t.id
+        and t.assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+      group by t.id, creator_tm.name
       order by (t.due_date is null), t.due_date asc, t.created_at desc
       limit 5
     `,
     getLeadPipelineSummary(today),
-    sql`select count(*)::int as count from todos where status <> 'COMPLETED'`,
-    sql`select count(*)::int as count from todos where status <> 'COMPLETED' and due_date = ${today}::date`,
+    sql`
+      select count(*)::int as count from todos
+      where status <> 'COMPLETED' and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+    `,
+    sql`
+      select count(*)::int as count from todos
+      where status <> 'COMPLETED' and due_date = ${today}::date
+        and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+    `,
   ]);
 
   const activeClients = activeRows.map((r) => mapClient(r as Record<string, unknown>));
@@ -147,7 +169,7 @@ export async function getDashboardData(isOwner: boolean, accessibleClientIds: st
     });
   }
 
-  const todoSnapshot = todoRows.map((r) => {
+  const todoSnapshot: Task[] = todoRows.map((r) => {
     const row = r as Record<string, unknown>;
     return {
       id: row.id as string,
@@ -165,6 +187,9 @@ export async function getDashboardData(isOwner: boolean, accessibleClientIds: st
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
       tags: ((row.tags as string[]) ?? []).filter(Boolean).sort(),
+      assignedToTeamMemberId: row.assigned_to_team_member_id as string | null,
+      createdByTeamMemberId: row.created_by_team_member_id as string | null,
+      createdByName: (row.created_by_name as string | null) ?? "Owner",
     };
   });
 

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, IdCard, CalendarClock, NotebookPen, StickyNote, BarChart3, CheckSquare } from "lucide-react";
 import { getLead } from "@/lib/data/leads";
 import { listCostEntries } from "@/lib/data/costEntries";
+import { getCurrentUser } from "@/lib/currentUser";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -32,14 +33,21 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { converted, costFrom, costTo } = await searchParams;
+  const user = await getCurrentUser();
+  const isOwner = user?.role === "OWNER";
   const [lead, costEntries, workTypes, leadSources, today] = await Promise.all([
     getLead(id),
-    listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }),
+    isOwner ? listCostEntries({ leadId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
     listWorkTypes({ includeInactive: true }),
     listLeadSources({ includeInactive: true }),
     getToday(),
   ]);
   if (!lead) notFound();
+
+  // Every to-do board is private — a lead's Tasks panel only ever shows the
+  // current viewer's own to-dos for that lead, never a colleague's.
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const myTasks = lead.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
 
   const boundDeleteLead = deleteLead.bind(null, id);
   const boundConvert = convertLeadToClient.bind(null, id);
@@ -113,19 +121,21 @@ export default async function LeadDetailPage({
             />
           </Card>
 
-          <CostSummarySection
-            entries={costEntries}
-            totalInvoiced={0}
-            budgetedHours={null}
-            reportHref={`/api/reports?${new URLSearchParams({
-              leadId: id,
-              summary: "1",
-              ...(costFrom ? { dateFrom: costFrom } : {}),
-              ...(costTo ? { dateTo: costTo } : {}),
-            }).toString()}`}
-            dateFrom={costFrom}
-            dateTo={costTo}
-          />
+          {isOwner && (
+            <CostSummarySection
+              entries={costEntries}
+              totalInvoiced={0}
+              budgetedHours={null}
+              reportHref={`/api/reports?${new URLSearchParams({
+                leadId: id,
+                summary: "1",
+                ...(costFrom ? { dateFrom: costFrom } : {}),
+                ...(costTo ? { dateTo: costTo } : {}),
+              }).toString()}`}
+              dateFrom={costFrom}
+              dateTo={costTo}
+            />
+          )}
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
@@ -174,7 +184,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={lead.tasks} today={today} />
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
           </Card>
         </div>
       </div>

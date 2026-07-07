@@ -58,6 +58,7 @@ export function TodoWorkspace({
   leads,
   todoTypes,
   defaultTypeSelection,
+  assignOptions,
   today,
 }: {
   tasks: Task[];
@@ -69,6 +70,8 @@ export function TodoWorkspace({
   leads: OwnerOption[];
   todoTypes: TodoType[];
   defaultTypeSelection: string;
+  /** "Me" plus whoever else you're allowed to hand a to-do to. */
+  assignOptions: { value: string; label: string }[];
   today: string;
 }) {
   const [optimisticTasks, applyStatusChange] = useOptimistic(
@@ -234,6 +237,7 @@ export function TodoWorkspace({
           leads={leads}
           todoTypes={todoTypes}
           defaultTypeSelection={defaultTypeSelection}
+          assignOptions={assignOptions}
           onClose={() => setDrawerState(null)}
         />
       )}

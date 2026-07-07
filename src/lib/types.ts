@@ -116,6 +116,12 @@ export interface Task {
   // present when returned from a query that joins in the owner's name
   clientName?: string;
   leadName?: string;
+  /** Whose board this to-do is currently on — null means the workspace owner. */
+  assignedToTeamMemberId: string | null;
+  /** Who originally created it — null means the workspace owner. Differs from assignedToTeamMemberId once a to-do has been handed off to someone else. */
+  createdByTeamMemberId: string | null;
+  /** "Owner" or the creating team member's name — only meaningful (and only shown by the UI) when it differs from who the to-do is assigned to now. */
+  createdByName: string;
 }
 
 export interface Client {

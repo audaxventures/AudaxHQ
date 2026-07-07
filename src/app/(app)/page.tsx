@@ -36,8 +36,9 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   const isOwner = user?.role === "OWNER";
   const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const [data, profile] = await Promise.all([
-    getDashboardData(isOwner, accessibleClientIds),
+    getDashboardData(isOwner, accessibleClientIds, selfAssigneeId),
     getProfile(),
   ]);
 
