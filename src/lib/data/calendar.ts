@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { formatDateInput } from "@/lib/format";
 
 export type CalendarEventKind = "FOLLOW_UP" | "MEETING" | "TASK";
 
@@ -56,7 +57,7 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
     events.push({
       id: row.id as string,
       kind: "FOLLOW_UP",
-      date: row.date as string,
+      date: formatDateInput(row.date as string | Date),
       title: row.label as string,
       ownerName: (row.owner_name as string | null) ?? null,
       href,
@@ -70,7 +71,7 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
     events.push({
       id: row.id as string,
       kind: "MEETING",
-      date: row.date as string,
+      date: formatDateInput(row.date as string | Date),
       title: "Meeting notes",
       ownerName: (row.owner_name as string | null) ?? null,
       href,
@@ -86,7 +87,7 @@ export async function listCalendarEvents(from: string, to: string): Promise<Cale
     events.push({
       id: row.id as string,
       kind: "TASK",
-      date: row.date as string,
+      date: formatDateInput(row.date as string | Date),
       title: row.title as string,
       ownerName: (row.owner_name as string | null) ?? null,
       href,

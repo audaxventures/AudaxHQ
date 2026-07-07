@@ -78,7 +78,7 @@ export function TaskFilterBar({
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="mb-3 flex w-full items-center justify-between rounded-xl border border-navy-200 bg-white px-4 py-2.5 text-sm font-medium text-navy-700 md:hidden"
+        className="mb-3 flex w-full items-center justify-between rounded-xl border border-navy-200 bg-white px-4 py-2.5 text-sm font-medium text-navy-700"
       >
         <span className="flex items-center gap-2">
           <SlidersHorizontal size={15} />
@@ -87,7 +87,7 @@ export function TaskFilterBar({
         </span>
         <ChevronDown size={16} className={cn("transition-transform", expanded && "rotate-180")} />
       </button>
-      <div className={cn(!expanded && "hidden", "md:block")}>
+      <div className={cn(!expanded && "hidden")}>
         <div className="mb-3">
           <Input
             placeholder="Search tasks…"
