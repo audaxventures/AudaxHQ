@@ -3,9 +3,10 @@
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Circle, GripVertical, ListTodo, Plus, Send } from "lucide-react";
+import { CheckCircle2, Circle, GripVertical, Inbox, ListTodo, Plus, Send } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { Drawer } from "@/components/ui/Drawer";
 import { cn } from "@/lib/cn";
 import { createTask, setTaskStatus } from "@/lib/actions/tasks";
 import { TASK_STATUS_LABELS } from "@/lib/types";
@@ -30,12 +31,13 @@ interface BoardColumn {
   icon: LucideIcon;
   iconClasses: string;
   /**
-   * "own": only to-dos currently assigned to the viewer. "handedOff": to-dos
-   * the viewer created but assigned to someone else. "all": either — used
-   * for Completed, so a handed-off to-do that gets finished moves here
-   * instead of lingering in "Assigned to others".
+   * "own": to-dos the viewer both created and is assigned. "assignedToMe":
+   * someone else created it but it's on the viewer's board now. "handedOff":
+   * the viewer created it but assigned it to someone else. Completed to-dos
+   * never get their own column — they're reachable via the "View completed"
+   * drawer regardless of scope, so they don't linger on the board.
    */
-  scope: "own" | "handedOff" | "all";
+  scope: "own" | "handedOff" | "assignedToMe";
 }
 
 // "Waiting on Client" isn't its own column — those tasks live in In
@@ -61,6 +63,15 @@ const BOARD_COLUMNS: BoardColumn[] = [
     scope: "own",
   },
   {
+    key: "ASSIGNED_TO_ME",
+    label: "Assigned to me",
+    statuses: ["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK"],
+    primaryStatus: "TO_BE_DONE",
+    icon: Inbox,
+    iconClasses: "bg-sage-100 text-sage-600",
+    scope: "assignedToMe",
+  },
+  {
     key: "ASSIGNED_TO_OTHERS",
     label: "Assigned to others",
     statuses: ["TO_BE_DONE", "IN_PROGRESS", "AWAITING_CLIENT_FEEDBACK"],
@@ -69,27 +80,15 @@ const BOARD_COLUMNS: BoardColumn[] = [
     iconClasses: "bg-violet-100 text-violet-600",
     scope: "handedOff",
   },
-  {
-    key: "COMPLETED",
-    label: TASK_STATUS_LABELS.COMPLETED,
-    statuses: ["COMPLETED"],
-    primaryStatus: "COMPLETED",
-    icon: CheckCircle2,
-    iconClasses: "bg-sage-100 text-sage-600",
-    scope: "all",
-  },
 ];
 
-function taskScope(task: Task, currentAssigneeId: string | null): "own" | "handedOff" {
-  return task.assignedToTeamMemberId === currentAssigneeId ? "own" : "handedOff";
+function taskScope(task: Task, currentAssigneeId: string | null): "own" | "handedOff" | "assignedToMe" {
+  if (task.assignedToTeamMemberId !== currentAssigneeId) return "handedOff";
+  return task.createdByTeamMemberId === currentAssigneeId ? "own" : "assignedToMe";
 }
-
-const COMPLETED_PREVIEW_COUNT = 3;
 
 export function TodoWorkspace({
   tasks,
-  showAllCompleted,
-  completedHref,
   filterStatus,
   clients,
   leads,
@@ -100,8 +99,6 @@ export function TodoWorkspace({
   today,
 }: {
   tasks: Task[];
-  showAllCompleted: boolean;
-  completedHref: string;
   /** Set when the Status filter narrows to one status — shows only the matching column. */
   filterStatus?: TaskStatus;
   clients: OwnerOption[];
@@ -130,6 +127,7 @@ export function TodoWorkspace({
     searchParams.get("new") === "1" ? { mode: "create", defaultStatus: "TO_BE_DONE" } : null
   );
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
   const quickAddRef = useRef<HTMLFormElement>(null);
   const [quickAddPending, startQuickAdd] = useTransition();
 
@@ -154,7 +152,11 @@ export function TodoWorkspace({
 
   const visibleColumns = (
     filterStatus ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus)) : BOARD_COLUMNS
-  ).filter((c) => c.key !== "ASSIGNED_TO_OTHERS" || assignOptions.length > 1);
+  ).filter((c) => c.scope === "own" || assignOptions.length > 1);
+
+  const completedTasks = [...optimisticTasks]
+    .filter((t) => t.status === "COMPLETED")
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   function moveTaskToColumn(taskId: string, columnKey: string) {
     const column = BOARD_COLUMNS.find((c) => c.key === columnKey);
@@ -201,7 +203,16 @@ export function TodoWorkspace({
         <Button onClick={() => setDrawerState({ mode: "create", defaultStatus: "TO_BE_DONE" })}>
           <Plus size={16} /> Create
         </Button>
+        <Button variant="secondary" onClick={() => setShowCompletedDrawer(true)}>
+          <CheckCircle2 size={16} /> Completed ({completedTasks.length})
+        </Button>
       </div>
+
+      {visibleColumns.length === 0 && (
+        <p className="rounded-2xl border border-navy-100 bg-cream-100/40 px-4 py-6 text-center text-sm text-navy-400">
+          Nothing to show for this filter.
+        </p>
+      )}
 
       <div
         className={cn(
@@ -211,13 +222,10 @@ export function TodoWorkspace({
       >
         {visibleColumns.map((column) => {
           const items = optimisticTasks.filter(
-            (t) =>
-              column.statuses.includes(t.status) &&
-              (column.scope === "all" || taskScope(t, currentAssigneeId) === column.scope)
+            (t) => column.statuses.includes(t.status) && t.status !== "COMPLETED" && taskScope(t, currentAssigneeId) === column.scope
           );
-          const isCompleted = column.key === "COMPLETED";
+          const isConsolidatedColumn = column.scope !== "own";
           const isHandedOffColumn = column.scope === "handedOff";
-          const visibleItems = isCompleted && !showAllCompleted ? items.slice(0, COMPLETED_PREVIEW_COUNT) : items;
           const Icon = column.icon;
 
           return (
@@ -240,12 +248,12 @@ export function TodoWorkspace({
               </div>
 
               <div className="flex-1 space-y-2.5">
-                {visibleItems.map((task) => (
+                {items.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
                     today={today}
-                    draggable={!isHandedOffColumn}
+                    draggable={!isConsolidatedColumn}
                     assignedToLabel={isHandedOffColumn ? assigneeLabelFor(task) : undefined}
                     onDragColumnChange={setDragOverColumn}
                     onDropOnColumn={(columnKey) => moveTaskToColumn(task.id, columnKey)}
@@ -257,25 +265,14 @@ export function TodoWorkspace({
                 )}
               </div>
 
-              {isCompleted ? (
-                items.length > COMPLETED_PREVIEW_COUNT && (
-                  <a
-                    href={completedHref}
-                    className="mt-3 block px-1 text-sm font-medium text-burnt-600 hover:text-burnt-700"
-                  >
-                    {showAllCompleted ? "Show fewer" : `View all completed (${items.length})`}
-                  </a>
-                )
-              ) : (
-                column.scope === "own" && (
-                  <button
-                    type="button"
-                    onClick={() => setDrawerState({ mode: "create", defaultStatus: column.primaryStatus })}
-                    className="mt-3 flex items-center gap-1.5 px-1 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
-                  >
-                    <Plus size={14} /> Add task
-                  </button>
-                )
+              {column.scope === "own" && (
+                <button
+                  type="button"
+                  onClick={() => setDrawerState({ mode: "create", defaultStatus: column.primaryStatus })}
+                  className="mt-3 flex items-center gap-1.5 px-1 text-sm font-medium text-navy-400 hover:text-navy-700 cursor-pointer"
+                >
+                  <Plus size={14} /> Add task
+                </button>
               )}
             </div>
           );
@@ -285,6 +282,27 @@ export function TodoWorkspace({
       <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-navy-400">
         <GripVertical size={14} /> Drag and drop tasks to update status
       </p>
+
+      {showCompletedDrawer && (
+        <Drawer
+          title="Completed tasks"
+          description="Everything you've finished — reopen one to bring it back onto the board."
+          onClose={() => setShowCompletedDrawer(false)}
+        >
+          <div className="space-y-2.5">
+            {completedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                today={today}
+                draggable={false}
+                onOpen={() => setDrawerState({ mode: "edit", task })}
+              />
+            ))}
+            {completedTasks.length === 0 && <p className="text-sm text-navy-400">Nothing completed yet.</p>}
+          </div>
+        </Drawer>
+      )}
 
       {drawerState && (
         <TaskFormDrawer

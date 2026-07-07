@@ -5,6 +5,7 @@ import { Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge } from "@/components/ui/Badge";
+import { RichTextView } from "@/components/ui/RichTextEditor";
 import { formatDate } from "@/lib/format";
 import { entityColorClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
@@ -45,7 +46,7 @@ export function MeetingNotesList({ notes }: { notes: MeetingNote[] }) {
                   <Users size={12} /> {note.attendees}
                 </p>
               )}
-              <p className="text-sm text-navy-700 line-clamp-2">{note.notes}</p>
+              <RichTextView html={note.notes ?? note.agenda ?? ""} className="text-sm text-navy-700 line-clamp-2" />
             </div>
           </button>
         ))}

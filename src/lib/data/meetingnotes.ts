@@ -7,7 +7,9 @@ interface MeetingNoteRow {
   lead_id: string | null;
   meeting_date: string;
   attendees: string | null;
-  notes: string;
+  agenda: string | null;
+  notes: string | null;
+  action_items: string | null;
   created_at: string;
   owner_name?: string;
   owner_color?: EntityColor | null;
@@ -20,7 +22,9 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
     leadId: row.lead_id,
     meetingDate: row.meeting_date,
     attendees: row.attendees,
+    agenda: row.agenda,
     notes: row.notes,
+    actionItems: row.action_items,
     createdAt: row.created_at,
     ownerName: row.owner_name,
     ownerColor: row.owner_color,
@@ -37,7 +41,7 @@ export interface MeetingNoteFilters {
 export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
   const rows = await sql`
     select
-      m.id, m.client_id, m.lead_id, m.meeting_date, m.attendees, m.notes, m.created_at,
+      m.id, m.client_id, m.lead_id, m.meeting_date, m.attendees, m.agenda, m.notes, m.action_items, m.created_at,
       coalesce(c.company_name, l.company_name) as owner_name,
       coalesce(c.color, l.color) as owner_color
     from meeting_notes m
@@ -60,26 +64,34 @@ export interface CreateMeetingNoteInput {
   leadId?: string;
   meetingDate: string;
   attendees?: string | null;
-  notes: string;
+  agenda?: string | null;
+  notes?: string | null;
+  actionItems?: string | null;
 }
 
 export async function createMeetingNote(input: CreateMeetingNoteInput): Promise<void> {
   await sql`
-    insert into meeting_notes (client_id, lead_id, meeting_date, attendees, notes)
-    values (${input.clientId ?? null}, ${input.leadId ?? null}, ${input.meetingDate}, ${input.attendees ?? null}, ${input.notes})
+    insert into meeting_notes (client_id, lead_id, meeting_date, attendees, agenda, notes, action_items)
+    values (
+      ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.meetingDate}, ${input.attendees ?? null},
+      ${input.agenda ?? null}, ${input.notes ?? null}, ${input.actionItems ?? null}
+    )
   `;
 }
 
 export interface UpdateMeetingNoteInput {
   meetingDate: string;
   attendees?: string | null;
-  notes: string;
+  agenda?: string | null;
+  notes?: string | null;
+  actionItems?: string | null;
 }
 
 export async function updateMeetingNote(id: string, input: UpdateMeetingNoteInput): Promise<void> {
   await sql`
     update meeting_notes
-    set meeting_date = ${input.meetingDate}, attendees = ${input.attendees ?? null}, notes = ${input.notes}
+    set meeting_date = ${input.meetingDate}, attendees = ${input.attendees ?? null},
+      agenda = ${input.agenda ?? null}, notes = ${input.notes ?? null}, action_items = ${input.actionItems ?? null}
     where id = ${id}
   `;
 }

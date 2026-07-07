@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Input, Select, Textarea, Label, FieldGroup } from "@/components/ui/Field";
+import { Input, Select, Label, FieldGroup } from "@/components/ui/Field";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Button } from "@/components/ui/Button";
 import { createMeetingNote } from "@/lib/actions/meetingnotes";
 
@@ -87,8 +88,16 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
         </FieldGroup>
       </div>
       <FieldGroup>
+        <Label htmlFor="agenda">Agenda</Label>
+        <RichTextEditor id="agenda" name="agenda" rows={3} placeholder="What's planned for this meeting…" />
+      </FieldGroup>
+      <FieldGroup>
         <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" rows={5} placeholder="What was discussed…" required />
+        <RichTextEditor id="notes" name="notes" rows={5} placeholder="What was discussed…" />
+      </FieldGroup>
+      <FieldGroup>
+        <Label htmlFor="actionItems">Action items</Label>
+        <RichTextEditor id="actionItems" name="actionItems" rows={3} placeholder="Follow-ups after the meeting…" />
       </FieldGroup>
       <SubmitButton />
     </form>

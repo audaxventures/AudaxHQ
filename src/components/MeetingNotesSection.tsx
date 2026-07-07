@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Users } from "lucide-react";
-import { Input, Textarea, Label, FieldGroup } from "@/components/ui/Field";
+import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
 import { formatDate } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
 import { createScopedMeetingNote } from "@/lib/actions/meetingnotes";
@@ -14,6 +15,9 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Bumped after each successful add to force the RichTextEditors to remount
+  // and clear — form.reset() doesn't touch contentEditable content.
+  const [formKey, setFormKey] = useState(0);
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
 
   return (
@@ -25,6 +29,7 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
             await createScopedMeetingNote(owner, formData);
           });
           formRef.current?.reset();
+          setFormKey((k) => k + 1);
         }}
         className="space-y-3 mb-5"
       >
@@ -39,8 +44,16 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
           </FieldGroup>
         </div>
         <FieldGroup>
+          <Label htmlFor="agenda">Agenda</Label>
+          <RichTextEditor key={`agenda-${formKey}`} id="agenda" name="agenda" rows={2} placeholder="What's planned for this meeting…" />
+        </FieldGroup>
+        <FieldGroup>
           <Label htmlFor="notes">Notes</Label>
-          <Textarea id="notes" name="notes" rows={3} placeholder="What was discussed…" required />
+          <RichTextEditor key={`notes-${formKey}`} id="notes" name="notes" rows={3} placeholder="What was discussed…" />
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="actionItems">Action items</Label>
+          <RichTextEditor key={`actionItems-${formKey}`} id="actionItems" name="actionItems" rows={2} placeholder="Follow-ups after the meeting…" />
         </FieldGroup>
         <button
           type="submit"
@@ -69,7 +82,7 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-navy-800 whitespace-pre-wrap line-clamp-3">{note.notes}</p>
+                <RichTextView html={note.notes ?? note.agenda ?? ""} className="text-sm text-navy-800 line-clamp-3" />
               </button>
             </li>
           ))}

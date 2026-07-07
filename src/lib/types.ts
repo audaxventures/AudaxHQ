@@ -80,7 +80,12 @@ export interface MeetingNote {
   leadId: string | null;
   meetingDate: string;
   attendees: string | null;
-  notes: string;
+  /** Rich text (sanitized HTML) — what's planned to be discussed, fillable before the meeting happens. */
+  agenda: string | null;
+  /** Rich text (sanitized HTML) — what was actually discussed. */
+  notes: string | null;
+  /** Rich text (sanitized HTML) — follow-ups to do after the meeting. */
+  actionItems: string | null;
   createdAt: string;
   // present when returned from a query that joins in the owner's name/color
   ownerName?: string;
