@@ -42,7 +42,11 @@ export default async function DashboardPage() {
     getProfile(),
   ]);
 
-  const firstName = profile.name.trim().split(/\s+/)[0] || null;
+  // Greet whoever's actually signed in, not always the business owner —
+  // profile.name is the business-level operator name, only correct when
+  // the owner themselves is logged in.
+  const greetingName = user?.role === "TEAM_MEMBER" ? user.teamMember.name : profile.name;
+  const firstName = greetingName.trim().split(/\s+/)[0] || null;
   const hour = currentHourInTimezone(profile.timezone);
 
   const overdueFollowUpCount = data.hotFollowUps.filter((f) => f.isOverdue).length;
