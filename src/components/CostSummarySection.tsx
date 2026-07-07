@@ -1,12 +1,17 @@
 import { AlertTriangle, PieChart, Plus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
-import { CostEntryTable } from "@/components/tracker/CostEntryTable";
+import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { CostDateRangeFilter } from "@/components/CostDateRangeFilter";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { buildCostSummary } from "@/lib/data/costEntries";
-import type { CostEntry } from "@/lib/types";
+import type { CostEntry, TeamMember, WorkCategory } from "@/lib/types";
+
+interface OwnerOption {
+  id: string;
+  companyName: string;
+}
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: "sage" | "brick" }) {
   return (
@@ -26,6 +31,10 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: "
 
 export function CostSummarySection({
   entries,
+  clients,
+  leads,
+  teamMembers,
+  workCategories,
   totalInvoiced,
   budgetedHours,
   reportHref,
@@ -34,6 +43,10 @@ export function CostSummarySection({
   dateTo,
 }: {
   entries: CostEntry[];
+  clients: OwnerOption[];
+  leads: OwnerOption[];
+  teamMembers: TeamMember[];
+  workCategories: WorkCategory[];
   totalInvoiced: number;
   budgetedHours: number | null;
   reportHref: string;
@@ -134,7 +147,7 @@ export function CostSummarySection({
         </div>
       )}
 
-      <CostEntryTable entries={entries} />
+      <CostEntryLog entries={entries} clients={clients} leads={leads} teamMembers={teamMembers} workCategories={workCategories} />
     </Card>
   );
 }
