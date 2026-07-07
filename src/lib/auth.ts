@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { getPasscodeCredentials } from "@/lib/data/appSettings";
+import type { SessionClaims, SessionRole } from "@/lib/types";
 
 export const SESSION_COOKIE_NAME = "audax_session";
+
+const SESSION_ROLES: SessionRole[] = ["OWNER", "TEAM_MEMBER"];
 
 function sessionSecret(): string {
   const secret = process.env.AUTH_SECRET ?? process.env.APP_PASSCODE;
@@ -18,20 +21,44 @@ function timingSafeStringEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-/**
- * Session tokens are a fixed value signed by AUTH_SECRET, deliberately
- * independent of the passcode's current value. That means validating a
- * session on every request (proxy.ts) never needs a database round trip,
- * and changing the passcode from Settings doesn't retroactively log out
- * every already-open browser — only future logins use the new passcode.
- */
-export function computeSessionToken(): string {
-  return crypto.createHmac("sha256", sessionSecret()).update("audax-hq-session-v1").digest("hex");
+function signPayload(payload: string): string {
+  return crypto.createHmac("sha256", sessionSecret()).update(payload).digest("base64url");
 }
 
-export function isValidSessionToken(token: string | undefined | null): boolean {
-  if (!token) return false;
-  return timingSafeStringEqual(token, computeSessionToken());
+/**
+ * Session tokens carry who's logged in (owner vs. a specific team member) as
+ * a signed payload, so proxy.ts can route on identity without a database
+ * round trip. The signature is independent of the passcode's current value,
+ * so changing a passcode from Settings doesn't retroactively log out every
+ * already-open browser — only future logins are affected.
+ */
+export function createSessionToken(claims: SessionClaims): string {
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  return `${payload}.${signPayload(payload)}`;
+}
+
+export function verifySessionToken(token: string | undefined | null): SessionClaims | null {
+  if (!token) return null;
+  const dotIndex = token.lastIndexOf(".");
+  if (dotIndex === -1) return null;
+  const payload = token.slice(0, dotIndex);
+  const signature = token.slice(dotIndex + 1);
+  if (!timingSafeStringEqual(signature, signPayload(payload))) return null;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionClaims;
+    if (!SESSION_ROLES.includes(claims.role)) return null;
+    if (claims.role === "TEAM_MEMBER" && typeof claims.teamMemberId !== "string") return null;
+    return claims;
+  } catch {
+    return null;
+  }
+}
+
+export function isCorrectPasscodeHash(candidate: string, hash: string, salt: string): boolean {
+  const candidateHash = crypto.scryptSync(candidate, salt, 64);
+  const storedHash = Buffer.from(hash, "hex");
+  if (candidateHash.length !== storedHash.length) return false;
+  return crypto.timingSafeEqual(candidateHash, storedHash);
 }
 
 /**
@@ -43,10 +70,7 @@ export function isValidSessionToken(token: string | undefined | null): boolean {
 export async function isCorrectPasscode(candidate: string): Promise<boolean> {
   const stored = await getPasscodeCredentials();
   if (stored) {
-    const candidateHash = crypto.scryptSync(candidate, stored.salt, 64);
-    const storedHash = Buffer.from(stored.hash, "hex");
-    if (candidateHash.length !== storedHash.length) return false;
-    return crypto.timingSafeEqual(candidateHash, storedHash);
+    return isCorrectPasscodeHash(candidate, stored.hash, stored.salt);
   }
   const envPasscode = process.env.APP_PASSCODE;
   if (!envPasscode) return false;

@@ -182,7 +182,22 @@ export interface TeamMember {
   defaultHourlyRate: string;
   active: boolean;
   createdAt: string;
+  /** Null when this row is just a cost-tracking label with no login. */
+  email: string | null;
+  /** True once a passcode has been set for this person — they can sign in. */
+  hasLogin: boolean;
 }
+
+export type SessionRole = "OWNER" | "TEAM_MEMBER";
+
+/** The signed session cookie's payload — decoded on every request, so keep it minimal. */
+export interface SessionClaims {
+  role: SessionRole;
+  teamMemberId?: string;
+}
+
+/** Resolved current-user context for a request — the team member's full record is looked up once claims are verified. */
+export type CurrentUser = { role: "OWNER" } | { role: "TEAM_MEMBER"; teamMember: TeamMember };
 
 export interface WorkCategory {
   id: string;

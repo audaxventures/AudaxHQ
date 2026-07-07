@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
 import * as teamMembers from "@/lib/data/teamMembers";
 import * as workCategories from "@/lib/data/workCategories";
+import { requireOwner } from "@/lib/currentUser";
 import type { FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -73,6 +75,7 @@ function revalidateWorkCategories() {
 }
 
 export async function createTeamMember(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -81,6 +84,7 @@ export async function createTeamMember(formData: FormData) {
 }
 
 export async function updateTeamMember(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -89,16 +93,53 @@ export async function updateTeamMember(id: string, formData: FormData) {
 }
 
 export async function activateTeamMember(id: string) {
+  await requireOwner();
   await teamMembers.setTeamMemberActive(id, true);
   revalidateTeamMembers();
 }
 
 export async function deactivateTeamMember(id: string) {
+  await requireOwner();
   await teamMembers.setTeamMemberActive(id, false);
   revalidateTeamMembers();
 }
 
+export async function enableTeamMemberLogin(id: string, formData: FormData) {
+  await requireOwner();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const passcode = String(formData.get("passcode") ?? "");
+  if (!email || passcode.length < 4) {
+    throw new Error("Enter an email and a passcode of at least 4 characters.");
+  }
+  await teamMembers.setTeamMemberLogin(id, email, passcode);
+  revalidateTeamMembers();
+}
+
+export async function disableTeamMemberLogin(id: string) {
+  await requireOwner();
+  await teamMembers.removeTeamMemberLogin(id);
+  revalidateTeamMembers();
+}
+
+export async function resetTeamMemberPasscode(id: string, formData: FormData) {
+  await requireOwner();
+  const passcode = String(formData.get("passcode") ?? "");
+  if (passcode.length < 4) {
+    throw new Error("Passcode must be at least 4 characters.");
+  }
+  await teamMembers.setTeamMemberPasscode(id, passcode);
+  revalidateTeamMembers();
+}
+
+export async function updateClientAccess(teamMemberId: string, formData: FormData) {
+  await requireOwner();
+  const clientIds = formData.getAll("clientId").map((v) => String(v));
+  await clientAccess.setClientAccess(teamMemberId, clientIds);
+  revalidateTeamMembers();
+}
+
 export async function createWorkCategory(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -107,6 +148,7 @@ export async function createWorkCategory(formData: FormData) {
 }
 
 export async function updateWorkCategory(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
@@ -115,11 +157,13 @@ export async function updateWorkCategory(id: string, formData: FormData) {
 }
 
 export async function activateWorkCategory(id: string) {
+  await requireOwner();
   await workCategories.setWorkCategoryActive(id, true);
   revalidateWorkCategories();
 }
 
 export async function deactivateWorkCategory(id: string) {
+  await requireOwner();
   await workCategories.setWorkCategoryActive(id, false);
   revalidateWorkCategories();
 }

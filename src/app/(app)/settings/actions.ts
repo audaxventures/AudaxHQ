@@ -8,6 +8,7 @@ import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
 import { isCorrectPasscode, hashPasscode } from "@/lib/auth";
+import { requireOwner } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
 
@@ -28,6 +29,7 @@ function revalidateTodoTypes() {
 }
 
 export async function createWorkType(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await workTypes.createWorkType(name);
@@ -35,6 +37,7 @@ export async function createWorkType(formData: FormData) {
 }
 
 export async function updateWorkType(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await workTypes.updateWorkType(id, name);
@@ -42,16 +45,19 @@ export async function updateWorkType(id: string, formData: FormData) {
 }
 
 export async function activateWorkType(id: string) {
+  await requireOwner();
   await workTypes.setWorkTypeActive(id, true);
   revalidateWorkTypes();
 }
 
 export async function deactivateWorkType(id: string) {
+  await requireOwner();
   await workTypes.setWorkTypeActive(id, false);
   revalidateWorkTypes();
 }
 
 export async function createLeadSource(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await leadSources.createLeadSource(name);
@@ -59,6 +65,7 @@ export async function createLeadSource(formData: FormData) {
 }
 
 export async function updateLeadSource(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await leadSources.updateLeadSource(id, name);
@@ -66,16 +73,19 @@ export async function updateLeadSource(id: string, formData: FormData) {
 }
 
 export async function activateLeadSource(id: string) {
+  await requireOwner();
   await leadSources.setLeadSourceActive(id, true);
   revalidateLeadSources();
 }
 
 export async function deactivateLeadSource(id: string) {
+  await requireOwner();
   await leadSources.setLeadSourceActive(id, false);
   revalidateLeadSources();
 }
 
 export async function createTodoType(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await todoTypes.createTodoType(name);
@@ -83,6 +93,7 @@ export async function createTodoType(formData: FormData) {
 }
 
 export async function updateTodoType(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   await todoTypes.updateTodoType(id, name);
@@ -90,16 +101,19 @@ export async function updateTodoType(id: string, formData: FormData) {
 }
 
 export async function activateTodoType(id: string) {
+  await requireOwner();
   await todoTypes.setTodoTypeActive(id, true);
   revalidateTodoTypes();
 }
 
 export async function deactivateTodoType(id: string) {
+  await requireOwner();
   await todoTypes.setTodoTypeActive(id, false);
   revalidateTodoTypes();
 }
 
 export async function updateProfile(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const timezone = String(formData.get("timezone") ?? "").trim() || "UTC";
@@ -110,6 +124,7 @@ export async function updateProfile(formData: FormData) {
 }
 
 export async function uploadBusinessLogo(formData: FormData) {
+  await requireOwner();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a logo file to upload.");
@@ -137,6 +152,7 @@ export async function uploadBusinessLogo(formData: FormData) {
 }
 
 export async function removeBusinessLogo() {
+  await requireOwner();
   const previousPath = await appSettings.getBusinessLogoPath();
   await appSettings.setBusinessLogoPath(null);
   if (previousPath) {
@@ -146,6 +162,7 @@ export async function removeBusinessLogo() {
 }
 
 export async function createBusinessEntity(formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const address = String(formData.get("address") ?? "").trim() || null;
@@ -155,6 +172,7 @@ export async function createBusinessEntity(formData: FormData) {
 }
 
 export async function updateBusinessEntity(id: string, formData: FormData) {
+  await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const address = String(formData.get("address") ?? "").trim() || null;
@@ -164,11 +182,13 @@ export async function updateBusinessEntity(id: string, formData: FormData) {
 }
 
 export async function activateBusinessEntity(id: string) {
+  await requireOwner();
   await businessEntities.setBusinessEntityActive(id, true);
   revalidatePath("/settings/business");
 }
 
 export async function deactivateBusinessEntity(id: string) {
+  await requireOwner();
   await businessEntities.setBusinessEntityActive(id, false);
   revalidatePath("/settings/business");
 }
@@ -178,6 +198,7 @@ export interface ActionResult {
 }
 
 export async function updateInvoiceAgingThresholds(formData: FormData): Promise<ActionResult> {
+  await requireOwner();
   const underDays = Number(formData.get("underDays"));
   const overDays = Number(formData.get("overDays"));
   if (!(underDays > 0) || !(overDays > underDays)) {
@@ -191,6 +212,7 @@ export async function updateInvoiceAgingThresholds(formData: FormData): Promise<
 }
 
 export async function changePasscode(formData: FormData): Promise<ActionResult> {
+  await requireOwner();
   const currentPasscode = String(formData.get("currentPasscode") ?? "");
   const newPasscode = String(formData.get("newPasscode") ?? "");
   const confirmPasscode = String(formData.get("confirmPasscode") ?? "");

@@ -3,16 +3,18 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
-  computeSessionToken,
+  createSessionToken,
   generateResetToken,
   hashPasscode,
   hashResetToken,
   isCorrectPasscode,
+  isCorrectPasscodeHash,
   isValidResetToken,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
 import { getProfile } from "@/lib/data/profile";
 import * as appSettings from "@/lib/data/appSettings";
+import * as teamMembers from "@/lib/data/teamMembers";
 import { sendPasscodeResetEmail } from "@/lib/email";
 
 export interface LoginState {
@@ -27,15 +29,29 @@ export async function login(
   const passcode = String(formData.get("passcode") ?? "");
   const next = String(formData.get("next") ?? "/");
 
-  const profile = await getProfile();
-  const emailMatches = email.length > 0 && email.toLowerCase() === profile.email.trim().toLowerCase();
+  if (!email || !passcode) {
+    return { error: "That email or passcode isn't right. Try again." };
+  }
 
-  if (!emailMatches || !passcode || !(await isCorrectPasscode(passcode))) {
+  const profile = await getProfile();
+  const emailMatches = email.toLowerCase() === profile.email.trim().toLowerCase();
+
+  let token: string | null = null;
+  if (emailMatches && (await isCorrectPasscode(passcode))) {
+    token = createSessionToken({ role: "OWNER" });
+  } else {
+    const credentials = await teamMembers.getTeamMemberCredentialsByEmail(email);
+    if (credentials && credentials.active && isCorrectPasscodeHash(passcode, credentials.hash, credentials.salt)) {
+      token = createSessionToken({ role: "TEAM_MEMBER", teamMemberId: credentials.id });
+    }
+  }
+
+  if (!token) {
     return { error: "That email or passcode isn't right. Try again." };
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, computeSessionToken(), {
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -71,19 +87,24 @@ export async function requestPasscodeReset(
   if (!email) return generic;
 
   const profile = await getProfile();
-  if (email.toLowerCase() !== profile.email.trim().toLowerCase()) {
-    return generic;
-  }
+  const isOwner = email.toLowerCase() === profile.email.trim().toLowerCase();
+  const teamMemberId = isOwner ? null : await teamMembers.getTeamMemberIdByEmail(email);
+  if (!isOwner && !teamMemberId) return generic;
 
   const token = generateResetToken();
-  await appSettings.setPasscodeResetToken(hashResetToken(token), new Date(Date.now() + RESET_TOKEN_TTL_MS));
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  if (isOwner) {
+    await appSettings.setPasscodeResetToken(hashResetToken(token), expiresAt);
+  } else {
+    await teamMembers.setTeamMemberResetToken(teamMemberId!, hashResetToken(token), expiresAt);
+  }
 
   const host = (await headers()).get("host");
   const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
   const resetUrl = `${protocol}://${host}/login/reset-passcode?token=${token}`;
 
   try {
-    await sendPasscodeResetEmail(profile.email, resetUrl);
+    await sendPasscodeResetEmail(email, resetUrl);
   } catch (e) {
     return { message: null, error: e instanceof Error ? e.message : "Couldn't send the reset email. Try again later." };
   }
@@ -110,15 +131,22 @@ export async function resetPasscode(
     return { error: "New passcode and confirmation don't match." };
   }
 
-  const stored = await appSettings.getPasscodeResetToken();
   const invalid = { error: "This reset link is invalid or has expired. Request a new one." };
-  if (!stored || stored.expiresAt < new Date()) return invalid;
-  if (!token || !isValidResetToken(hashResetToken(token), stored.tokenHash)) return invalid;
+  if (!token) return invalid;
+  const tokenHash = hashResetToken(token);
 
-  const { hash, salt } = hashPasscode(newPasscode);
-  await appSettings.setPasscodeCredentials(hash, salt);
-  await appSettings.clearPasscodeResetToken();
+  const stored = await appSettings.getPasscodeResetToken();
+  if (stored && stored.expiresAt >= new Date() && isValidResetToken(tokenHash, stored.tokenHash)) {
+    const { hash, salt } = hashPasscode(newPasscode);
+    await appSettings.setPasscodeCredentials(hash, salt);
+    await appSettings.clearPasscodeResetToken();
+    redirect("/login?reset=1");
+  }
 
+  const teamMember = await teamMembers.findTeamMemberByResetTokenHash(tokenHash);
+  if (!teamMember) return invalid;
+
+  await teamMembers.setTeamMemberPasscode(teamMember.id, newPasscode);
   redirect("/login?reset=1");
 }
 
