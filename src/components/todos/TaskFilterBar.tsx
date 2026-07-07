@@ -124,7 +124,7 @@ export function TaskFilterBar({
               icon={List}
             >
               <option value="">All statuses</option>
-              {TASK_STATUS_ORDER.map((s) => (
+              {TASK_STATUS_ORDER.filter((s) => s !== "COMPLETED").map((s) => (
                 <option key={s} value={s}>
                   {TASK_STATUS_LABELS[s]}
                 </option>

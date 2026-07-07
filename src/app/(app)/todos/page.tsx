@@ -7,22 +7,34 @@ import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { listTodoTypes } from "@/lib/data/todoTypes";
 import { listTeamMembers } from "@/lib/data/teamMembers";
-import { getToday } from "@/lib/data/profile";
+import { getProfile, getToday } from "@/lib/data/profile";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { getCurrentUser } from "@/lib/currentUser";
 import { formatDateInput } from "@/lib/format";
 import type { CurrentUser, Task, TaskPriority, TaskStatus, TaskType, TeamMember } from "@/lib/types";
 
-/** "Me" always comes first (value "" — omitted from the submitted form data means "assign to myself"); everyone else you can hand a to-do to follows. */
-function buildAssignOptions(user: CurrentUser | null, teamMembers: TeamMember[]): { value: string; label: string }[] {
+/**
+ * "Me" always comes first (value "" — omitted from the submitted form data
+ * means "assign to myself"); everyone else you can hand a to-do to follows.
+ * The owner sometimes also has their own row in team_members (e.g. to track
+ * their own billable hours in the tracker) — that row is filtered out here
+ * since "Me"/"Owner" already represent that same person, and leaving it in
+ * would show the owner's name twice.
+ */
+function buildAssignOptions(
+  user: CurrentUser | null,
+  teamMembers: TeamMember[],
+  ownerName: string
+): { value: string; label: string }[] {
+  const otherMembers = teamMembers.filter((tm) => tm.name !== ownerName);
   const options = [{ value: "", label: "Me" }];
   if (user?.role === "TEAM_MEMBER") {
     options.push({ value: "OWNER", label: "Owner" });
-    for (const tm of teamMembers) {
+    for (const tm of otherMembers) {
       if (tm.id !== user.teamMember.id) options.push({ value: tm.id, label: tm.name });
     }
   } else {
-    for (const tm of teamMembers) options.push({ value: tm.id, label: tm.name });
+    for (const tm of otherMembers) options.push({ value: tm.id, label: tm.name });
   }
   return options;
 }
@@ -65,14 +77,13 @@ export default async function TodosPage({
     priority?: string;
     due?: string;
     sort?: string;
-    completed?: string;
   }>;
 }) {
   const sp = await searchParams;
   const user = await getCurrentUser();
   const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
   const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
-  const [allTasks, allTags, clients, leads, todoTypes, teamMembers, today] = await Promise.all([
+  const [allTasks, allTags, clients, leads, todoTypes, teamMembers, today, profile] = await Promise.all([
     listTasks({
       search: sp.q,
       tag: sp.tag,
@@ -90,15 +101,15 @@ export default async function TodosPage({
     listTodoTypes({ includeInactive: true }),
     listTeamMembers(),
     getToday(),
+    getProfile(),
   ]);
-  const assignOptions = buildAssignOptions(user, teamMembers);
+  const assignOptions = buildAssignOptions(user, teamMembers, profile.name);
 
   const tasks = sortTasks(
     allTasks.filter((t) => matchesDuePreset(t, sp.due, today)),
     sp.sort
   );
 
-  const showAllCompleted = sp.completed === "all";
   const filterStatus = sp.status as TaskStatus | undefined;
 
   const filterParams = {
@@ -111,16 +122,6 @@ export default async function TodosPage({
     due: sp.due,
     sort: sp.sort,
   };
-
-  function buildCompletedHref(nextShowAll: boolean) {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(filterParams)) {
-      if (v) params.set(k, v);
-    }
-    if (nextShowAll) params.set("completed", "all");
-    const qs = params.toString();
-    return qs ? `/todos?${qs}` : "/todos";
-  }
 
   const activeTodoTypes = todoTypes.filter((t) => t.active);
   const defaultTypeSelection =
@@ -140,8 +141,6 @@ export default async function TodosPage({
 
       <TodoWorkspace
         tasks={tasks}
-        showAllCompleted={showAllCompleted}
-        completedHref={buildCompletedHref(!showAllCompleted)}
         filterStatus={filterStatus}
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}

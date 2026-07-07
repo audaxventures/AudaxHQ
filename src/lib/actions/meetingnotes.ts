@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
 import { requireClientAccess } from "@/lib/currentUser";
+import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null) {
   revalidatePath("/meeting-notes");
@@ -11,16 +12,29 @@ function revalidateOwner(clientId?: string | null, leadId?: string | null) {
   if (leadId) revalidatePath(`/leads/${leadId}`);
 }
 
+/** Extracts and sanitizes the three rich-text fields, so an agenda can be saved on its own before the meeting happens. Returns null if all three are empty. */
+function extractRichTextFields(formData: FormData): { agenda: string | null; notes: string | null; actionItems: string | null } | null {
+  const agenda = sanitizeRichText(String(formData.get("agenda") ?? ""));
+  const notes = sanitizeRichText(String(formData.get("notes") ?? ""));
+  const actionItems = sanitizeRichText(String(formData.get("actionItems") ?? ""));
+  if (isRichTextEmpty(agenda) && isRichTextEmpty(notes) && isRichTextEmpty(actionItems)) return null;
+  return {
+    agenda: isRichTextEmpty(agenda) ? null : agenda,
+    notes: isRichTextEmpty(notes) ? null : notes,
+    actionItems: isRichTextEmpty(actionItems) ? null : actionItems,
+  };
+}
+
 export async function createMeetingNote(formData: FormData) {
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
   const meetingDate = String(formData.get("meetingDate") ?? "");
-  const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
-  if ((!clientId && !leadId) || !meetingDate || !notes) return;
+  const fields = extractRichTextFields(formData);
+  if ((!clientId && !leadId) || !meetingDate || !fields) return;
   if (clientId) await requireClientAccess(clientId);
 
-  await meetingNotes.createMeetingNote({ clientId, leadId, meetingDate, attendees, notes });
+  await meetingNotes.createMeetingNote({ clientId, leadId, meetingDate, attendees, ...fields });
   revalidateOwner(clientId, leadId);
   redirect(clientId ? `/clients/${clientId}` : `/leads/${leadId}`);
 }
@@ -31,16 +45,16 @@ export async function createScopedMeetingNote(
 ) {
   if (owner.type === "CLIENT") await requireClientAccess(owner.clientId);
   const meetingDate = String(formData.get("meetingDate") ?? "");
-  const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
-  if (!meetingDate || !notes) return;
+  const fields = extractRichTextFields(formData);
+  if (!meetingDate || !fields) return;
 
   await meetingNotes.createMeetingNote({
     clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
     leadId: owner.type === "LEAD" ? owner.leadId : undefined,
     meetingDate,
     attendees,
-    notes,
+    ...fields,
   });
   revalidateOwner(
     owner.type === "CLIENT" ? owner.clientId : undefined,
@@ -55,11 +69,11 @@ export async function updateMeetingNote(
 ) {
   if (owner.clientId) await requireClientAccess(owner.clientId);
   const meetingDate = String(formData.get("meetingDate") ?? "");
-  const notes = String(formData.get("notes") ?? "").trim();
   const attendees = (formData.get("attendees") as string) || null;
-  if (!meetingDate || !notes) return;
+  const fields = extractRichTextFields(formData);
+  if (!meetingDate || !fields) return;
 
-  await meetingNotes.updateMeetingNote(id, { meetingDate, attendees, notes });
+  await meetingNotes.updateMeetingNote(id, { meetingDate, attendees, ...fields });
   revalidateOwner(owner.clientId, owner.leadId);
 }
 

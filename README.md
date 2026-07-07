@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private buckets for client and lead document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
 - **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
@@ -45,6 +45,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/014_team_member_access.sql
    psql "$DATABASE_URL" -f migrations/015_followup_assignment.sql
    psql "$DATABASE_URL" -f migrations/016_lead_documents.sql
+   psql "$DATABASE_URL" -f migrations/017_meeting_note_agenda.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -138,6 +139,7 @@ migrations/013_passcode_reset.sql  adds app_settings passcode reset token column
 migrations/014_team_member_access.sql  adds team member logins + client_access + todo assignment columns
 migrations/015_followup_assignment.sql  adds follow_ups.assigned_to_team_member_id
 migrations/016_lead_documents.sql  extends documents to leads (nullable client_id + new lead_id column)
+migrations/017_meeting_note_agenda.sql  adds meeting_notes.agenda + action_items (notes becomes optional)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

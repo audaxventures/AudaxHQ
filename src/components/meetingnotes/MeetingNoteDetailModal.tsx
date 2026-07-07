@@ -3,7 +3,8 @@
 import { useTransition } from "react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
-import { Input, Textarea, Label, FieldGroup } from "@/components/ui/Field";
+import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AvatarChip } from "@/components/ui/AvatarChip";
@@ -73,8 +74,16 @@ export function MeetingNoteDetailModal({
           </FieldGroup>
         </div>
         <FieldGroup>
+          <Label htmlFor="agenda">Agenda</Label>
+          <RichTextEditor id="agenda" name="agenda" rows={3} defaultValue={note.agenda} placeholder="What's planned for this meeting…" />
+        </FieldGroup>
+        <FieldGroup>
           <Label htmlFor="notes">Notes</Label>
-          <Textarea id="notes" name="notes" rows={10} required defaultValue={note.notes} />
+          <RichTextEditor id="notes" name="notes" rows={6} defaultValue={note.notes} placeholder="What was discussed…" />
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="actionItems">Action items</Label>
+          <RichTextEditor id="actionItems" name="actionItems" rows={3} defaultValue={note.actionItems} placeholder="Follow-ups after the meeting…" />
         </FieldGroup>
         <div className="flex items-center justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" size="sm" onClick={onClose}>
