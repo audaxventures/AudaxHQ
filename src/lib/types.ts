@@ -264,6 +264,8 @@ export interface Business {
   name: string;
   ownerName: string;
   ownerEmail: string;
+  /** Links a team_members row as the owner's own identity (e.g. one they created to track their own billable hours) — see migration 022. Assignment writes normalize a selection of this row down to the same "assigned to the owner" (null) convention used everywhere else. */
+  ownerTeamMemberId: string | null;
   timezone: string;
   /** Public URL of the uploaded business logo, or null to fall back to the static /logo.png. */
   logoUrl: string | null;

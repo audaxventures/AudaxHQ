@@ -18,6 +18,12 @@ async function resolveOwnerAccess(owner: { clientId?: string; leadId?: string })
   throw new Error("Not authorized.");
 }
 
+/** See resolveAssignee in lib/actions/tasks.ts — same normalization, for follow-ups. */
+function normalizeAssignee(assignedToTeamMemberId: string | null, user: CurrentUser): string | null {
+  if (assignedToTeamMemberId === user.business.ownerTeamMemberId) return null;
+  return assignedToTeamMemberId;
+}
+
 export async function addFollowUp(
   owner: { clientId: string } | { leadId: string },
   formData: FormData
@@ -26,7 +32,7 @@ export async function addFollowUp(
   const label = String(formData.get("label") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   if (!label || !date) return;
-  const assignedToTeamMemberId = String(formData.get("assignedTo") ?? "") || null;
+  const assignedToTeamMemberId = normalizeAssignee(String(formData.get("assignedTo") ?? "") || null, user);
   await followups.addFollowUp(owner, user.businessId, { label, date, assignedToTeamMemberId });
   revalidateOwner("clientId" in owner ? owner.clientId : undefined, "leadId" in owner ? owner.leadId : undefined);
 }
@@ -47,7 +53,7 @@ export async function setFollowUpAssignee(
   owner: { clientId?: string; leadId?: string }
 ) {
   const user = await resolveOwnerAccess(owner);
-  await followups.setFollowUpAssignee(id, user.businessId, assignedToTeamMemberId);
+  await followups.setFollowUpAssignee(id, user.businessId, normalizeAssignee(assignedToTeamMemberId, user));
   revalidateOwner(owner.clientId, owner.leadId);
 }
 

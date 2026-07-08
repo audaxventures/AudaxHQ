@@ -11,6 +11,7 @@ function mapBusiness(row: Record<string, unknown>): Business {
     name: row.name as string,
     ownerName: row.owner_name as string,
     ownerEmail: row.owner_email as string,
+    ownerTeamMemberId: row.owner_team_member_id as string | null,
     timezone: row.timezone as string,
     logoUrl: logoPath ? supabase.storage.from(BUSINESS_ASSETS_BUCKET).getPublicUrl(logoPath).data.publicUrl : null,
     invoiceAgingUnderDays: Number(row.invoice_aging_under_days),
@@ -111,6 +112,11 @@ export async function updateBusinessOwnerProfile(
       where business_id = ${businessId} and role = 'OWNER'
     `,
   ]);
+}
+
+/** Links (or unlinks, with null) a team_members row as the owner's own identity — see migration 022. */
+export async function setOwnerTeamMember(businessId: string, teamMemberId: string | null): Promise<void> {
+  await sql`update businesses set owner_team_member_id = ${teamMemberId} where id = ${businessId}`;
 }
 
 /** Server-only (the logo upload/remove actions) — the raw storage path, needed to delete the previous file when replacing or removing the logo. */

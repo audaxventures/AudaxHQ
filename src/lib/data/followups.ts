@@ -123,6 +123,14 @@ export async function setFollowUpAssignee(id: string, businessId: string, assign
   await sql`update follow_ups set assigned_to_team_member_id = ${assignedToTeamMemberId}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
+/** See reassignTasksFromTeamMemberToOwner in data/todos.ts — same repair, for follow-ups. */
+export async function reassignFollowUpsFromTeamMemberToOwner(businessId: string, teamMemberId: string): Promise<void> {
+  await sql`
+    update follow_ups set assigned_to_team_member_id = null
+    where business_id = ${businessId} and assigned_to_team_member_id = ${teamMemberId}
+  `;
+}
+
 export async function deleteFollowUp(id: string, businessId: string): Promise<void> {
   await sql`delete from follow_ups where id = ${id} and business_id = ${businessId}`;
 }
