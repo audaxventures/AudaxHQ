@@ -16,10 +16,12 @@ export const ENTITY_COLOR_BG_CLASS: Record<EntityColor, string> = {
   navy: "bg-navy-700",
   slate: "bg-slate-600",
   blue: "bg-blue-600",
+  teal: "bg-teal-600",
   sage: "bg-sage-600",
   burnt: "bg-burnt-600",
   gold: "bg-gold-600",
   brick: "bg-brick-600",
+  rose: "bg-rose-600",
   violet: "bg-violet-600",
 };
 

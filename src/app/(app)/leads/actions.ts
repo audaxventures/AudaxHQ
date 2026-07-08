@@ -19,7 +19,7 @@ const leadSchema = z.object({
   workTypeOther: z.string().optional(),
   sourceId: z.string().optional(),
   sourceOther: z.string().optional(),
-  color: z.enum(["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "violet"]).optional(),
+  color: z.enum(["navy", "slate", "blue", "teal", "sage", "burnt", "gold", "brick", "rose", "violet"]).optional(),
 });
 
 function parseLeadForm(formData: FormData) {

@@ -1,55 +1,32 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Pagination } from "@/components/ui/Pagination";
 import { ClientFilterBar } from "@/components/clients/ClientFilterBar";
 import { ClientListRow } from "@/components/clients/ClientListRow";
 import { ClientGridCard } from "@/components/clients/ClientGridCard";
-import { listClients, countClients } from "@/lib/data/clients";
+import { listClients } from "@/lib/data/clients";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { requireCurrentUser } from "@/lib/currentUser";
 import type { ClientStatus, ClientType } from "@/lib/types";
 import { Plus, Users } from "lucide-react";
 
-const PAGE_SIZE = 6;
-
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; type?: string; view?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; type?: string; view?: string }>;
 }) {
-  const { status, type, view, page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
+  const { status, type, view } = await searchParams;
   const isGrid = view === "grid";
 
   const user = await requireCurrentUser();
   const isTeamMember = user.role === "TEAM_MEMBER";
   const accessibleClientIds = await accessibleClientIdsFor(user);
 
-  const [clients, total] = await Promise.all([
-    listClients(user.businessId, {
-      status: status as ClientStatus | undefined,
-      type: type as ClientType | undefined,
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-      accessibleClientIds,
-    }),
-    countClients(user.businessId, {
-      status: status as ClientStatus | undefined,
-      type: type as ClientType | undefined,
-      accessibleClientIds,
-    }),
-  ]);
-
-  const buildPageHref = (targetPage: number) => {
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (type) params.set("type", type);
-    if (view) params.set("view", view);
-    if (targetPage > 1) params.set("page", String(targetPage));
-    const qs = params.toString();
-    return qs ? `/clients?${qs}` : "/clients";
-  };
+  const clients = await listClients(user.businessId, {
+    status: status as ClientStatus | undefined,
+    type: type as ClientType | undefined,
+    accessibleClientIds,
+  });
 
   return (
     <div>
@@ -85,7 +62,6 @@ export default async function ClientsPage({
           ))}
         </div>
       )}
-      <Pagination page={page} pageSize={PAGE_SIZE} total={total} itemLabel="clients" buildHref={buildPageHref} />
     </div>
   );
 }

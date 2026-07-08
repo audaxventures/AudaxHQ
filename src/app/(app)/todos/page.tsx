@@ -19,14 +19,23 @@ import type { CurrentUser, Task, TaskPriority, TaskStatus, TaskType, TeamMember 
  * The owner sometimes also has their own row in team_members (e.g. to track
  * their own billable hours in the tracker) — that row is filtered out here
  * since "Me"/"Owner" already represent that same person, and leaving it in
- * would show the owner's name twice.
+ * would show the owner's name twice. Matched on normalized name or login
+ * email rather than an exact string, since there's no schema link between a
+ * team_members row and the owner it represents.
  */
 function buildAssignOptions(
   user: CurrentUser,
   teamMembers: TeamMember[],
-  ownerName: string
+  ownerName: string,
+  ownerEmail: string
 ): { value: string; label: string }[] {
-  const otherMembers = teamMembers.filter((tm) => tm.name !== ownerName);
+  const normalizedOwnerName = ownerName.trim().toLowerCase();
+  const normalizedOwnerEmail = ownerEmail.trim().toLowerCase();
+  const otherMembers = teamMembers.filter((tm) => {
+    const isOwnersName = tm.name.trim().toLowerCase() === normalizedOwnerName;
+    const isOwnersEmail = !!tm.email && tm.email.trim().toLowerCase() === normalizedOwnerEmail;
+    return !isOwnersName && !isOwnersEmail;
+  });
   const options = [{ value: "", label: "Me" }];
   if (user.role === "TEAM_MEMBER") {
     options.push({ value: "OWNER", label: "Owner" });
@@ -102,7 +111,7 @@ export default async function TodosPage({
     listTeamMembers(user.businessId),
     getBusinessToday(user.businessId),
   ]);
-  const assignOptions = buildAssignOptions(user, teamMembers, user.business.ownerName);
+  const assignOptions = buildAssignOptions(user, teamMembers, user.business.ownerName, user.business.ownerEmail);
 
   const tasks = sortTasks(
     allTasks.filter((t) => matchesDuePreset(t, sp.due, today)),

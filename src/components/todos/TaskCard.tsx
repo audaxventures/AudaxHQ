@@ -60,6 +60,11 @@ export function TaskCard({
   // so suppress onOpen briefly after any drag ends rather than trusting tap/drag
   // to be mutually exclusive.
   const justDraggedRef = useRef(false);
+  // Same story as justDraggedRef: framer-motion's onTap still fires after a
+  // click on the checkbox button, which would reopen the drawer right after
+  // toggling completion — suppress it briefly instead of relying solely on
+  // the checkbox's own stopPropagation.
+  const justToggledRef = useRef(false);
   const completed = task.status === "COMPLETED";
   const overdue = !completed && isOverdue(task.dueDate, today);
   const dueToday = !completed && isDueToday(task.dueDate, today);
@@ -70,6 +75,10 @@ export function TaskCard({
 
   function toggleComplete(e: React.MouseEvent) {
     e.stopPropagation();
+    justToggledRef.current = true;
+    setTimeout(() => {
+      justToggledRef.current = false;
+    }, 150);
     const nextStatus = completed ? "TO_BE_DONE" : "COMPLETED";
     startTransition(async () => {
       await setTaskStatus(task.id, task.clientId, task.leadId, nextStatus);
@@ -91,7 +100,7 @@ export function TaskCard({
   }
 
   function handleTap() {
-    if (justDraggedRef.current) return;
+    if (justDraggedRef.current || justToggledRef.current) return;
     onOpen();
   }
 

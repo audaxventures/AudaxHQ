@@ -25,7 +25,7 @@ export type TaskType = "CLIENT" | "LEAD" | "CUSTOM";
 export type FollowUpStatus = "UPCOMING" | "COMPLETED";
 export type InvoiceAgeBracket = "UNDER_15" | "DAYS_15_30" | "OVER_30";
 /** An operator-assignable accent color for a client or lead, used for avatars and accent bars across the app. */
-export type EntityColor = "navy" | "slate" | "blue" | "sage" | "burnt" | "gold" | "brick" | "violet";
+export type EntityColor = "navy" | "slate" | "blue" | "teal" | "sage" | "burnt" | "gold" | "brick" | "rose" | "violet";
 
 export interface ClientLink {
   id: string;
@@ -429,10 +429,12 @@ export const ENTITY_COLOR_ORDER: EntityColor[] = [
   "navy",
   "slate",
   "blue",
+  "teal",
   "sage",
   "burnt",
   "gold",
   "brick",
+  "rose",
   "violet",
 ];
 
@@ -440,10 +442,12 @@ export const ENTITY_COLOR_LABELS: Record<EntityColor, string> = {
   navy: "Navy",
   slate: "Slate",
   blue: "Blue",
+  teal: "Teal",
   sage: "Sage",
   burnt: "Burnt orange",
   gold: "Gold",
   brick: "Brick",
+  rose: "Rose",
   violet: "Violet",
 };
 
