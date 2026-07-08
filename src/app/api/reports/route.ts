@@ -46,7 +46,7 @@ export async function GET(request: Request) {
   const dateTo = params.get("dateTo") || undefined;
   const withSummary = params.get("summary") === "1";
 
-  const entries = await listCostEntries({ clientId, leadId, teamMemberId, workCategoryId, billable, dateFrom, dateTo });
+  const entries = await listCostEntries(user.businessId, { clientId, leadId, teamMemberId, workCategoryId, billable, dateFrom, dateTo });
 
   const lines: string[] = [];
 
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     let budgetedHours: number | null = null;
 
     if (clientId) {
-      const client = await getClient(clientId);
+      const client = await getClient(clientId, user.businessId);
       if (client) {
         ownerName = client.companyName;
         totalInvoiced = client.invoices
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
         budgetedHours = client.budgetedHours;
       }
     } else if (leadId) {
-      const lead = await getLead(leadId);
+      const lead = await getLead(leadId, user.businessId);
       if (lead) ownerName = lead.companyName;
     }
 

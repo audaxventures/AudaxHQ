@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as documents from "@/lib/data/documents";
 import { supabase, DOCUMENTS_BUCKET, LEAD_DOCUMENTS_BUCKET } from "@/lib/storage";
 import { MAX_DOCUMENT_SIZE_BYTES, getFileExtension, isAllowedDocumentExtension } from "@/lib/documents";
-import { requireClientAccess } from "@/lib/currentUser";
+import { requireClientAccess, requireLeadAccess, requireCurrentUser } from "@/lib/currentUser";
 
 type Owner = { clientId: string } | { leadId: string };
 
@@ -22,7 +22,7 @@ function revalidateOwner(owner: Owner) {
 }
 
 export async function uploadDocument(owner: Owner, formData: FormData) {
-  if ("clientId" in owner) await requireClientAccess(owner.clientId);
+  const user = "clientId" in owner ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Choose a file to upload.");
@@ -34,14 +34,14 @@ export async function uploadDocument(owner: Owner, formData: FormData) {
     throw new Error("File is too large (25MB max).");
   }
   const label = String(formData.get("label") ?? "").trim() || null;
-  const filePath = documents.newDocumentStoragePath(ownerId(owner), file.name);
+  const filePath = documents.newDocumentStoragePath(user.businessId, ownerId(owner), file.name);
 
   const { error } = await supabase.storage
     .from(bucketFor(owner))
     .upload(filePath, file, { contentType: file.type || undefined });
   if (error) throw new Error(error.message);
 
-  await documents.createDocument(owner, {
+  await documents.createDocument(owner, user.businessId, {
     fileName: file.name,
     filePath,
     fileType: getFileExtension(file.name),
@@ -52,18 +52,20 @@ export async function uploadDocument(owner: Owner, formData: FormData) {
 }
 
 export async function deleteDocument(owner: Owner, documentId: string) {
-  if ("clientId" in owner) await requireClientAccess(owner.clientId);
-  const doc = await documents.getDocument(documentId);
+  const user = "clientId" in owner ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+  const doc = await documents.getDocument(documentId, user.businessId);
   if (!doc) return;
   await supabase.storage.from(bucketFor(owner)).remove([doc.filePath]);
-  await documents.deleteDocumentRecord(documentId);
+  await documents.deleteDocumentRecord(documentId, user.businessId);
   revalidateOwner(owner);
 }
 
 export async function getDocumentDownloadUrl(documentId: string): Promise<string> {
-  const doc = await documents.getDocument(documentId);
+  const user = await requireCurrentUser();
+  const doc = await documents.getDocument(documentId, user.businessId);
   if (!doc) throw new Error("Document not found.");
   if (doc.clientId) await requireClientAccess(doc.clientId);
+  else if (doc.leadId) await requireLeadAccess(doc.leadId);
   const bucket = doc.clientId ? DOCUMENTS_BUCKET : LEAD_DOCUMENTS_BUCKET;
   const { data, error } = await supabase.storage
     .from(bucket)

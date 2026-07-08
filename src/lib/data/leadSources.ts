@@ -11,22 +11,22 @@ function mapLeadSource(row: Record<string, unknown>): LeadSource {
   };
 }
 
-export async function listLeadSources(opts: { includeInactive?: boolean } = {}): Promise<LeadSource[]> {
+export async function listLeadSources(businessId: string, opts: { includeInactive?: boolean } = {}): Promise<LeadSource[]> {
   const rows = opts.includeInactive
-    ? await sql`select * from lead_sources order by active desc, name asc`
-    : await sql`select * from lead_sources where active order by name asc`;
+    ? await sql`select * from lead_sources where business_id = ${businessId} order by active desc, name asc`
+    : await sql`select * from lead_sources where business_id = ${businessId} and active order by name asc`;
   return rows.map((r) => mapLeadSource(r as Record<string, unknown>));
 }
 
-export async function createLeadSource(name: string): Promise<LeadSource> {
-  const rows = await sql`insert into lead_sources (name) values (${name}) returning *`;
+export async function createLeadSource(businessId: string, name: string): Promise<LeadSource> {
+  const rows = await sql`insert into lead_sources (business_id, name) values (${businessId}, ${name}) returning *`;
   return mapLeadSource(rows[0] as Record<string, unknown>);
 }
 
-export async function updateLeadSource(id: string, name: string): Promise<void> {
-  await sql`update lead_sources set name = ${name} where id = ${id}`;
+export async function updateLeadSource(id: string, businessId: string, name: string): Promise<void> {
+  await sql`update lead_sources set name = ${name} where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function setLeadSourceActive(id: string, active: boolean): Promise<void> {
-  await sql`update lead_sources set active = ${active} where id = ${id}`;
+export async function setLeadSourceActive(id: string, businessId: string, active: boolean): Promise<void> {
+  await sql`update lead_sources set active = ${active} where id = ${id} and business_id = ${businessId}`;
 }

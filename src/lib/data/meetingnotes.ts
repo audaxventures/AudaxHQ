@@ -38,7 +38,7 @@ export interface MeetingNoteFilters {
   accessibleClientIds?: string[] | null;
 }
 
-export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
+export async function listMeetingNotes(businessId: string, filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
   const rows = await sql`
     select
       m.id, m.client_id, m.lead_id, m.meeting_date, m.attendees, m.agenda, m.notes, m.action_items, m.created_at,
@@ -47,7 +47,8 @@ export async function listMeetingNotes(filters: MeetingNoteFilters = {}): Promis
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id
-    where (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
+    where m.business_id = ${businessId}
+      and (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or m.lead_id = ${filters.leadId ?? null})
       and (
         ${filters.accessibleClientIds ?? null}::uuid[] is null
@@ -69,11 +70,11 @@ export interface CreateMeetingNoteInput {
   actionItems?: string | null;
 }
 
-export async function createMeetingNote(input: CreateMeetingNoteInput): Promise<void> {
+export async function createMeetingNote(businessId: string, input: CreateMeetingNoteInput): Promise<void> {
   await sql`
-    insert into meeting_notes (client_id, lead_id, meeting_date, attendees, agenda, notes, action_items)
+    insert into meeting_notes (client_id, lead_id, business_id, meeting_date, attendees, agenda, notes, action_items)
     values (
-      ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.meetingDate}, ${input.attendees ?? null},
+      ${input.clientId ?? null}, ${input.leadId ?? null}, ${businessId}, ${input.meetingDate}, ${input.attendees ?? null},
       ${input.agenda ?? null}, ${input.notes ?? null}, ${input.actionItems ?? null}
     )
   `;
@@ -87,15 +88,15 @@ export interface UpdateMeetingNoteInput {
   actionItems?: string | null;
 }
 
-export async function updateMeetingNote(id: string, input: UpdateMeetingNoteInput): Promise<void> {
+export async function updateMeetingNote(id: string, businessId: string, input: UpdateMeetingNoteInput): Promise<void> {
   await sql`
     update meeting_notes
     set meeting_date = ${input.meetingDate}, attendees = ${input.attendees ?? null},
       agenda = ${input.agenda ?? null}, notes = ${input.notes ?? null}, action_items = ${input.actionItems ?? null}
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function deleteMeetingNote(id: string): Promise<void> {
-  await sql`delete from meeting_notes where id = ${id}`;
+export async function deleteMeetingNote(id: string, businessId: string): Promise<void> {
+  await sql`delete from meeting_notes where id = ${id} and business_id = ${businessId}`;
 }

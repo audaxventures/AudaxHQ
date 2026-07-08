@@ -7,13 +7,11 @@ import {
   generateResetToken,
   hashPasscode,
   hashResetToken,
-  isCorrectPasscode,
   isCorrectPasscodeHash,
-  isValidResetToken,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
-import { getProfile } from "@/lib/data/profile";
-import * as appSettings from "@/lib/data/appSettings";
+import { lookupAccountEmail } from "@/lib/data/accountEmails";
+import * as businesses from "@/lib/data/businesses";
 import * as teamMembers from "@/lib/data/teamMembers";
 import { sendPasscodeResetEmail } from "@/lib/email";
 
@@ -25,7 +23,7 @@ export async function login(
   _prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const passcode = String(formData.get("passcode") ?? "");
   const next = String(formData.get("next") ?? "/");
 
@@ -33,21 +31,25 @@ export async function login(
     return { error: "That email or passcode isn't right. Try again." };
   }
 
-  const profile = await getProfile();
-  const emailMatches = email.toLowerCase() === profile.email.trim().toLowerCase();
+  const genericError = { error: "That email or passcode isn't right. Try again." };
+  const lookup = await lookupAccountEmail(email);
+  if (!lookup) return genericError;
 
   let token: string | null = null;
-  if (emailMatches && (await isCorrectPasscode(passcode))) {
-    token = createSessionToken({ role: "OWNER" });
+  if (lookup.role === "OWNER") {
+    const creds = await businesses.getPasscodeCredentials(lookup.businessId);
+    if (isCorrectPasscodeHash(passcode, creds.hash, creds.salt)) {
+      token = createSessionToken({ role: "OWNER", businessId: lookup.businessId });
+    }
   } else {
-    const credentials = await teamMembers.getTeamMemberCredentialsByEmail(email);
+    const credentials = await teamMembers.getTeamMemberCredentials(lookup.teamMemberId!);
     if (credentials && credentials.active && isCorrectPasscodeHash(passcode, credentials.hash, credentials.salt)) {
-      token = createSessionToken({ role: "TEAM_MEMBER", teamMemberId: credentials.id });
+      token = createSessionToken({ role: "TEAM_MEMBER", businessId: lookup.businessId, teamMemberId: credentials.id });
     }
   }
 
   if (!token) {
-    return { error: "That email or passcode isn't right. Try again." };
+    return genericError;
   }
 
   const cookieStore = await cookies();
@@ -71,32 +73,30 @@ export interface ForgotPasscodeState {
 
 /**
  * Always resolves with the same generic message regardless of whether the
- * submitted email matched the profile — doesn't reveal whether an email is
- * "the" account email. Only surfaces a real error when sending genuinely
- * fails after a match, which is operator-troubleshooting info, not a leak.
+ * submitted email matched an account — doesn't reveal whether an email is
+ * on file. Only surfaces a real error when sending genuinely fails after a
+ * match, which is operator-troubleshooting info, not a leak.
  */
 export async function requestPasscodeReset(
   _prevState: ForgotPasscodeState,
   formData: FormData
 ): Promise<ForgotPasscodeState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const generic: ForgotPasscodeState = {
     message: "If that email is on file, we've sent a link to reset your passcode.",
     error: null,
   };
   if (!email) return generic;
 
-  const profile = await getProfile();
-  const isOwner = email.toLowerCase() === profile.email.trim().toLowerCase();
-  const teamMemberId = isOwner ? null : await teamMembers.getTeamMemberIdByEmail(email);
-  if (!isOwner && !teamMemberId) return generic;
+  const lookup = await lookupAccountEmail(email);
+  if (!lookup) return generic;
 
   const token = generateResetToken();
   const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-  if (isOwner) {
-    await appSettings.setPasscodeResetToken(hashResetToken(token), expiresAt);
+  if (lookup.role === "OWNER") {
+    await businesses.setPasscodeResetToken(lookup.businessId, hashResetToken(token), expiresAt);
   } else {
-    await teamMembers.setTeamMemberResetToken(teamMemberId!, hashResetToken(token), expiresAt);
+    await teamMembers.setTeamMemberResetToken(lookup.teamMemberId!, hashResetToken(token), expiresAt);
   }
 
   const host = (await headers()).get("host");
@@ -135,11 +135,11 @@ export async function resetPasscode(
   if (!token) return invalid;
   const tokenHash = hashResetToken(token);
 
-  const stored = await appSettings.getPasscodeResetToken();
-  if (stored && stored.expiresAt >= new Date() && isValidResetToken(tokenHash, stored.tokenHash)) {
+  const business = await businesses.findBusinessByResetTokenHash(tokenHash);
+  if (business) {
     const { hash, salt } = hashPasscode(newPasscode);
-    await appSettings.setPasscodeCredentials(hash, salt);
-    await appSettings.clearPasscodeResetToken();
+    await businesses.setPasscodeCredentials(business.id, hash, salt);
+    await businesses.clearPasscodeResetToken(business.id);
     redirect("/login?reset=1");
   }
 
@@ -149,4 +149,3 @@ export async function resetPasscode(
   await teamMembers.setTeamMemberPasscode(teamMember.id, newPasscode);
   redirect("/login?reset=1");
 }
-

@@ -7,7 +7,7 @@ import { ClientListRow } from "@/components/clients/ClientListRow";
 import { ClientGridCard } from "@/components/clients/ClientGridCard";
 import { listClients, countClients } from "@/lib/data/clients";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import type { ClientStatus, ClientType } from "@/lib/types";
 import { Plus, Users } from "lucide-react";
 
@@ -22,19 +22,19 @@ export default async function ClientsPage({
   const page = Math.max(1, Number(pageParam) || 1);
   const isGrid = view === "grid";
 
-  const user = await getCurrentUser();
-  const isTeamMember = user?.role === "TEAM_MEMBER";
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
+  const user = await requireCurrentUser();
+  const isTeamMember = user.role === "TEAM_MEMBER";
+  const accessibleClientIds = await accessibleClientIdsFor(user);
 
   const [clients, total] = await Promise.all([
-    listClients({
+    listClients(user.businessId, {
       status: status as ClientStatus | undefined,
       type: type as ClientType | undefined,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
       accessibleClientIds,
     }),
-    countClients({
+    countClients(user.businessId, {
       status: status as ClientStatus | undefined,
       type: type as ClientType | undefined,
       accessibleClientIds,

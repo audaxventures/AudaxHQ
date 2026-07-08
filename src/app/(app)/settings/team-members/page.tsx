@@ -4,12 +4,14 @@ import { TeamMembersPanel } from "@/components/settings/TeamMembersPanel";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listAllClientAccess } from "@/lib/data/clientAccess";
 import { listClients } from "@/lib/data/clients";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function TeamMembersSettingsPage() {
+  const user = await requireOwner();
   const [teamMembers, clients, clientAccess] = await Promise.all([
-    listTeamMembers({ includeInactive: true }),
-    listClients(),
-    listAllClientAccess(),
+    listTeamMembers(user.businessId, { includeInactive: true }),
+    listClients(user.businessId),
+    listAllClientAccess(user.businessId),
   ]);
   return (
     <Card className="p-6">

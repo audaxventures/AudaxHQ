@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import * as followups from "@/lib/data/followups";
-import { requireClientAccess } from "@/lib/currentUser";
-import type { FollowUpStatus } from "@/lib/types";
+import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
+import type { CurrentUser, FollowUpStatus } from "@/lib/types";
 
 function revalidateOwner(clientId?: string, leadId?: string) {
   if (clientId) revalidatePath(`/clients/${clientId}`);
@@ -11,16 +11,23 @@ function revalidateOwner(clientId?: string, leadId?: string) {
   revalidatePath("/");
 }
 
+/** Resolves + authorizes the owning client/lead, whichever is set. */
+async function resolveOwnerAccess(owner: { clientId?: string; leadId?: string }): Promise<CurrentUser> {
+  if (owner.clientId) return requireClientAccess(owner.clientId);
+  if (owner.leadId) return requireLeadAccess(owner.leadId);
+  throw new Error("Not authorized.");
+}
+
 export async function addFollowUp(
   owner: { clientId: string } | { leadId: string },
   formData: FormData
 ) {
-  if ("clientId" in owner) await requireClientAccess(owner.clientId);
+  const user = await resolveOwnerAccess(owner);
   const label = String(formData.get("label") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   if (!label || !date) return;
   const assignedToTeamMemberId = String(formData.get("assignedTo") ?? "") || null;
-  await followups.addFollowUp(owner, { label, date, assignedToTeamMemberId });
+  await followups.addFollowUp(owner, user.businessId, { label, date, assignedToTeamMemberId });
   revalidateOwner("clientId" in owner ? owner.clientId : undefined, "leadId" in owner ? owner.leadId : undefined);
 }
 
@@ -29,8 +36,8 @@ export async function setFollowUpStatus(
   status: FollowUpStatus,
   owner: { clientId?: string; leadId?: string }
 ) {
-  if (owner.clientId) await requireClientAccess(owner.clientId);
-  await followups.setFollowUpStatus(id, status);
+  const user = await resolveOwnerAccess(owner);
+  await followups.setFollowUpStatus(id, user.businessId, status);
   revalidateOwner(owner.clientId, owner.leadId);
 }
 
@@ -39,13 +46,13 @@ export async function setFollowUpAssignee(
   assignedToTeamMemberId: string | null,
   owner: { clientId?: string; leadId?: string }
 ) {
-  if (owner.clientId) await requireClientAccess(owner.clientId);
-  await followups.setFollowUpAssignee(id, assignedToTeamMemberId);
+  const user = await resolveOwnerAccess(owner);
+  await followups.setFollowUpAssignee(id, user.businessId, assignedToTeamMemberId);
   revalidateOwner(owner.clientId, owner.leadId);
 }
 
 export async function deleteFollowUp(id: string, owner: { clientId?: string; leadId?: string }) {
-  if (owner.clientId) await requireClientAccess(owner.clientId);
-  await followups.deleteFollowUp(id);
+  const user = await resolveOwnerAccess(owner);
+  await followups.deleteFollowUp(id, user.businessId);
   revalidateOwner(owner.clientId, owner.leadId);
 }

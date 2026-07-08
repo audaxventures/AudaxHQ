@@ -7,8 +7,8 @@ import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge, InvoiceAgeBracketBadge } from "@/components/ui/Badge";
 import { InvoiceAgingFilterBar } from "@/components/invoicing/InvoiceAgingFilterBar";
 import { listOutstandingInvoices } from "@/lib/data/invoicing";
-import { getAppSettings } from "@/lib/data/appSettings";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
+import { requireOwner } from "@/lib/currentUser";
 import { markInvoicePaid } from "@/lib/actions/invoicing";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -27,10 +27,12 @@ export default async function InvoiceAgingPage({
   searchParams: Promise<{ clientType?: string; bracket?: string }>;
 }) {
   const { clientType, bracket } = await searchParams;
-  const [settings, today] = await Promise.all([getAppSettings(), getToday()]);
-  const thresholds = { underDays: settings.invoiceAgingUnderDays, overDays: settings.invoiceAgingOverDays };
+  const user = await requireOwner();
+  const today = await getBusinessToday(user.businessId);
+  const thresholds = { underDays: user.business.invoiceAgingUnderDays, overDays: user.business.invoiceAgingOverDays };
   const bracketLabels = invoiceAgeBracketLabels(thresholds.underDays, thresholds.overDays);
   const invoices = await listOutstandingInvoices(
+    user.businessId,
     {
       clientType: clientType as ClientType | undefined,
       bracket: bracket as InvoiceAgeBracket | undefined,

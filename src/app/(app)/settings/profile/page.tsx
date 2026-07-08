@@ -2,12 +2,12 @@ import { Card } from "@/components/ui/Card";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { BusinessLogoForm } from "@/components/settings/BusinessLogoForm";
-import { getProfile } from "@/lib/data/profile";
-import { getAppSettings } from "@/lib/data/appSettings";
+import { requireOwner } from "@/lib/currentUser";
 import { initials } from "@/lib/avatar";
 
 export default async function ProfileSettingsPage() {
-  const [profile, settings] = await Promise.all([getProfile(), getAppSettings()]);
+  const user = await requireOwner();
+  const business = user.business;
   return (
     <Card className="p-6">
       <SettingsPanelHeader
@@ -20,14 +20,14 @@ export default async function ProfileSettingsPage() {
         }
         action={
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-navy-100 text-base font-semibold text-navy-700">
-            {initials(profile.name)}
+            {initials(business.ownerName)}
           </div>
         }
       />
-      <ProfileForm profile={profile} />
+      <ProfileForm business={business} />
       <div className="mt-6 border-t border-navy-100 pt-6">
         <h3 className="mb-3 text-sm font-semibold text-navy-900">Business logo</h3>
-        <BusinessLogoForm logoUrl={settings.logoUrl} />
+        <BusinessLogoForm logoUrl={business.logoUrl} />
       </div>
     </Card>
   );

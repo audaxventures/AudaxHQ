@@ -5,11 +5,13 @@ import { InfoNote } from "@/components/ui/InfoNote";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
+import { requireCurrentUser } from "@/lib/currentUser";
 
 export default async function NewLeadPage() {
+  const user = await requireCurrentUser();
   const [workTypes, leadSources] = await Promise.all([
-    listWorkTypes({ includeInactive: true }),
-    listLeadSources({ includeInactive: true }),
+    listWorkTypes(user.businessId, { includeInactive: true }),
+    listLeadSources(user.businessId, { includeInactive: true }),
   ]);
   return (
     <div>

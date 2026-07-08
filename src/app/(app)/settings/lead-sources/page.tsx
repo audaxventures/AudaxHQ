@@ -8,9 +8,11 @@ import {
   deactivateLeadSource,
   updateLeadSource,
 } from "@/app/(app)/settings/actions";
+import { requireOwner } from "@/lib/currentUser";
 
 export default async function LeadSourcesSettingsPage() {
-  const leadSources = await listLeadSources({ includeInactive: true });
+  const user = await requireOwner();
+  const leadSources = await listLeadSources(user.businessId, { includeInactive: true });
   return (
     <Card className="p-6">
       <SettingsPanelHeader title="Lead Sources" description="Where your leads come from. Used on the Lead form and Lead Insights." />

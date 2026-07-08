@@ -16,7 +16,7 @@ import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -35,7 +35,7 @@ import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency, isDateInRange } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
-import { getToday } from "@/lib/data/profile";
+import { getBusinessToday } from "@/lib/data/businesses";
 import { Button } from "@/components/ui/Button";
 
 export default async function ClientDetailPage({
@@ -47,28 +47,30 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { costFrom, costTo } = await searchParams;
-  const user = await getCurrentUser();
-  const isOwner = user?.role === "OWNER";
-  if (user && !isOwner) {
+  const user = await requireCurrentUser();
+  const isOwner = user.role === "OWNER";
+  if (!isOwner) {
     const accessibleClientIds = await accessibleClientIdsFor(user);
     if (!accessibleClientIds?.includes(id)) notFound();
   }
   const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads] = await Promise.all([
-    getClient(id),
-    isOwner ? listCostEntries({ clientId: id, dateFrom: costFrom, dateTo: costTo }) : Promise.resolve([]),
-    listWorkTypes({ includeInactive: true }),
-    getToday(),
+    getClient(id, user.businessId),
+    isOwner
+      ? listCostEntries(user.businessId, { clientId: id, dateFrom: costFrom, dateTo: costTo })
+      : Promise.resolve([]),
+    listWorkTypes(user.businessId, { includeInactive: true }),
+    getBusinessToday(user.businessId),
     // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
-    listTeamMembers(),
-    isOwner ? listWorkCategories() : Promise.resolve([]),
-    isOwner ? listClients() : Promise.resolve([]),
-    isOwner ? listLeads() : Promise.resolve([]),
+    listTeamMembers(user.businessId),
+    isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
+    isOwner ? listClients(user.businessId) : Promise.resolve([]),
+    isOwner ? listLeads(user.businessId) : Promise.resolve([]),
   ]);
   if (!client) notFound();
 
   // Every to-do board is private — a client's Tasks panel only ever shows
   // the current viewer's own to-dos for that client, never a colleague's.
-  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const myTasks = client.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
 
   const isArchived = client.status === "CHURNED";

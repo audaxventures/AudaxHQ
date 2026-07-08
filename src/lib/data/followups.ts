@@ -27,16 +27,16 @@ function mapFollowUp(row: FollowUpRow): FollowUp {
   };
 }
 
-export async function listFollowUpsForClient(clientId: string): Promise<FollowUp[]> {
+export async function listFollowUpsForClient(clientId: string, businessId: string): Promise<FollowUp[]> {
   const rows = await sql`
-    select * from follow_ups where client_id = ${clientId} order by date asc
+    select * from follow_ups where client_id = ${clientId} and business_id = ${businessId} order by date asc
   `;
   return (rows as unknown as FollowUpRow[]).map(mapFollowUp);
 }
 
-export async function listFollowUpsForLead(leadId: string): Promise<FollowUp[]> {
+export async function listFollowUpsForLead(leadId: string, businessId: string): Promise<FollowUp[]> {
   const rows = await sql`
-    select * from follow_ups where lead_id = ${leadId} order by date asc
+    select * from follow_ups where lead_id = ${leadId} and business_id = ${businessId} order by date asc
   `;
   return (rows as unknown as FollowUpRow[]).map(mapFollowUp);
 }
@@ -53,7 +53,11 @@ export interface HotFollowUp extends FollowUp {
  * client-owned follow-ups to that list — lead-owned ones are always included,
  * since leads aren't access-scoped.
  */
-export async function listHotFollowUps(today: string, accessibleClientIds?: string[] | null): Promise<HotFollowUp[]> {
+export async function listHotFollowUps(
+  businessId: string,
+  today: string,
+  accessibleClientIds?: string[] | null
+): Promise<HotFollowUp[]> {
   const rows = await sql`
     select
       f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
@@ -64,7 +68,8 @@ export async function listHotFollowUps(today: string, accessibleClientIds?: stri
     from follow_ups f
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
-    where f.status = 'UPCOMING' and f.date <= ${today}::date
+    where f.business_id = ${businessId}
+      and f.status = 'UPCOMING' and f.date <= ${today}::date
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
         or f.client_id is null
@@ -88,34 +93,36 @@ export async function listHotFollowUps(today: string, accessibleClientIds?: stri
 
 export async function addFollowUp(
   owner: { clientId?: string; leadId?: string },
+  businessId: string,
   input: { label: string; date: string; assignedToTeamMemberId?: string | null }
 ): Promise<void> {
   await sql`
-    insert into follow_ups (client_id, lead_id, label, date, assigned_to_team_member_id)
-    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${input.label}, ${input.date}, ${input.assignedToTeamMemberId ?? null})
+    insert into follow_ups (client_id, lead_id, business_id, label, date, assigned_to_team_member_id)
+    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${businessId}, ${input.label}, ${input.date}, ${input.assignedToTeamMemberId ?? null})
   `;
 }
 
 export async function updateFollowUp(
   id: string,
+  businessId: string,
   input: { label: string; date: string; status: FollowUpStatus; assignedToTeamMemberId?: string | null }
 ): Promise<void> {
   await sql`
     update follow_ups set
       label = ${input.label}, date = ${input.date}, status = ${input.status},
       assigned_to_team_member_id = ${input.assignedToTeamMemberId ?? null}, updated_at = now()
-    where id = ${id}
+    where id = ${id} and business_id = ${businessId}
   `;
 }
 
-export async function setFollowUpStatus(id: string, status: FollowUpStatus): Promise<void> {
-  await sql`update follow_ups set status = ${status}, updated_at = now() where id = ${id}`;
+export async function setFollowUpStatus(id: string, businessId: string, status: FollowUpStatus): Promise<void> {
+  await sql`update follow_ups set status = ${status}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function setFollowUpAssignee(id: string, assignedToTeamMemberId: string | null): Promise<void> {
-  await sql`update follow_ups set assigned_to_team_member_id = ${assignedToTeamMemberId}, updated_at = now() where id = ${id}`;
+export async function setFollowUpAssignee(id: string, businessId: string, assignedToTeamMemberId: string | null): Promise<void> {
+  await sql`update follow_ups set assigned_to_team_member_id = ${assignedToTeamMemberId}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function deleteFollowUp(id: string): Promise<void> {
-  await sql`delete from follow_ups where id = ${id}`;
+export async function deleteFollowUp(id: string, businessId: string): Promise<void> {
+  await sql`delete from follow_ups where id = ${id} and business_id = ${businessId}`;
 }

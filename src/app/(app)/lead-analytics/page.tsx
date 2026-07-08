@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { ConversionTable } from "@/components/leads/ConversionTable";
 import { getConversionBySource, getConversionByWorkType } from "@/lib/data/leadAnalytics";
+import { requireCurrentUser } from "@/lib/currentUser";
 
 export default async function LeadAnalyticsPage() {
+  const user = await requireCurrentUser();
   const [bySource, byWorkType] = await Promise.all([
-    getConversionBySource(),
-    getConversionByWorkType(),
+    getConversionBySource(user.businessId),
+    getConversionByWorkType(user.businessId),
   ]);
 
   return (

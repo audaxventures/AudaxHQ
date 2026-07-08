@@ -52,14 +52,14 @@ export async function createTimeEntry(formData: FormData) {
     teamMemberId = user.teamMember.id;
     rate = Number(user.teamMember.defaultHourlyRate);
     if (clientId) {
-      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId);
+      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId, user.businessId);
       if (!accessibleIds.includes(clientId)) {
         throw new Error("You don't have access to that client.");
       }
     }
   }
 
-  await costEntries.createTimeEntry({ clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
+  await costEntries.createTimeEntry(user.businessId, { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
   revalidateOwner(clientId, leadId);
 }
 
@@ -95,7 +95,7 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
     rate = Number(user.teamMember.defaultHourlyRate);
     restrictToTeamMemberId = user.teamMember.id;
     if (clientId) {
-      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId);
+      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId, user.businessId);
       if (!accessibleIds.includes(clientId)) {
         throw new Error("You don't have access to that client.");
       }
@@ -104,6 +104,7 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
 
   await costEntries.updateTimeEntry(
     id,
+    user.businessId,
     { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description },
     restrictToTeamMemberId
   );
@@ -114,12 +115,12 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
-  await costEntries.deleteTimeEntry(id, user.role === "TEAM_MEMBER" ? user.teamMember.id : null);
+  await costEntries.deleteTimeEntry(id, user.businessId, user.role === "TEAM_MEMBER" ? user.teamMember.id : null);
   revalidateOwner(clientId, leadId);
 }
 
 export async function createFixedCost(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const date = String(formData.get("date") ?? "");
   const description = String(formData.get("description") ?? "").trim();
@@ -130,7 +131,7 @@ export async function createFixedCost(formData: FormData) {
     throw new Error("Fill in date, description, and amount.");
   }
 
-  await costEntries.createFixedCost({ clientId, leadId, date, description, amount, category });
+  await costEntries.createFixedCost(user.businessId, { clientId, leadId, date, description, amount, category });
   revalidateOwner(clientId, leadId);
 }
 
@@ -140,7 +141,7 @@ export async function updateFixedCost(
   previousLeadId: string | null,
   formData: FormData
 ) {
-  await requireOwner();
+  const user = await requireOwner();
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const date = String(formData.get("date") ?? "");
   const description = String(formData.get("description") ?? "").trim();
@@ -151,14 +152,14 @@ export async function updateFixedCost(
     throw new Error("Fill in date, description, and amount.");
   }
 
-  await costEntries.updateFixedCost(id, { clientId, leadId, date, description, amount, category });
+  await costEntries.updateFixedCost(id, user.businessId, { clientId, leadId, date, description, amount, category });
   revalidateOwner(previousClientId, previousLeadId);
   revalidateOwner(clientId, leadId);
 }
 
 export async function deleteFixedCost(id: string, clientId: string | null, leadId: string | null) {
-  await requireOwner();
-  await costEntries.deleteFixedCost(id);
+  const user = await requireOwner();
+  await costEntries.deleteFixedCost(id, user.businessId);
   revalidateOwner(clientId, leadId);
 }
 
@@ -173,49 +174,49 @@ function revalidateWorkCategories() {
 }
 
 export async function createTeamMember(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
-  await teamMembers.createTeamMember({ name, defaultHourlyRate });
+  await teamMembers.createTeamMember(user.businessId, { name, defaultHourlyRate });
   revalidateTeamMembers();
 }
 
 export async function updateTeamMember(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
-  await teamMembers.updateTeamMember(id, { name, defaultHourlyRate });
+  await teamMembers.updateTeamMember(id, user.businessId, { name, defaultHourlyRate });
   revalidateTeamMembers();
 }
 
 export async function activateTeamMember(id: string) {
-  await requireOwner();
-  await teamMembers.setTeamMemberActive(id, true);
+  const user = await requireOwner();
+  await teamMembers.setTeamMemberActive(id, user.businessId, true);
   revalidateTeamMembers();
 }
 
 export async function deactivateTeamMember(id: string) {
-  await requireOwner();
-  await teamMembers.setTeamMemberActive(id, false);
+  const user = await requireOwner();
+  await teamMembers.setTeamMemberActive(id, user.businessId, false);
   revalidateTeamMembers();
 }
 
 export async function enableTeamMemberLogin(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const passcode = String(formData.get("passcode") ?? "");
   if (!email || passcode.length < 4) {
     throw new Error("Enter an email and a passcode of at least 4 characters.");
   }
-  await teamMembers.setTeamMemberLogin(id, email, passcode);
+  await teamMembers.setTeamMemberLogin(id, user.businessId, email, passcode);
   revalidateTeamMembers();
 }
 
 export async function disableTeamMemberLogin(id: string) {
-  await requireOwner();
-  await teamMembers.removeTeamMemberLogin(id);
+  const user = await requireOwner();
+  await teamMembers.removeTeamMemberLogin(id, user.businessId);
   revalidateTeamMembers();
 }
 
@@ -230,38 +231,38 @@ export async function resetTeamMemberPasscode(id: string, formData: FormData) {
 }
 
 export async function updateClientAccess(teamMemberId: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const clientIds = formData.getAll("clientId").map((v) => String(v));
-  await clientAccess.setClientAccess(teamMemberId, clientIds);
+  await clientAccess.setClientAccess(teamMemberId, user.businessId, clientIds);
   revalidateTeamMembers();
 }
 
 export async function createWorkCategory(formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
-  await workCategories.createWorkCategory({ name, defaultHourlyRate });
+  await workCategories.createWorkCategory(user.businessId, { name, defaultHourlyRate });
   revalidateWorkCategories();
 }
 
 export async function updateWorkCategory(id: string, formData: FormData) {
-  await requireOwner();
+  const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
-  await workCategories.updateWorkCategory(id, { name, defaultHourlyRate });
+  await workCategories.updateWorkCategory(id, user.businessId, { name, defaultHourlyRate });
   revalidateWorkCategories();
 }
 
 export async function activateWorkCategory(id: string) {
-  await requireOwner();
-  await workCategories.setWorkCategoryActive(id, true);
+  const user = await requireOwner();
+  await workCategories.setWorkCategoryActive(id, user.businessId, true);
   revalidateWorkCategories();
 }
 
 export async function deactivateWorkCategory(id: string) {
-  await requireOwner();
-  await workCategories.setWorkCategoryActive(id, false);
+  const user = await requireOwner();
+  await workCategories.setWorkCategoryActive(id, user.businessId, false);
   revalidateWorkCategories();
 }

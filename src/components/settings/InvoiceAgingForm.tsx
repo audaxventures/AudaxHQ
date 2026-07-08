@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import type { AppSettings } from "@/lib/types";
+import type { Business } from "@/lib/types";
 import { updateInvoiceAgingThresholds } from "@/app/(app)/settings/actions";
 
-export function InvoiceAgingForm({ settings }: { settings: AppSettings }) {
+export function InvoiceAgingForm({ settings }: { settings: Business }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);

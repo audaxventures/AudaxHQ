@@ -9,9 +9,8 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { getProfile } from "@/lib/data/profile";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 import { currentHourInTimezone } from "@/lib/timezone";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -33,21 +32,18 @@ function greetingWord(hour: number): string {
 }
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  const isOwner = user?.role === "OWNER";
-  const accessibleClientIds = user ? await accessibleClientIdsFor(user) : null;
-  const selfAssigneeId = user?.role === "TEAM_MEMBER" ? user.teamMember.id : null;
-  const [data, profile] = await Promise.all([
-    getDashboardData(isOwner, accessibleClientIds, selfAssigneeId),
-    getProfile(),
-  ]);
+  const user = await requireCurrentUser();
+  const isOwner = user.role === "OWNER";
+  const accessibleClientIds = await accessibleClientIdsFor(user);
+  const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  const data = await getDashboardData(user.businessId, isOwner, accessibleClientIds, selfAssigneeId);
 
   // Greet whoever's actually signed in, not always the business owner —
-  // profile.name is the business-level operator name, only correct when
-  // the owner themselves is logged in.
-  const greetingName = user?.role === "TEAM_MEMBER" ? user.teamMember.name : profile.name;
+  // business.ownerName is the workspace-level operator name, only correct
+  // when the owner themselves is logged in.
+  const greetingName = user.role === "TEAM_MEMBER" ? user.teamMember.name : user.business.ownerName;
   const firstName = greetingName.trim().split(/\s+/)[0] || null;
-  const hour = currentHourInTimezone(profile.timezone);
+  const hour = currentHourInTimezone(user.business.timezone);
 
   const overdueFollowUpCount = data.hotFollowUps.filter((f) => f.isOverdue).length;
 
