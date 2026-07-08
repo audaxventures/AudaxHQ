@@ -129,7 +129,7 @@ export default async function ClientDetailPage({
                     ? "One entry per month, created automatically — add one-off invoices any time."
                     : "Split the project total across deposits, milestones, or however you invoice this client."}
                 </p>
-                <InvoicesList clientId={id} invoices={client.invoices} />
+                <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
               </Card>
 
               <CostSummarySection

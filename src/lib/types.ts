@@ -1,6 +1,7 @@
 export type ClientType = "PROJECT" | "RECURRING";
 export type ClientStatus = "ACTIVE" | "PAUSED" | "CHURNED";
 export type InvoiceStatus = "NOT_INVOICED" | "INVOICED" | "PAID";
+export type InvoiceType = "FIXED" | "HOURLY";
 export type LeadStatus =
   | "NEW"
   | "CONTACTED"
@@ -53,6 +54,10 @@ export interface Invoice {
   clientId: string;
   label: string;
   amount: string;
+  invoiceType: InvoiceType;
+  hours: string | null;
+  hourlyRate: string | null;
+  description: string | null;
   status: InvoiceStatus;
   invoicedDate: string | null;
   paidDate: string | null;

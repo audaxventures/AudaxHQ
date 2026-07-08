@@ -5,7 +5,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LeadFilterBar } from "@/components/leads/LeadFilterBar";
 import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
-import { listLeads } from "@/lib/data/leads";
+import { ConvertedLeadsDrawer } from "@/components/leads/ConvertedLeadsDrawer";
+import { listConvertedLeads, listLeads } from "@/lib/data/leads";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser } from "@/lib/currentUser";
 import type { LeadStatus } from "@/lib/types";
@@ -19,8 +20,9 @@ export default async function LeadsPage({
   const isGrid = view === "grid";
   const user = await requireCurrentUser();
 
-  const [leads, today] = await Promise.all([
+  const [leads, convertedLeads, today] = await Promise.all([
     listLeads(user.businessId, { status: status as LeadStatus | undefined }),
+    listConvertedLeads(user.businessId),
     getBusinessToday(user.businessId),
   ]);
 
@@ -38,7 +40,10 @@ export default async function LeadsPage({
           </LinkButton>
         }
       />
-      <LeadFilterBar status={status} view={view} />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <LeadFilterBar status={status} view={view} />
+        <ConvertedLeadsDrawer leads={convertedLeads} />
+      </div>
       {leads.length === 0 ? (
         <EmptyState
           title="No leads match these filters"

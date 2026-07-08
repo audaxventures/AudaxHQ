@@ -11,6 +11,7 @@ import type {
   EntityColor,
   Invoice,
   InvoiceStatus,
+  InvoiceType,
 } from "@/lib/types";
 import { listFollowUpsForClient } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
@@ -61,6 +62,10 @@ function mapInvoice(row: Record<string, unknown>): Invoice {
     clientId: row.client_id as string,
     label: row.label as string,
     amount: row.amount as string,
+    invoiceType: row.invoice_type as InvoiceType,
+    hours: row.hours as string | null,
+    hourlyRate: row.hourly_rate as string | null,
+    description: row.description as string | null,
     status: row.status as InvoiceStatus,
     invoicedDate: row.invoiced_date as string | null,
     paidDate: row.paid_date as string | null,
@@ -252,7 +257,12 @@ export async function deleteClientLink(id: string, businessId: string): Promise<
 
 export interface InvoiceInput {
   label: string;
+  /** For HOURLY invoices this is hours * hourlyRate, computed by the caller. */
   amount: number;
+  invoiceType: InvoiceType;
+  hours: number | null;
+  hourlyRate: number | null;
+  description: string | null;
   status: InvoiceStatus;
   invoicedDate: string | null;
   paidDate: string | null;
@@ -260,8 +270,12 @@ export interface InvoiceInput {
 
 export async function addInvoice(clientId: string, businessId: string, input: InvoiceInput): Promise<void> {
   await sql`
-    insert into invoices (client_id, business_id, label, amount, status, invoiced_date, paid_date)
-    values (${clientId}, ${businessId}, ${input.label}, ${input.amount}, ${input.status}, ${input.invoicedDate}, ${input.paidDate})
+    insert into invoices (client_id, business_id, label, amount, invoice_type, hours, hourly_rate, description, status, invoiced_date, paid_date)
+    values (
+      ${clientId}, ${businessId}, ${input.label}, ${input.amount},
+      ${input.invoiceType}, ${input.hours}, ${input.hourlyRate}, ${input.description},
+      ${input.status}, ${input.invoicedDate}, ${input.paidDate}
+    )
   `;
 }
 
@@ -270,6 +284,10 @@ export async function updateInvoice(id: string, businessId: string, input: Invoi
     update invoices set
       label = ${input.label},
       amount = ${input.amount},
+      invoice_type = ${input.invoiceType},
+      hours = ${input.hours},
+      hourly_rate = ${input.hourlyRate},
+      description = ${input.description},
       status = ${input.status},
       invoiced_date = ${input.invoicedDate},
       paid_date = ${input.paidDate}
