@@ -199,11 +199,17 @@ export function ClientForm({
           icon={fieldIcon(List)}
           compact={compact}
         />
-        {!compact && (
+        {!compact ? (
           <FieldGroup>
             <Label compact={compact}>Color</Label>
             <ColorPicker name="color" defaultValue={client?.color} />
           </FieldGroup>
+        ) : (
+          // The detail page's own instant-save swatch (EntityColorPicker,
+          // rendered in the page header) is the color control here — this
+          // just round-trips the current value so an unrelated "Save
+          // changes" click on this form doesn't wipe it back to null.
+          <input type="hidden" name="color" value={client?.color ?? ""} />
         )}
       </div>
       {compact ? (
