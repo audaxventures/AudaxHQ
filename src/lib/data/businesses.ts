@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { sql } from "@/lib/db";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { todayInTimezone } from "@/lib/timezone";
@@ -22,6 +23,59 @@ function mapBusiness(row: Record<string, unknown>): Business {
 export async function getBusiness(businessId: string): Promise<Business> {
   const rows = await sql`select * from businesses where id = ${businessId}`;
   return mapBusiness(rows[0] as Record<string, unknown>);
+}
+
+export interface CreateBusinessInput {
+  name: string;
+  ownerName: string;
+  /** Already normalized to lower(trim()) by the caller. */
+  ownerEmail: string;
+  passcodeHash: string;
+  passcodeSalt: string;
+  timezone: string;
+}
+
+/**
+ * Creates a new tenant workspace: the business row, its account_emails
+ * entry, and a starter set of lookup rows (work types, lead sources,
+ * to-do types) so the new owner isn't dropped into an empty picklist
+ * everywhere. All in one transaction — account_emails' primary key on
+ * email is what actually enforces global email uniqueness (see
+ * lookupAccountEmail), so if the email is already taken this whole
+ * transaction rolls back atomically and no orphan business row is left
+ * behind. The business id is generated here (rather than left to the
+ * column's default) so it can be reused across every statement in the
+ * batch, since sql.transaction() can't reference an earlier statement's
+ * result from a later one.
+ */
+export async function createBusiness(input: CreateBusinessInput): Promise<Business> {
+  const businessId = randomUUID();
+  await sql.transaction([
+    sql`
+      insert into businesses (id, name, owner_name, owner_email, owner_passcode_hash, owner_passcode_salt, timezone)
+      values (${businessId}, ${input.name}, ${input.ownerName}, ${input.ownerEmail}, ${input.passcodeHash}, ${input.passcodeSalt}, ${input.timezone})
+    `,
+    sql`insert into account_emails (email, business_id, role) values (${input.ownerEmail}, ${businessId}, 'OWNER')`,
+    sql`
+      insert into work_types (business_id, name, is_fallback) values
+        (${businessId}, 'Consulting', false),
+        (${businessId}, 'Other', true)
+    `,
+    sql`
+      insert into lead_sources (business_id, name, is_fallback) values
+        (${businessId}, 'Referral', false),
+        (${businessId}, 'Cold Outreach', false),
+        (${businessId}, 'Inbound', false),
+        (${businessId}, 'Other', true)
+    `,
+    sql`
+      insert into todo_types (business_id, name) values
+        (${businessId}, 'General'),
+        (${businessId}, 'Personal'),
+        (${businessId}, 'Other')
+    `,
+  ]);
+  return getBusiness(businessId);
 }
 
 /** The workspace's configured IANA timezone, used to compute "today" everywhere date-only logic needs it. */

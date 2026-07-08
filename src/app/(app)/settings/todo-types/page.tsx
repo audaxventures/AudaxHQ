@@ -19,9 +19,9 @@ export default async function TodoTypesSettingsPage() {
         title="To-Do Types"
         description={
           <>
-            Categories for general to-dos (General, Personal, Audax Ventures, H2MB, Other, and anything you add).
-            Client and Lead to-dos are a separate, fixed type tied directly to a client or lead record — they
-            don&rsquo;t show up here since they can&rsquo;t be renamed or archived.
+            Categories for general to-dos (General, Personal, Other, and anything you add). Client and Lead to-dos
+            are a separate, fixed type tied directly to a client or lead record — they don&rsquo;t show up here
+            since they can&rsquo;t be renamed or archived.
           </>
         }
       />
