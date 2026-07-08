@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as businesses from "@/lib/data/businesses";
 import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
+import * as followups from "@/lib/data/followups";
 import * as teamMembers from "@/lib/data/teamMembers";
+import * as todos from "@/lib/data/todos";
 import * as workCategories from "@/lib/data/workCategories";
 import { getCurrentUser, requireOwner } from "@/lib/currentUser";
 import type { FixedCostCategory } from "@/lib/types";
@@ -235,6 +238,30 @@ export async function updateClientAccess(teamMemberId: string, formData: FormDat
   const clientIds = formData.getAll("clientId").map((v) => String(v));
   await clientAccess.setClientAccess(teamMemberId, user.businessId, clientIds);
   revalidateTeamMembers();
+}
+
+/**
+ * Links a team_members row (e.g. one the owner created to track their own
+ * billable hours) as the owner's own identity, so assigning a to-do/follow-up
+ * to that row is treated identically to assigning it to the owner. Also
+ * repairs anything already stuck on that row from before the link existed.
+ */
+export async function linkOwnerTeamMember(teamMemberId: string) {
+  const user = await requireOwner();
+  await businesses.setOwnerTeamMember(user.businessId, teamMemberId);
+  await todos.reassignTasksFromTeamMemberToOwner(user.businessId, teamMemberId);
+  await followups.reassignFollowUpsFromTeamMemberToOwner(user.businessId, teamMemberId);
+  revalidateTeamMembers();
+  revalidatePath("/todos");
+  revalidatePath("/");
+}
+
+export async function unlinkOwnerTeamMember() {
+  const user = await requireOwner();
+  await businesses.setOwnerTeamMember(user.businessId, null);
+  revalidateTeamMembers();
+  revalidatePath("/todos");
+  revalidatePath("/");
 }
 
 export async function createWorkCategory(formData: FormData) {

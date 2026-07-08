@@ -21,11 +21,18 @@ function selfId(user: CurrentUser): string | null {
   return user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
 }
 
-/** The "Assign to" <select> submits "OWNER" or a team-member row id; "" (not present) means "me" (the current user). */
+/**
+ * The "Assign to" <select> submits "OWNER" or a team-member row id; "" (not
+ * present) means "me" (the current user). A selection matching the owner's
+ * own linked team_members row (see businesses.ownerTeamMemberId) is
+ * normalized to the same null value as "OWNER" — otherwise a task assigned
+ * to that row would be invisible on the owner's own board, since nothing
+ * else in the app treats that row as equivalent to the owner.
+ */
 function resolveAssignee(formData: FormData, user: CurrentUser): string | null {
   const raw = formData.get("assignedTo");
   if (raw === null || raw === "") return selfId(user);
-  if (raw === "OWNER") return null;
+  if (raw === "OWNER" || raw === user.business.ownerTeamMemberId) return null;
   return String(raw);
 }
 
