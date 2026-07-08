@@ -39,6 +39,14 @@ function mapNote(row: Record<string, unknown>): LeadNote {
 
 export interface LeadFilters {
   status?: LeadStatus;
+  /**
+   * Leads that have already been converted to a client are, from this point
+   * on, worked on as a client — they default to hidden everywhere a lead
+   * list is used to pick something to act on (the leads page, entity
+   * selectors, etc). Pass "include" for views that need full history, like
+   * the data export.
+   */
+  converted?: "exclude" | "include";
   limit?: number;
   offset?: number;
 }
@@ -60,6 +68,7 @@ export async function listLeads(
     ) f on f.lead_id = l.id
     where l.business_id = ${businessId}
       and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
+      and (${filters.converted === "include"} or l.converted_client_id is null)
     order by
       case when f.next_date is null then 1 else 0 end asc,
       f.next_date asc,
@@ -71,6 +80,18 @@ export async function listLeads(
     ...mapLead(row as Record<string, unknown>),
     nextFollowUpDate: (row as Record<string, unknown>).next_follow_up_date as string | null,
   }));
+}
+
+export async function listConvertedLeads(businessId: string): Promise<Lead[]> {
+  const rows = await sql`
+    select l.*, wt.name as work_type_name, ls.name as source_name
+    from leads l
+    left join work_types wt on wt.id = l.work_type_id
+    left join lead_sources ls on ls.id = l.source_id
+    where l.business_id = ${businessId} and l.converted_client_id is not null
+    order by l.updated_at desc
+  `;
+  return rows.map((row) => mapLead(row as Record<string, unknown>));
 }
 
 export interface LeadPipelineSummary {

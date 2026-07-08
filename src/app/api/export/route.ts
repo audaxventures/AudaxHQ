@@ -40,7 +40,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       break;
     }
     case "leads": {
-      const leads = await listLeads(businessId);
+      const leads = await listLeads(businessId, { converted: "include" });
       lines.push(
         csvRow(["Company Name", "Contact Name", "Email", "Phone", "Status", "Estimated Value", "Work Type", "Source", "Created At"])
       );

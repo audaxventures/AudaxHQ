@@ -128,7 +128,11 @@ export async function deleteClientLink(clientId: string, linkId: string) {
 
 const invoiceSchema = z.object({
   label: z.string().min(1, "Label is required"),
-  amount: z.coerce.number().min(0),
+  invoiceType: z.enum(["FIXED", "HOURLY"]),
+  amount: z.coerce.number().min(0).optional(),
+  hours: z.coerce.number().min(0).optional(),
+  hourlyRate: z.coerce.number().min(0).optional(),
+  description: z.string().optional(),
   status: z.enum(["NOT_INVOICED", "INVOICED", "PAID"]),
   invoicedDate: z.string().optional(),
   paidDate: z.string().optional(),
@@ -137,18 +141,31 @@ const invoiceSchema = z.object({
 function parseInvoiceForm(formData: FormData) {
   const parsed = invoiceSchema.parse({
     label: formData.get("label"),
-    amount: formData.get("amount"),
+    invoiceType: formData.get("invoiceType") || "FIXED",
+    amount: formData.get("amount") || undefined,
+    hours: formData.get("hours") || undefined,
+    hourlyRate: formData.get("hourlyRate") || undefined,
+    description: formData.get("description") || undefined,
     status: formData.get("status"),
     invoicedDate: formData.get("invoicedDate") || undefined,
     paidDate: formData.get("paidDate") || undefined,
   });
-  return {
+
+  const shared = {
     label: parsed.label,
-    amount: parsed.amount,
+    description: parsed.description ?? null,
     status: parsed.status,
     invoicedDate: parsed.invoicedDate ?? null,
     paidDate: parsed.paidDate ?? null,
   };
+
+  if (parsed.invoiceType === "HOURLY") {
+    const hours = parsed.hours ?? 0;
+    const hourlyRate = parsed.hourlyRate ?? 0;
+    return { ...shared, invoiceType: "HOURLY" as const, hours, hourlyRate, amount: hours * hourlyRate };
+  }
+
+  return { ...shared, invoiceType: "FIXED" as const, hours: null, hourlyRate: null, amount: parsed.amount ?? 0 };
 }
 
 async function requireOwnerClientAccess(clientId: string) {
