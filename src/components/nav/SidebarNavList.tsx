@@ -7,7 +7,16 @@ import type { SessionRole } from "@/lib/types";
 const OWNER_ONLY_HREFS = ["/invoices"];
 
 /** The nav-links + Settings + Sign out block shared by the desktop sidebar and the mobile drawer. */
-export function SidebarNavList({ role, onNavigate }: { role: SessionRole; onNavigate?: () => void }) {
+export function SidebarNavList({
+  role,
+  isAdmin,
+  onNavigate,
+}: {
+  role: SessionRole;
+  /** Platform-admin status — an axis orthogonal to role (see isPlatformAdmin in src/lib/currentUser.ts), so it's a separate prop rather than a third role value. */
+  isAdmin?: boolean;
+  onNavigate?: () => void;
+}) {
   const links = role === "OWNER" ? NAV_LINKS : NAV_LINKS.filter((link) => !OWNER_ONLY_HREFS.includes(link.href));
   return (
     <>
@@ -19,6 +28,11 @@ export function SidebarNavList({ role, onNavigate }: { role: SessionRole; onNavi
       {role === "OWNER" && (
         <div className="relative mt-1 border-t border-navy-300/20 pt-1">
           <NavLink href="/settings" label="Settings" icon="settings" onClick={onNavigate} />
+        </div>
+      )}
+      {isAdmin && (
+        <div className="relative mt-1 border-t border-navy-300/20 pt-1">
+          <NavLink href="/admin" label="Admin" icon="admin" onClick={onNavigate} />
         </div>
       )}
       <form action="/api/logout" method="post" className="relative mt-1">

@@ -47,6 +47,8 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/016_lead_documents.sql
    psql "$DATABASE_URL" -f migrations/017_meeting_note_agenda.sql
    psql "$DATABASE_URL" -f migrations/018_businesses.sql
+   psql "$DATABASE_URL" -f migrations/019_drop_business_id_defaults.sql
+   psql "$DATABASE_URL" -f migrations/020_business_suspension.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -75,6 +77,12 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 **`012_business_logo.sql`** adds a `logo_path` column to `app_settings`, pointing at the uploaded business logo in Supabase Storage — not breaking, purely additive.
 
 **`013_passcode_reset.sql`** adds `passcode_reset_token_hash`/`passcode_reset_token_expires_at` columns to `app_settings`, backing the "Forgot passcode?" email flow — not breaking, purely additive.
+
+**`018_businesses.sql`** Stage 1 of the multi-tenant conversion — adds `businesses` + `account_emails` tables, `business_id` on every tenant-scoped table, drops `profile`/`app_settings`. Requires `app_settings.passcode_hash` to already be set before running — see the migration's own header comment.
+
+**`019_drop_business_id_defaults.sql`** drops the temporary `business_id` column defaults `018` added, now that every insert supplies `business_id` explicitly — not breaking, but run only after the app code from that point in the conversion is deployed.
+
+**`020_business_suspension.sql`** adds `businesses.suspended_at`, backing the platform admin portal's suspend/reactivate action — not breaking, purely additive.
 
 ### 2. Document storage setup (Supabase)
 
@@ -108,6 +116,7 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase project's `service_role` secret key |
 | `RESEND_API_KEY` | (optional) Your Resend API key, enables "Forgot passcode?" emails |
 | `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Audax HQ <noreply@yourdomain.com>` |
+| `PLATFORM_ADMIN_EMAILS` | (optional) Comma-separated business-owner emails allowed onto the platform admin portal at `/admin` — sign in normally, no separate credential |
 
 ### 5. Deploy
 
@@ -120,6 +129,8 @@ Recurring clients get their current month's invoice row created automatically th
 ## Access model
 
 There are no user accounts. `src/proxy.ts` checks every request (except `/login*` and static assets) for a signed session cookie; `/login` posts an email + passcode to a server action that validates the email against the Settings → Profile email and the passcode against `APP_PASSCODE` (or the Settings-managed passcode), then sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`. `/login/forgot` and `/login/reset-passcode` implement a self-service passcode reset over email (see "Passcode reset emails" above) for when the passcode is forgotten.
+
+**Platform admin** (`/admin`, `src/lib/data/admin.ts`): a workspace owner whose email is listed in `PLATFORM_ADMIN_EMAILS` sees an "Admin" nav link and can view every workspace on the platform plus suspend/reactivate one — see `isPlatformAdmin`/`requirePlatformAdmin` in `src/lib/currentUser.ts`. No separate credential; it's a check layered on top of that account's normal login.
 
 ## Project structure
 

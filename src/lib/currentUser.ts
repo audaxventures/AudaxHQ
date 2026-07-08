@@ -7,13 +7,14 @@ import { clientBelongsToBusiness } from "@/lib/data/clients";
 import { leadBelongsToBusiness } from "@/lib/data/leads";
 import type { CurrentUser } from "@/lib/types";
 
-/** Resolves the signed session cookie into a full current-user record. Null if unauthenticated or the team member's login was revoked since the cookie was issued. */
+/** Resolves the signed session cookie into a full current-user record. Null if unauthenticated, the business has been suspended by a platform admin, or the team member's login was revoked since the cookie was issued. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const claims = verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
   if (!claims) return null;
 
   const business = await getBusiness(claims.businessId);
+  if (business.suspendedAt) return null;
   if (claims.role === "OWNER") return { role: "OWNER", businessId: claims.businessId, business };
 
   const teamMember = await getTeamMember(claims.teamMemberId!, claims.businessId);
@@ -34,6 +35,26 @@ export async function requireOwner(): Promise<CurrentUser & { role: "OWNER" }> {
   if (!user || user.role !== "OWNER") {
     throw new Error("Not authorized.");
   }
+  return user;
+}
+
+/** Emails allowed onto the platform admin portal — comma-separated PLATFORM_ADMIN_EMAILS env var, unset means nobody has access. */
+function platformAdminEmails(): string[] {
+  return (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** True for an OWNER whose business email is allowlisted as a platform admin — an axis orthogonal to OWNER/TEAM_MEMBER, since it's about operating the SaaS platform itself, not any one workspace. */
+export function isPlatformAdmin(user: CurrentUser): boolean {
+  return user.role === "OWNER" && platformAdminEmails().includes(user.business.ownerEmail.toLowerCase());
+}
+
+/** Throws unless the current session is a platform admin — use at the top of every /admin page and server action. Returns the resolved user so callers can read businessId without a second lookup. */
+export async function requirePlatformAdmin(): Promise<CurrentUser & { role: "OWNER" }> {
+  const user = await requireOwner();
+  if (!isPlatformAdmin(user)) throw new Error("Not authorized.");
   return user;
 }
 

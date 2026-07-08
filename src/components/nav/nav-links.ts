@@ -10,7 +10,7 @@ export const NAV_LINKS = [
   { href: "/todos", label: "To-Dos", icon: "todos" },
 ] as const;
 
-export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings";
+export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings" | "admin";
 
 /** The mobile bottom tab bar only has room for a few links — the rest live in the drawer. */
 const MOBILE_TAB_HREFS = ["/", "/clients", "/todos"];

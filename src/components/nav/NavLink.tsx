@@ -13,6 +13,7 @@ import {
   BarChart3,
   Clock,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
@@ -28,6 +29,7 @@ const ICONS = {
   tracker: Clock,
   todos: CheckSquare,
   settings: Settings,
+  admin: ShieldCheck,
 } as const satisfies Record<NavIconKey, unknown>;
 
 export function NavLink({

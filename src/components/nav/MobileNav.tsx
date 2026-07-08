@@ -8,7 +8,7 @@ import { NavLink } from "@/components/nav/NavLink";
 import { MobileSidebarDrawer } from "@/components/nav/MobileSidebarDrawer";
 import type { SessionRole } from "@/lib/types";
 
-export function MobileTopBar({ role }: { role: SessionRole }) {
+export function MobileTopBar({ role, isAdmin }: { role: SessionRole; isAdmin?: boolean }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -46,7 +46,7 @@ export function MobileTopBar({ role }: { role: SessionRole }) {
           </form>
         </div>
       </header>
-      {drawerOpen && <MobileSidebarDrawer role={role} onClose={() => setDrawerOpen(false)} />}
+      {drawerOpen && <MobileSidebarDrawer role={role} isAdmin={isAdmin} onClose={() => setDrawerOpen(false)} />}
     </>
   );
 }

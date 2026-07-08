@@ -7,7 +7,15 @@ import { SidebarNavList } from "@/components/nav/SidebarNavList";
 import type { SessionRole } from "@/lib/types";
 
 /** Only ever rendered while open — the caller conditionally mounts it (`{drawerOpen && <MobileSidebarDrawer .../>}`). */
-export function MobileSidebarDrawer({ role, onClose }: { role: SessionRole; onClose: () => void }) {
+export function MobileSidebarDrawer({
+  role,
+  isAdmin,
+  onClose,
+}: {
+  role: SessionRole;
+  isAdmin?: boolean;
+  onClose: () => void;
+}) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -60,7 +68,7 @@ export function MobileSidebarDrawer({ role, onClose }: { role: SessionRole; onCl
             <X size={20} />
           </button>
         </div>
-        <SidebarNavList role={role} onNavigate={onClose} />
+        <SidebarNavList role={role} isAdmin={isAdmin} onNavigate={onClose} />
       </div>
     </div>
   );

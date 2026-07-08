@@ -264,6 +264,8 @@ export interface Business {
   logoUrl: string | null;
   invoiceAgingUnderDays: number;
   invoiceAgingOverDays: number;
+  /** Set by the platform admin portal — a suspended workspace's owner and team can no longer log in, but its data is untouched. Null means active. */
+  suspendedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

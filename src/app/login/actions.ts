@@ -52,6 +52,14 @@ export async function login(
     return genericError;
   }
 
+  // Checked only after the passcode has already been confirmed correct —
+  // checking earlier would let someone probe arbitrary emails to learn
+  // whether a business is suspended without knowing its passcode.
+  const business = await businesses.getBusiness(lookup.businessId);
+  if (business.suspendedAt) {
+    return { error: "This workspace has been suspended. Contact support." };
+  }
+
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
