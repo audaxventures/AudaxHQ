@@ -20,7 +20,7 @@ const clientSchema = z.object({
   workTypeOther: z.string().optional(),
   startDate: z.string().optional(),
   budgetedHours: z.coerce.number().min(0).optional(),
-  color: z.enum(["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "violet"]).optional(),
+  color: z.enum(["navy", "slate", "blue", "teal", "sage", "burnt", "gold", "brick", "rose", "violet"]).optional(),
 });
 
 /**

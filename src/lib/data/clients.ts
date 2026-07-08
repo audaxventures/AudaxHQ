@@ -115,21 +115,6 @@ export async function listClients(
   }));
 }
 
-export async function countClients(
-  businessId: string,
-  filters: Pick<ClientFilters, "status" | "type" | "accessibleClientIds"> = {}
-): Promise<number> {
-  const rows = await sql`
-    select count(*) as count
-    from clients c
-    where c.business_id = ${businessId}
-      and (${filters.status ?? null}::client_status is null or c.status = ${filters.status ?? null})
-      and (${filters.type ?? null}::client_type is null or c.type = ${filters.type ?? null})
-      and (${filters.accessibleClientIds ?? null}::uuid[] is null or c.id = any(${filters.accessibleClientIds ?? null}::uuid[]))
-  `;
-  return Number((rows[0] as Record<string, unknown>).count);
-}
-
 /** Whether `clientId` belongs to `businessId` — the tenant-isolation check behind requireClientAccess, independent of any team-member access-list scoping. */
 export async function clientBelongsToBusiness(clientId: string, businessId: string): Promise<boolean> {
   const rows = await sql`select 1 from clients where id = ${clientId} and business_id = ${businessId}`;

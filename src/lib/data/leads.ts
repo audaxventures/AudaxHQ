@@ -73,16 +73,6 @@ export async function listLeads(
   }));
 }
 
-export async function countLeads(businessId: string, filters: Pick<LeadFilters, "status"> = {}): Promise<number> {
-  const rows = await sql`
-    select count(*) as count
-    from leads l
-    where l.business_id = ${businessId}
-      and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
-  `;
-  return Number((rows[0] as Record<string, unknown>).count);
-}
-
 export interface LeadPipelineSummary {
   /** NEW + CONTACTED combined — leads not yet actively worked. */
   newCount: number;
