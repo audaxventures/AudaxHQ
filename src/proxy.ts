@@ -6,7 +6,7 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 // settings) — team members are bounced back to / even if they navigate here
 // directly. This is a defense on top of hiding the nav links, not a
 // replacement for the requireOwner() checks in the server actions themselves.
-const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/api/export", "/api/invoice-aging/export", "/api/reports"];
+const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/export", "/api/invoice-aging/export", "/api/reports"];
 
 // Passcode + team-member login gate for this internal tool. See /login and
 // src/lib/auth.ts.

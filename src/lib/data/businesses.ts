@@ -15,6 +15,7 @@ function mapBusiness(row: Record<string, unknown>): Business {
     logoUrl: logoPath ? supabase.storage.from(BUSINESS_ASSETS_BUCKET).getPublicUrl(logoPath).data.publicUrl : null,
     invoiceAgingUnderDays: Number(row.invoice_aging_under_days),
     invoiceAgingOverDays: Number(row.invoice_aging_over_days),
+    suspendedAt: row.suspended_at as string | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

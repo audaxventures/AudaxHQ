@@ -4,7 +4,7 @@ import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/ui/Footer";
-import { getCurrentUser } from "@/lib/currentUser";
+import { getCurrentUser, isPlatformAdmin } from "@/lib/currentUser";
 
 // This app is a live daily-use tool backed by Postgres — every page here
 // needs fresh data on every request, so opt the whole section out of static
@@ -18,12 +18,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // so fail closed to the more restrictive role rather than crashing.
   const role = currentUser?.role ?? "TEAM_MEMBER";
   const logoUrl = currentUser?.business.logoUrl ?? null;
+  const isAdmin = currentUser ? isPlatformAdmin(currentUser) : false;
 
   return (
     <div className="flex min-h-dvh w-full">
-      <Sidebar role={role} />
+      <Sidebar role={role} isAdmin={isAdmin} />
       <div className="flex flex-1 flex-col min-w-0">
-        <MobileTopBar role={role} />
+        <MobileTopBar role={role} isAdmin={isAdmin} />
         <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
           <div className="mb-4 flex justify-start md:justify-end">
             <Link href="/" className="transition-opacity hover:opacity-80">
