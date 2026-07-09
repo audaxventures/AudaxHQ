@@ -8,7 +8,15 @@ import { NavLink } from "@/components/nav/NavLink";
 import { MobileSidebarDrawer } from "@/components/nav/MobileSidebarDrawer";
 import type { SessionRole } from "@/lib/types";
 
-export function MobileTopBar({ role, isAdmin }: { role: SessionRole; isAdmin?: boolean }) {
+export function MobileTopBar({
+  role,
+  isAdmin,
+  businessName,
+}: {
+  role: SessionRole;
+  isAdmin?: boolean;
+  businessName: string;
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -22,8 +30,11 @@ export function MobileTopBar({ role, isAdmin }: { role: SessionRole; isAdmin?: b
         >
           <Menu size={20} strokeWidth={1.75} />
         </button>
-        <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-heading text-lg font-medium text-burnt-400">
-          Audax HQ
+        <p
+          className="absolute left-1/2 top-1/2 max-w-[55%] -translate-x-1/2 -translate-y-1/2 truncate font-heading text-lg font-medium text-burnt-400"
+          title={businessName}
+        >
+          {businessName}
         </p>
         <div className="flex items-center gap-1">
           {role === "OWNER" && (
@@ -46,7 +57,9 @@ export function MobileTopBar({ role, isAdmin }: { role: SessionRole; isAdmin?: b
           </form>
         </div>
       </header>
-      {drawerOpen && <MobileSidebarDrawer role={role} isAdmin={isAdmin} onClose={() => setDrawerOpen(false)} />}
+      {drawerOpen && (
+        <MobileSidebarDrawer role={role} isAdmin={isAdmin} businessName={businessName} onClose={() => setDrawerOpen(false)} />
+      )}
     </>
   );
 }
