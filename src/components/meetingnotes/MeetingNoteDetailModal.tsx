@@ -38,7 +38,7 @@ export function MeetingNoteDetailModal({
               {note.ownerName}
             </Link>
             <div className="mt-0.5">
-              <Badge tone={note.clientId ? "navy" : "burnt"}>{note.clientId ? "Client" : "Lead"}</Badge>
+              <Badge tone={note.clientId ? "sage" : "violet"}>{note.clientId ? "Client" : "Lead"}</Badge>
             </div>
           </div>
         </div>
@@ -57,6 +57,10 @@ export function MeetingNoteDetailModal({
         }}
         className="space-y-4"
       >
+        <FieldGroup>
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" name="title" defaultValue={note.title ?? ""} placeholder="e.g. Kickoff call, Q3 check-in…" />
+        </FieldGroup>
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label htmlFor="meetingDate">Meeting date</Label>
