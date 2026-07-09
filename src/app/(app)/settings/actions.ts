@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import * as businesses from "@/lib/data/businesses";
-import * as billingEntities from "@/lib/data/billingEntities";
 import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
@@ -160,35 +159,11 @@ export async function removeBusinessLogo() {
   revalidatePath("/", "layout");
 }
 
-export async function createBillingEntity(formData: FormData) {
+export async function updateBusinessName(formData: FormData) {
   const user = await requireOwner();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
-  const address = String(formData.get("address") ?? "").trim() || null;
-  const contactInfo = String(formData.get("contactInfo") ?? "").trim() || null;
-  await billingEntities.createBillingEntity(user.businessId, { name, address, contactInfo });
-  revalidatePath("/settings/business");
-}
-
-export async function updateBillingEntity(id: string, formData: FormData) {
-  const user = await requireOwner();
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
-  const address = String(formData.get("address") ?? "").trim() || null;
-  const contactInfo = String(formData.get("contactInfo") ?? "").trim() || null;
-  await billingEntities.updateBillingEntity(id, user.businessId, { name, address, contactInfo });
-  revalidatePath("/settings/business");
-}
-
-export async function activateBillingEntity(id: string) {
-  const user = await requireOwner();
-  await billingEntities.setBillingEntityActive(id, user.businessId, true);
-  revalidatePath("/settings/business");
-}
-
-export async function deactivateBillingEntity(id: string) {
-  const user = await requireOwner();
-  await billingEntities.setBillingEntityActive(id, user.businessId, false);
+  await businesses.updateBusinessName(user.businessId, name);
   revalidatePath("/settings/business");
 }
 

@@ -115,6 +115,10 @@ export async function updateBusinessOwnerProfile(
   ]);
 }
 
+export async function updateBusinessName(businessId: string, name: string): Promise<void> {
+  await sql`update businesses set name = ${name}, updated_at = now() where id = ${businessId}`;
+}
+
 /** Marks the first-login welcome popup as seen — see migration 023. */
 export async function dismissOnboarding(businessId: string): Promise<void> {
   await sql`update businesses set onboarding_dismissed_at = now() where id = ${businessId} and onboarding_dismissed_at is null`;

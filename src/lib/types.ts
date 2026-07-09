@@ -283,15 +283,6 @@ export interface Business {
   updatedAt: string;
 }
 
-export interface BillingEntity {
-  id: string;
-  name: string;
-  address: string | null;
-  contactInfo: string | null;
-  active: boolean;
-  createdAt: string;
-}
-
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";
 
 export const FIXED_COST_CATEGORY_LABELS: Record<FixedCostCategory, string> = {
