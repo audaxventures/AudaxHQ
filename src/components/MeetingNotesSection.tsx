@@ -33,6 +33,10 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
         }}
         className="space-y-3 mb-5"
       >
+        <FieldGroup>
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
+        </FieldGroup>
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label htmlFor="meetingDate">Meeting date</Label>
@@ -74,6 +78,7 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
                 onClick={() => setSelectedId(note.id)}
                 className="w-full border-l-2 border-burnt-200 pl-4 py-1 text-left hover:bg-cream-100/60 transition-colors cursor-pointer rounded-r-md"
               >
+                {note.title && <p className="text-sm font-medium text-navy-900">{note.title}</p>}
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <p className="text-xs font-medium text-navy-500">{formatDate(note.meetingDate)}</p>
                   {note.attendees && (

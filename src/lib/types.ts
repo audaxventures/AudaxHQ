@@ -81,6 +81,8 @@ export interface FollowUp {
 
 export interface MeetingNote {
   id: string;
+  /** Falls back to the client/lead name in the UI when not set (legacy notes created before titles existed). */
+  title: string | null;
   clientId: string | null;
   leadId: string | null;
   meetingDate: string;

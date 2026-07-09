@@ -36,13 +36,14 @@ function extractRichTextFields(formData: FormData): { agenda: string | null; not
 export async function createMeetingNote(formData: FormData) {
   const clientId = (formData.get("clientId") as string) || undefined;
   const leadId = (formData.get("leadId") as string) || undefined;
+  const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
   if ((!clientId && !leadId) || !meetingDate || !fields) return;
   const user = await resolveOwnerAccess({ clientId, leadId });
 
-  await meetingNotes.createMeetingNote(user.businessId, { clientId, leadId, meetingDate, attendees, ...fields });
+  await meetingNotes.createMeetingNote(user.businessId, { title, clientId, leadId, meetingDate, attendees, ...fields });
   revalidateOwner(clientId, leadId);
   redirect(clientId ? `/clients/${clientId}` : `/leads/${leadId}`);
 }
@@ -53,12 +54,14 @@ export async function createScopedMeetingNote(
 ) {
   const user =
     owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+  const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
   if (!meetingDate || !fields) return;
 
   await meetingNotes.createMeetingNote(user.businessId, {
+    title,
     clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
     leadId: owner.type === "LEAD" ? owner.leadId : undefined,
     meetingDate,
@@ -77,12 +80,13 @@ export async function updateMeetingNote(
   formData: FormData
 ) {
   const user = await resolveOwnerAccess(owner);
+  const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
   if (!meetingDate || !fields) return;
 
-  await meetingNotes.updateMeetingNote(id, user.businessId, { meetingDate, attendees, ...fields });
+  await meetingNotes.updateMeetingNote(id, user.businessId, { title, meetingDate, attendees, ...fields });
   revalidateOwner(owner.clientId, owner.leadId);
 }
 

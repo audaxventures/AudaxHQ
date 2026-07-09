@@ -77,6 +77,11 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
         )}
       </FieldGroup>
 
+      <FieldGroup>
+        <Label htmlFor="title">Title</Label>
+        <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
+      </FieldGroup>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FieldGroup>
           <Label htmlFor="meetingDate">Meeting date</Label>

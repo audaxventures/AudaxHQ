@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Building2, Circle, Flag, List, Tag as TagIcon, Target, Trash2, UserCircle2 } from "lucide-react";
+import { Building2, Circle, Flag, List, Tag as TagIcon, Trash2, UserCircle2 } from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
@@ -29,8 +29,20 @@ const PRIORITY_SELECT_TONE: Record<TaskPriority, string> = {
   HIGH: "border-brick-600/20! bg-brick-100! text-brick-600!",
 };
 
-function taskTypeSelection(task: Task): string {
-  return task.type === "CUSTOM" ? (task.todoTypeId ?? "") : task.type;
+/** Encodes which client/lead (if any) a task belongs to as a single dropdown value: "client:<id>" / "lead:<id>" / "" for neither. */
+function taskOwnerValue(task: Task): string {
+  if (task.type === "CLIENT" && task.clientId) return `client:${task.clientId}`;
+  if (task.type === "LEAD" && task.leadId) return `lead:${task.leadId}`;
+  return "";
+}
+
+function taskCategoryValue(task: Task): string {
+  return task.type === "CUSTOM" ? (task.todoTypeId ?? "") : "";
+}
+
+/** defaultTypeSelection is normally a real todo_types id — it only falls back to the literal "CLIENT" when a business has no custom types left at all, in which case there's no sensible category default. */
+function defaultCategoryValue(defaultTypeSelection: string): string {
+  return defaultTypeSelection === "CLIENT" || defaultTypeSelection === "LEAD" ? "" : defaultTypeSelection;
 }
 
 /** Mirrors the assign-to <select>'s value convention: "" for the viewer themselves, "OWNER" for the owner, otherwise a team member's id. */
@@ -66,17 +78,26 @@ export function TaskFormDrawer({
   currentAssigneeId: string | null;
   onClose: () => void;
 }) {
-  const [typeSelection, setTypeSelection] = useState(task ? taskTypeSelection(task) : defaultTypeSelection);
+  const [ownerValue, setOwnerValue] = useState(task ? taskOwnerValue(task) : "");
+  const [categoryValue, setCategoryValue] = useState(
+    task ? taskCategoryValue(task) : defaultCategoryValue(defaultTypeSelection)
+  );
   const [statusValue, setStatusValue] = useState<TaskStatus>(task?.status ?? defaultStatus ?? "TO_BE_DONE");
   const [priorityValue, setPriorityValue] = useState<TaskPriority>(task?.priority ?? "MEDIUM");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
-  const activeTodoTypes = todoTypes.filter((t) => t.active || t.id === typeSelection);
+  const activeTodoTypes = todoTypes.filter((t) => t.active || t.id === categoryValue);
+
+  const [ownerKind, ownerId] = ownerValue ? ownerValue.split(":") : ["", ""];
+  const resolvedTypeSelection = ownerValue ? (ownerKind === "client" ? "CLIENT" : "LEAD") : categoryValue;
+  const resolvedClientId = ownerKind === "client" ? ownerId : "";
+  const resolvedLeadId = ownerKind === "lead" ? ownerId : "";
 
   function resetForm() {
     formRef.current?.reset();
-    setTypeSelection(defaultTypeSelection);
+    setOwnerValue("");
+    setCategoryValue(defaultCategoryValue(defaultTypeSelection));
     setStatusValue(defaultStatus ?? "TO_BE_DONE");
     setPriorityValue("MEDIUM");
   }
@@ -101,14 +122,8 @@ export function TaskFormDrawer({
         action={(formData) => {
           setError(null);
           const keepOpen = formData.get("intent") === "continue";
-          const clientId = formData.get("clientId");
-          const leadId = formData.get("leadId");
-          if (typeSelection === "CLIENT" && !clientId) {
-            setError("Choose a client.");
-            return;
-          }
-          if (typeSelection === "LEAD" && !leadId) {
-            setError("Choose a lead.");
+          if (!resolvedTypeSelection) {
+            setError("Choose a client, lead, or category.");
             return;
           }
           startTransition(async () => {
@@ -159,18 +174,50 @@ export function TaskFormDrawer({
           </FieldGroup>
         )}
 
+        <input type="hidden" name="typeSelection" value={resolvedTypeSelection} />
+        <input type="hidden" name="clientId" value={resolvedClientId} />
+        <input type="hidden" name="leadId" value={resolvedLeadId} />
+
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
-            <Label htmlFor="task-type">Type</Label>
+            <Label htmlFor="task-owner">Client / Lead</Label>
             <Select
-              id="task-type"
-              name="typeSelection"
-              value={typeSelection}
-              onChange={(e) => setTypeSelection(e.target.value)}
+              id="task-owner"
+              value={ownerValue}
+              onChange={(e) => setOwnerValue(e.target.value)}
+              icon={Building2}
+            >
+              <option value="">No client or lead</option>
+              {clients.length > 0 && (
+                <optgroup label="Clients">
+                  {clients.map((c) => (
+                    <option key={c.id} value={`client:${c.id}`}>
+                      {c.companyName}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {leads.length > 0 && (
+                <optgroup label="Leads">
+                  {leads.map((l) => (
+                    <option key={l.id} value={`lead:${l.id}`}>
+                      {l.companyName}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </Select>
+          </FieldGroup>
+          <FieldGroup>
+            <Label htmlFor="task-category">Category</Label>
+            <Select
+              id="task-category"
+              value={categoryValue}
+              onChange={(e) => setCategoryValue(e.target.value)}
+              disabled={!!ownerValue}
               icon={List}
             >
-              <option value="CLIENT">Client</option>
-              <option value="LEAD">Lead</option>
+              {activeTodoTypes.length === 0 && <option value="">No categories yet</option>}
               {activeTodoTypes.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
@@ -178,37 +225,6 @@ export function TaskFormDrawer({
               ))}
             </Select>
           </FieldGroup>
-          {typeSelection === "CLIENT" ? (
-            <FieldGroup>
-              <Label htmlFor="task-client">Client / Lead</Label>
-              <Select id="task-client" name="clientId" defaultValue={task?.clientId ?? ""} icon={Building2}>
-                <option value="" disabled>
-                  Select a client or lead
-                </option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.companyName}
-                  </option>
-                ))}
-              </Select>
-            </FieldGroup>
-          ) : typeSelection === "LEAD" ? (
-            <FieldGroup>
-              <Label htmlFor="task-lead">Client / Lead</Label>
-              <Select id="task-lead" name="leadId" defaultValue={task?.leadId ?? ""} icon={Target}>
-                <option value="" disabled>
-                  Select a client or lead
-                </option>
-                {leads.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.companyName}
-                  </option>
-                ))}
-              </Select>
-            </FieldGroup>
-          ) : (
-            <div />
-          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
