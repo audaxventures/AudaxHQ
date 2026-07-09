@@ -92,8 +92,9 @@ export function FollowUpsWorkspace({
 }) {
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
 
-  const upcoming = followUps.filter((f) => f.status === "UPCOMING" && !f.isOverdue).sort((a, b) => a.date.localeCompare(b.date));
-  const overdue = followUps.filter((f) => f.status === "UPCOMING" && f.isOverdue).sort((a, b) => a.date.localeCompare(b.date));
+  const byDateAsc = (a: HotFollowUp, b: HotFollowUp) => new Date(a.date).getTime() - new Date(b.date).getTime();
+  const upcoming = followUps.filter((f) => f.status === "UPCOMING" && !f.isOverdue).sort(byDateAsc);
+  const overdue = followUps.filter((f) => f.status === "UPCOMING" && f.isOverdue).sort(byDateAsc);
   const completed = [...followUps]
     .filter((f) => f.status === "COMPLETED")
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
