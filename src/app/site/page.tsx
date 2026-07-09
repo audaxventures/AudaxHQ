@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckSquare, Clock, NotebookPen, Receipt, Target, Users } from "lucide-react";
+import { ArrowRight, Check, CheckSquare, Clock, Flag, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
+import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { appPath } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -25,55 +26,37 @@ const FEATURES = [
     icon: Users,
     title: "Clients & Projects",
     tone: "sage",
-    description: "Every client relationship, project detail, and file — organized in one record instead of scattered folders.",
+    description: "Everything about your clients, organized.",
   },
   {
     icon: Target,
     title: "Leads & Pipeline",
     tone: "gold",
-    description: "Track opportunities from first contact to signed client, with lead source reporting built in.",
+    description: "Track every opportunity and close deals faster.",
   },
   {
     icon: Receipt,
     title: "Revenue Tracking",
     tone: "blue",
-    description: "Invoice clients, track what's been paid, and see exactly which balances are aging.",
+    description: "Know your numbers, at a glance.",
   },
   {
     icon: NotebookPen,
     title: "Meetings & Notes",
     tone: "violet",
-    description: "Log every call with agendas, notes, and action items — searchable, not buried in someone's inbox.",
+    description: "Capture every conversation and never miss a detail.",
   },
   {
     icon: Clock,
     title: "Time & Costs",
     tone: "teal",
-    description: "Track billable hours and project costs, and know your real profitability on every client.",
+    description: "Track time, costs, and profitability.",
   },
   {
     icon: CheckSquare,
     title: "Tasks & Follow-ups",
     tone: "brick",
-    description: "Assign work across your team and keep every follow-up from falling through the cracks.",
-  },
-];
-
-const STEPS = [
-  {
-    n: "1",
-    title: "Create your workspace",
-    description: "Sign up in under a minute — no credit card, nothing to install.",
-  },
-  {
-    n: "2",
-    title: "Add your clients and leads",
-    description: "Bring in who you already work with, and set up the tags and categories that match how you actually work.",
-  },
-  {
-    n: "3",
-    title: "Run your business",
-    description: "Track work, log time, send invoices, and keep your whole team looking at the same information.",
+    description: "Stay on top of what matters most.",
   },
 ];
 
@@ -140,69 +123,90 @@ export default function MarketingHomePage() {
       </div>
 
       <div id="features" className="bg-cream-50">
-        <Section>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Everything in one workspace.
+        <Section className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <h2 className="font-heading text-3xl font-semibold leading-tight text-navy-900 sm:text-4xl">
+              Everything you need.
+              <br />
+              All in one place.
             </h2>
-            <p className="mt-3 text-base text-navy-500">No more six tabs open just to answer one client question.</p>
+            <span className="mt-4 block h-1 w-10 rounded-full bg-burnt-500" />
+            <p className="mt-5 max-w-md text-base leading-relaxed text-navy-500">
+              Audax HQ brings every part of your business together so you can stay organized, deliver exceptional
+              work, and grow with confidence.
+            </p>
+            <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8">
+              {FEATURES.map((f) => (
+                <div key={f.title}>
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${FEATURE_TONE[f.tone]}`}>
+                    <f.icon size={20} />
+                  </span>
+                  <h3 className="mt-3 font-heading text-base font-semibold text-navy-900">{f.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-navy-500">{f.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-navy-100 bg-white p-6">
-                <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${FEATURE_TONE[f.tone]}`}>
-                  <f.icon size={20} />
-                </span>
-                <h3 className="mt-4 font-heading text-lg font-medium text-navy-900">{f.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-navy-500">{f.description}</p>
-              </div>
-            ))}
-          </div>
+          <DeviceShowcase />
         </Section>
       </div>
 
       <div className="bg-cream-100">
-        <Section>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
-              From signup to running your business.
-            </h2>
-          </div>
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {STEPS.map((s) => (
-              <div key={s.n}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-navy-900 font-heading text-sm font-semibold text-cream-50">
-                  {s.n}
-                </span>
-                <h3 className="mt-4 font-heading text-lg font-medium text-navy-900">{s.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-navy-500">{s.description}</p>
-              </div>
-            ))}
+        <Section className="py-16 sm:py-20">
+          <div className="relative overflow-hidden rounded-2xl bg-navy-900 px-7 py-10 sm:px-12 sm:py-14">
+            <Quote size={56} className="text-burnt-400/25" />
+            <p className="mt-4 max-w-2xl font-heading text-xl font-medium leading-snug text-cream-50 sm:text-2xl">
+              “Audax HQ changed the way we run our business. We save hours every week and nothing falls through the
+              cracks.”
+            </p>
+            <p className="mt-6 text-sm text-navy-300">
+              — Ryan Peterson, Northpine Advisors{" "}
+              <span className="text-navy-500">(placeholder quote — to be replaced with a real customer story)</span>
+            </p>
           </div>
         </Section>
       </div>
 
-      <div className="bg-navy-900">
-        <Section className="text-center">
-          <h2 className="font-heading text-3xl font-semibold text-cream-50 sm:text-4xl">
-            Ready to get out of the spreadsheets?
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-base text-navy-300">
-            Set up your workspace in a couple of minutes — free to start, no credit card.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={appPath("/signup")}
-              className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
-            >
-              Start for free <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-xl border border-navy-600 px-5 py-3 text-sm font-semibold text-cream-100 transition-colors hover:border-navy-400 hover:bg-navy-800"
-            >
-              Talk to us
-            </Link>
+      <div className="bg-cream-50">
+        <Section className="py-16 sm:py-20">
+          <div className="relative min-h-[440px] overflow-hidden rounded-2xl border border-navy-100 sm:min-h-[480px]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- large decorative photo, not a candidate for next/image in this static marketing card */}
+            <img src="/sidebar.png" alt="" className="absolute inset-0 h-full w-full object-cover object-bottom" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-50/90 to-transparent" />
+            <div className="relative flex h-full flex-col justify-center px-7 py-10 sm:px-12 sm:py-14 lg:max-w-md">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-navy-300 text-navy-700">
+                <Flag size={18} />
+              </span>
+              <h2 className="mt-5 font-heading text-3xl font-semibold leading-tight text-navy-900 sm:text-4xl">
+                Ready to simplify your business?
+              </h2>
+              <p className="mt-2 font-heading text-lg text-navy-700">Start your workspace today.</p>
+              <ul className="mt-6 flex flex-col gap-2 text-sm text-navy-700">
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-sage-600" /> Free during early access
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-sage-600" /> No credit card required
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check size={16} className="text-sage-600" /> Your data, always exportable
+                </li>
+              </ul>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link
+                  href={appPath("/signup")}
+                  className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
+                >
+                  Start for free <ArrowRight size={16} />
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 rounded-xl border border-navy-300 px-5 py-3 text-sm font-semibold text-navy-800 transition-colors hover:border-navy-400 hover:bg-white"
+                >
+                  Talk to us
+                </Link>
+              </div>
+            </div>
           </div>
         </Section>
       </div>

@@ -50,13 +50,14 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // logo.png, logo.white.png, and favicon.png must stay excluded: they're
-  // requested by the login page itself, before the visitor has a valid
-  // session cookie. favicon.ico stays excluded too since some browsers
-  // probe for it regardless of the declared <link rel="icon">.
-  // dashboard-preview.png is the welcome-email's header graphic — email
-  // clients fetch it with no session cookie at all, so it must stay public.
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|logo.white.png|dashboard-preview.png|login|signup).*)",
-  ],
+  // Any static file under public/ (anything with a dot in its path — images,
+  // favicon.ico, etc.) is excluded entirely: none of it is sensitive, some of
+  // it is fetched with no session at all (the welcome email's header image,
+  // the login page's own background before the visitor is authenticated),
+  // and — since this proxy also does the marketing-host rewrite below — a
+  // request for a plain file must never get rewritten to /site/<file>, which
+  // doesn't exist and would 404. Enumerating filenames one at a time here
+  // has bitten us before (sidebar.png/login.png 404ing on marketing hosts
+  // because they weren't on the old list) — exclude the whole class instead.
+  matcher: ["/((?!_next/static|_next/image|login|signup|.*\\..*).*)"],
 };
