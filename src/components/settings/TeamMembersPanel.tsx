@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Check, KeyRound, Pencil, Plus, ShieldCheck, X } from "lucide-react";
+import { Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { InfoNote } from "@/components/ui/InfoNote";
 import { cn } from "@/lib/cn";
@@ -11,6 +11,7 @@ import {
   activateTeamMember,
   createTeamMember,
   deactivateTeamMember,
+  deleteTeamMemberPermanently,
   disableTeamMemberLogin,
   enableTeamMemberLogin,
   linkOwnerTeamMember,
@@ -280,7 +281,20 @@ function TeamMemberRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [managingAccess, setManagingAccess] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  function handleDelete() {
+    if (!confirm(`Permanently delete ${member.name}? This can't be undone.`)) return;
+    setDeleteError(null);
+    startTransition(async () => {
+      try {
+        await deleteTeamMemberPermanently(member.id);
+      } catch (e) {
+        setDeleteError(e instanceof Error ? e.message : "Couldn't delete this team member.");
+      }
+    });
+  }
 
   return (
     <div className="rounded-lg border border-navy-100 p-3">
@@ -348,9 +362,22 @@ function TeamMemberRow({
             >
               {member.active ? "Deactivate" : "Activate"}
             </button>
+            {!member.active && !isLinkedToOwner && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="p-1.5 text-navy-300 hover:text-brick-600 cursor-pointer"
+                aria-label="Permanently delete team member"
+                title="Permanently delete"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
         </div>
       )}
+
+      {deleteError && <p className="mt-2 text-xs text-brick-600">{deleteError}</p>}
 
       {managingAccess && !editing && (
         <div className="mt-3">

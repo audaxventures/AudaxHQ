@@ -206,6 +206,26 @@ export async function deactivateTeamMember(id: string) {
   revalidateTeamMembers();
 }
 
+export async function deleteTeamMemberPermanently(id: string) {
+  const user = await requireOwner();
+  if (id === user.business.ownerTeamMemberId) {
+    throw new Error("This row is linked to your own owner login — unlink it before deleting.");
+  }
+  const member = await teamMembers.getTeamMember(id, user.businessId);
+  if (!member) return;
+  if (member.active) {
+    throw new Error("Deactivate this team member before permanently deleting them.");
+  }
+  const timeEntryCount = await teamMembers.countTimeEntries(id, user.businessId);
+  if (timeEntryCount > 0) {
+    throw new Error(
+      `${member.name} has ${timeEntryCount} logged time ${timeEntryCount === 1 ? "entry" : "entries"} and can't be permanently deleted — that would remove them from your cost history. Keep them deactivated instead.`
+    );
+  }
+  await teamMembers.deleteTeamMemberPermanently(id, user.businessId);
+  revalidateTeamMembers();
+}
+
 export async function enableTeamMemberLogin(id: string, formData: FormData) {
   const user = await requireOwner();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();

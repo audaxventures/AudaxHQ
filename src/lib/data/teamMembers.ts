@@ -51,6 +51,26 @@ export async function setTeamMemberActive(id: string, businessId: string, active
   await sql`update team_members set active = ${active} where id = ${id} and business_id = ${businessId}`;
 }
 
+/** Time entries are the one record type that never disappears silently — they feed cost/profitability reporting. */
+export async function countTimeEntries(id: string, businessId: string): Promise<number> {
+  const rows = await sql`
+    select count(*)::int as count from time_entries where team_member_id = ${id} and business_id = ${businessId}
+  `;
+  return (rows[0] as Record<string, unknown>).count as number;
+}
+
+/**
+ * Hard-deletes a team member. Every other record type they may be linked to
+ * (todos, follow_ups, client_access, account_emails, businesses.owner_team_member_id)
+ * already cascades or nulls out safely at the FK level. Callers must confirm
+ * countTimeEntries(...) is 0 first — the FK on time_entries has no ON DELETE
+ * clause specifically to make that check unavoidable rather than silently
+ * dropping cost history.
+ */
+export async function deleteTeamMemberPermanently(id: string, businessId: string): Promise<void> {
+  await sql`delete from team_members where id = ${id} and business_id = ${businessId}`;
+}
+
 export interface TeamMemberCredentials {
   id: string;
   hash: string;
