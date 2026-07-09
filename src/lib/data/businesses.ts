@@ -17,6 +17,7 @@ function mapBusiness(row: Record<string, unknown>): Business {
     invoiceAgingUnderDays: Number(row.invoice_aging_under_days),
     invoiceAgingOverDays: Number(row.invoice_aging_over_days),
     suspendedAt: row.suspended_at as string | null,
+    onboardingDismissedAt: row.onboarding_dismissed_at as string | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -112,6 +113,11 @@ export async function updateBusinessOwnerProfile(
       where business_id = ${businessId} and role = 'OWNER'
     `,
   ]);
+}
+
+/** Marks the first-login welcome popup as seen — see migration 023. */
+export async function dismissOnboarding(businessId: string): Promise<void> {
+  await sql`update businesses set onboarding_dismissed_at = now() where id = ${businessId} and onboarding_dismissed_at is null`;
 }
 
 /** Links (or unlinks, with null) a team_members row as the owner's own identity — see migration 022. */

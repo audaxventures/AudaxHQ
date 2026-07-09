@@ -1,9 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSessionToken, hashPasscode, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { createBusiness } from "@/lib/data/businesses";
+import { sendWelcomeEmail } from "@/lib/email";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 
 export interface SignupState {
@@ -51,6 +52,16 @@ export async function signup(
       return { error: "That email is already registered. Try signing in instead." };
     }
     throw e;
+  }
+
+  // Best-effort — a welcome email failing (missing API key, Resend hiccup,
+  // etc) should never block a brand-new workspace from being usable.
+  try {
+    const host = (await headers()).get("host");
+    const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
+    await sendWelcomeEmail(ownerEmail, ownerName, businessName, `${protocol}://${host}/login`);
+  } catch (e) {
+    console.error("Failed to send welcome email:", e);
   }
 
   const token = createSessionToken({ role: "OWNER", businessId });
