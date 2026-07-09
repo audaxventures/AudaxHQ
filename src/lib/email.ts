@@ -14,8 +14,163 @@ function resendApiKey(): string {
   return key;
 }
 
-export async function sendPasscodeResetEmail(to: string, resetUrl: string): Promise<void> {
+/**
+ * Sent whenever someone requests a passcode reset (owner or team member —
+ * `name` is whichever of the two the reset was resolved to, so the greeting
+ * always addresses the actual person, not a generic "there"). Same
+ * dependency-free inline-HTML approach as sendWelcomeEmail, including its
+ * footer support line — see the comment above that function.
+ */
+export async function sendPasscodeResetEmail(to: string, name: string, resetUrl: string): Promise<void> {
   const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
+  const firstName = name.trim().split(/\s+/)[0] || name;
+  const origin = new URL(resetUrl).origin;
+  const supportEmail = "info@audaxventures.ca";
+  const supportMailto = `mailto:${supportEmail}`;
+
+  const passcodeDots = Array.from({ length: 6 })
+    .map(
+      () =>
+        `<span style="display: inline-block; width: 10px; height: 10px; margin: 0 4px; border-radius: 50%; background: #223655;"></span>`
+    )
+    .join("");
+
+  const html = `
+    <div style="background: #f8f2e6; padding: 32px 16px; font-family: Helvetica, Arial, sans-serif;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin: 0 auto;">
+        <tr>
+          <td style="background: #ffffff; border-radius: 20px 20px 0 0; padding: 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="vertical-align: middle;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 8px;">
+                        <img src="${origin}/favicon.png" width="24" height="24" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">AUDAX <span style="color: #be5a1e;">HQ</span></span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td style="text-align: right; font-size: 13px; color: #4c5f82;">
+                  Need help? <a href="${supportMailto}" style="color: #be5a1e; text-decoration: none; font-weight: 600;">Contact our team &rarr;</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: linear-gradient(135deg, #dceaf2, #ede9fe); padding: 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="vertical-align: top; width: 60%;">
+                  <span style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%; background: #ffffff; font-size: 20px; margin-bottom: 16px;">&#128274;</span>
+                  <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">Reset your Audax HQ passcode</h1>
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">We received a request to reset the passcode for your workspace.</p>
+                </td>
+                <td style="vertical-align: middle; width: 40%; text-align: right;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="display: inline-table; background: #ffffff; border-radius: 14px; box-shadow: 0 12px 28px -12px rgba(16,29,51,0.3);">
+                    <tr>
+                      <td style="padding: 24px 20px; text-align: center;">
+                        <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #e9ecf2; font-size: 15px; margin-bottom: 12px;">&#128274;</span>
+                        <div>${passcodeDots}</div>
+                        <div style="margin-top: 10px; height: 2px; width: 100%; background: #d3d9e5;"></div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #ffffff; padding: 32px;">
+            <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #101d33;">Hi <span style="font-weight: 700;">${firstName}</span>,</p>
+            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;">You can reset your passcode by clicking the button below.</p>
+            <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">This link will expire in <span style="font-weight: 700; color: #be5a1e;">30 minutes</span> for your security.</p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+              <tr>
+                <td style="border-radius: 10px; background: #101d33;">
+                  <a href="${resetUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Reset my passcode &rarr;</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin: 0 0 4px; font-size: 12px; color: #7c8aa3;">Or copy and paste this link into your browser:</p>
+            <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all;">
+              <a href="${resetUrl}" style="color: #2f6f9e; text-decoration: underline;">${resetUrl}</a>
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #f7e2cc; border-radius: 14px;">
+              <tr>
+                <td style="padding: 18px 20px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td style="width: 40px; vertical-align: top;">
+                        <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #ffffff; color: #9c4416; font-size: 15px; font-weight: 700;">&#10003;</span>
+                      </td>
+                      <td style="vertical-align: top; padding-left: 6px;">
+                        <p style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #101d33;">Didn't request this?</p>
+                        <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #7a3512;">
+                          If you didn't request a passcode reset, you can safely ignore this email. Your passcode won't change unless you use the link above.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; padding: 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="width: 40px; vertical-align: top;">
+                  <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #101d33; color: #fdfbf6; font-size: 14px;">&#9742;</span>
+                </td>
+                <td style="vertical-align: top; padding-left: 6px;">
+                  <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #101d33;">Need help?</p>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #7c8aa3;">
+                    Our team is here if you have any questions. Email
+                    <a href="${supportMailto}" style="color: #be5a1e; text-decoration: none;">${supportEmail}</a>
+                    and we'll get back to you quickly.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; border-radius: 0 0 20px 20px; padding: 0 32px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #e9ecf2; padding-top: 16px;">
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 6px;">
+                        <img src="${origin}/favicon.png" width="18" height="18" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; color: #101d33;">AUDAX <span style="color: #be5a1e;">HQ</span></span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 6px 0 0; font-size: 12px; color: #7c8aa3;">The Business Operating System for Service Businesses.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 16px; font-size: 11px; color: #aeb8cb;">&copy; ${new Date().getFullYear()} Audax Ventures Inc. All rights reserved.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
 
   const res = await fetch(RESEND_API_URL, {
     method: "POST",
@@ -27,11 +182,7 @@ export async function sendPasscodeResetEmail(to: string, resetUrl: string): Prom
       from,
       to,
       subject: "Reset your Audax HQ passcode",
-      html: `
-        <p>Someone requested a passcode reset for your Audax HQ workspace.</p>
-        <p><a href="${resetUrl}">Click here to set a new passcode</a>. This link expires in 30 minutes.</p>
-        <p>If you didn't request this, you can safely ignore this email — your passcode won't change unless the link above is used.</p>
-      `,
+      html,
     }),
   });
 
