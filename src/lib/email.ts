@@ -359,3 +359,44 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
     throw new Error(`Failed to send welcome email (${res.status}): ${body || res.statusText}`);
   }
 }
+
+/** Sent when someone submits the marketing site's contact form — lands in the shared support inbox with reply_to set to the submitter, so replying goes straight to them. */
+export async function sendContactFormEmail(name: string, fromEmail: string, message: string): Promise<void> {
+  const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
+  const supportEmail = "info@audaxventures.ca";
+
+  const escapedMessage = message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br />");
+
+  const html = `
+    <div style="font-family: Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+      <h1 style="margin: 0 0 16px; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; color: #101d33;">New contact form submission</h1>
+      <p style="margin: 0 0 4px; font-size: 14px; color: #4c5f82;"><strong style="color: #101d33;">From:</strong> ${name} &lt;${fromEmail}&gt;</p>
+      <p style="margin: 16px 0 4px; font-size: 14px; color: #4c5f82;"><strong style="color: #101d33;">Message:</strong></p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #101d33; white-space: pre-wrap;">${escapedMessage}</p>
+    </div>
+  `;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: supportEmail,
+      reply_to: fromEmail,
+      subject: `Contact form: ${name}`,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to send contact form email (${res.status}): ${body || res.statusText}`);
+  }
+}

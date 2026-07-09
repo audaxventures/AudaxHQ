@@ -128,6 +128,8 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `RESEND_API_KEY` | (optional) Your Resend API key, enables "Forgot passcode?" emails |
 | `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Audax HQ <noreply@yourdomain.com>` |
 | `PLATFORM_ADMIN_EMAILS` | (optional) Comma-separated business-owner emails allowed onto the platform admin portal at `/admin` — sign in normally, no separate credential |
+| `MARKETING_HOSTS` | (optional) Comma-separated hostnames that should serve the public marketing site instead of the app, e.g. `audaxhq.ca,www.audaxhq.ca`. Defaults to those two hosts if unset |
+| `NEXT_PUBLIC_APP_URL` | (optional) Origin the marketing site's "Sign in" / "Start for free" links point to, e.g. `https://app.audaxhq.ca`. Defaults to same-origin (empty string) for local dev |
 
 ### 5. Deploy
 
@@ -142,6 +144,10 @@ Recurring clients get their current month's invoice row created automatically th
 There are no user accounts. `src/proxy.ts` checks every request (except `/login*` and static assets) for a signed session cookie; `/login` posts an email + passcode to a server action that validates the email against the Settings → Profile email and the passcode against `APP_PASSCODE` (or the Settings-managed passcode), then sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`. `/login/forgot` and `/login/reset-passcode` implement a self-service passcode reset over email (see "Passcode reset emails" above) for when the passcode is forgotten.
 
 **Platform admin** (`/admin`, `src/lib/data/admin.ts`): a workspace owner whose email is listed in `PLATFORM_ADMIN_EMAILS` sees an "Admin" nav link and can view every workspace on the platform plus suspend/reactivate one — see `isPlatformAdmin`/`requirePlatformAdmin` in `src/lib/currentUser.ts`. No separate credential; it's a check layered on top of that account's normal login.
+
+## Marketing site
+
+The public marketing site (homepage, About, Pricing, FAQ, Contact) lives under `src/app/site/` and is served from the same Next.js deployment as the app, routed by hostname: `src/proxy.ts` rewrites any request whose `Host` header matches `MARKETING_HOSTS` (default `audaxhq.ca,www.audaxhq.ca`) into `/site/*`, guarded so `/site` can't be reached directly on a non-marketing host. Every other hostname (including `localhost` and the app's own subdomain) continues to serve the app unchanged. The marketing site's "Sign in" / "Start for free" links point at `NEXT_PUBLIC_APP_URL`.
 
 ## Project structure
 

@@ -8,9 +8,30 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 // replacement for the requireOwner() checks in the server actions themselves.
 const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/export", "/api/invoice-aging/export", "/api/reports"];
 
+// Hostnames that serve the public marketing site (src/app/site/*) instead of
+// the app. Requests here are rewritten to /site/* and never reach the
+// passcode gate below — the marketing site has no session-gated content.
+// Unset in local dev, so localhost always serves the app exactly as before.
+const MARKETING_HOSTS = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca")
+  .split(",")
+  .map((h) => h.trim())
+  .filter(Boolean);
+
 // Passcode + team-member login gate for this internal tool. See /login and
 // src/lib/auth.ts.
 export function proxy(request: NextRequest) {
+  const host = request.headers.get("host")?.split(":")[0] ?? "";
+  if (MARKETING_HOSTS.includes(host)) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/site${url.pathname === "/" ? "" : url.pathname}`;
+    // Signals to src/app/site/layout.tsx that this request legitimately came
+    // through the marketing-host rewrite, so a direct /site/* hit on the app
+    // domain (host not in MARKETING_HOSTS) doesn't fall through and render.
+    const headers = new Headers(request.headers);
+    headers.set("x-marketing-rewrite", "1");
+    return NextResponse.rewrite(url, { request: { headers } });
+  }
+
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const claims = verifySessionToken(token);
   if (!claims) {
