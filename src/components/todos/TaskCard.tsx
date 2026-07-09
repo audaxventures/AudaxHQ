@@ -10,6 +10,7 @@ import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
 import { TASK_PRIORITY_LABELS } from "@/lib/types";
 import type { Task, TaskPriority } from "@/lib/types";
 import { setTaskStatus } from "@/lib/actions/tasks";
+import { entityColorChipClass } from "@/lib/avatar";
 
 const PRIORITY_TONE_CLASSES: Record<TaskPriority, string> = {
   HIGH: "text-brick-600",
@@ -70,6 +71,7 @@ export function TaskCard({
   const dueToday = !completed && isDueToday(task.dueDate, today);
   const ownerHref = task.clientId ? `/clients/${task.clientId}` : task.leadId ? `/leads/${task.leadId}` : null;
   const ownerName = task.clientName ?? task.leadName;
+  const ownerColor = task.clientColor ?? task.leadColor;
   // Someone handed this off to you rather than you creating it yourself.
   const handedOff = task.createdByTeamMemberId !== task.assignedToTeamMemberId;
 
@@ -146,7 +148,10 @@ export function TaskCard({
             href={ownerHref}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center rounded-full bg-burnt-100 px-2.5 py-1 text-xs font-medium text-burnt-600 hover:bg-burnt-200"
+            className={cn(
+              "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium opacity-90 hover:opacity-100",
+              entityColorChipClass(ownerColor, ownerName)
+            )}
           >
             {ownerName}
           </Link>

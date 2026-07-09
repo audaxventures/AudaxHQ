@@ -86,3 +86,21 @@ export async function suspendBusiness(businessId: string): Promise<void> {
 export async function reactivateBusiness(businessId: string): Promise<void> {
   await sql`update businesses set suspended_at = null, updated_at = now() where id = ${businessId}`;
 }
+
+/**
+ * Irreversibly erases a workspace and everything in it — every other
+ * business-scoped table cascades via `on delete cascade` (see migration
+ * 018). Both guards (must be suspended, name must match exactly) are
+ * enforced right in the query so the check and the delete can't race apart;
+ * zero rows back means the caller's confirmation didn't hold.
+ */
+export async function deleteBusiness(businessId: string, expectedName: string): Promise<void> {
+  const rows = await sql`
+    delete from businesses
+    where id = ${businessId} and suspended_at is not null and name = ${expectedName}
+    returning id
+  `;
+  if (rows.length === 0) {
+    throw new Error("Workspace must be suspended and the typed name must match exactly before it can be permanently deleted.");
+  }
+}
