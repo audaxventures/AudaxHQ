@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql` + `migrations/019_drop_business_id_defaults.sql` + `migrations/020_business_suspension.sql` + `migrations/021_invoice_hourly.sql` + `migrations/022_owner_team_member_link.sql` + `migrations/023_business_onboarding.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private buckets for client and lead document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
 - **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
@@ -49,6 +49,9 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/018_businesses.sql
    psql "$DATABASE_URL" -f migrations/019_drop_business_id_defaults.sql
    psql "$DATABASE_URL" -f migrations/020_business_suspension.sql
+   psql "$DATABASE_URL" -f migrations/021_invoice_hourly.sql
+   psql "$DATABASE_URL" -f migrations/022_owner_team_member_link.sql
+   psql "$DATABASE_URL" -f migrations/023_business_onboarding.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -83,6 +86,12 @@ There's no ORM/migration tool — each `migrations/NNN_*.sql` file is applied on
 **`019_drop_business_id_defaults.sql`** drops the temporary `business_id` column defaults `018` added, now that every insert supplies `business_id` explicitly — not breaking, but run only after the app code from that point in the conversion is deployed.
 
 **`020_business_suspension.sql`** adds `businesses.suspended_at`, backing the platform admin portal's suspend/reactivate action — not breaking, purely additive.
+
+**`021_invoice_hourly.sql`** adds `invoices.invoice_type` (FIXED/HOURLY), `hours`, `hourly_rate`, and `description` — lets an invoice be billed hourly instead of only as a flat amount, plus a notes field. Not breaking, purely additive.
+
+**`022_owner_team_member_link.sql`** adds `businesses.owner_team_member_id`, letting an owner explicitly link a `team_members` row they created for themselves (e.g. to track their own billable hours) to their own identity, with a best-effort backfill for exact name/email matches. Not breaking, purely additive.
+
+**`023_business_onboarding.sql`** adds `businesses.onboarding_dismissed_at`, tracking whether the owner has dismissed the first-login welcome popup. Not breaking, purely additive.
 
 ### 2. Document storage setup (Supabase)
 
@@ -153,6 +162,11 @@ migrations/015_followup_assignment.sql  adds follow_ups.assigned_to_team_member_
 migrations/016_lead_documents.sql  extends documents to leads (nullable client_id + new lead_id column)
 migrations/017_meeting_note_agenda.sql  adds meeting_notes.agenda + action_items (notes becomes optional)
 migrations/018_businesses.sql  Stage 1 of multi-tenant conversion — adds businesses + account_emails tables, business_id on every tenant-scoped table, drops profile/app_settings. IMPORTANT: requires app_settings.passcode_hash to already be set (Settings > Passcode) before running — see the migration's own header comment. Schema-only: query-level business_id scoping is a later stage, not yet enforced.
+migrations/019_drop_business_id_defaults.sql  drops the temporary business_id column defaults 018 added
+migrations/020_business_suspension.sql  adds businesses.suspended_at (platform admin suspend/reactivate)
+migrations/021_invoice_hourly.sql  adds invoices.invoice_type/hours/hourly_rate/description
+migrations/022_owner_team_member_link.sql  adds businesses.owner_team_member_id
+migrations/023_business_onboarding.sql  adds businesses.onboarding_dismissed_at (first-login welcome popup)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

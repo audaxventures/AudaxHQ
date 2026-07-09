@@ -232,3 +232,10 @@ export async function changePasscode(formData: FormData): Promise<ActionResult> 
   revalidatePath("/settings/passcode");
   return { error: null };
 }
+
+/** Dismisses the first-login welcome popup for good — see migration 023. */
+export async function dismissOnboarding() {
+  const user = await requireOwner();
+  await businesses.dismissOnboarding(user.businessId);
+  revalidatePath("/", "layout");
+}

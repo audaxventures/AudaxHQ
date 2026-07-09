@@ -273,6 +273,8 @@ export interface Business {
   invoiceAgingOverDays: number;
   /** Set by the platform admin portal — a suspended workspace's owner and team can no longer log in, but its data is untouched. Null means active. */
   suspendedAt: string | null;
+  /** Set once the owner dismisses the first-login welcome popup — null means it hasn't been shown/dismissed yet. */
+  onboardingDismissedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

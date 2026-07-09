@@ -4,6 +4,7 @@ import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/ui/Footer";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import { getCurrentUser, isPlatformAdmin } from "@/lib/currentUser";
 
 // This app is a live daily-use tool backed by Postgres — every page here
@@ -20,8 +21,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const logoUrl = currentUser?.business.logoUrl ?? null;
   const isAdmin = currentUser ? isPlatformAdmin(currentUser) : false;
 
+  const showWelcome = currentUser?.role === "OWNER" && !currentUser.business.onboardingDismissedAt;
+
   return (
     <div className="flex min-h-dvh w-full">
+      {showWelcome && (
+        <WelcomeModal ownerName={currentUser.business.ownerName} businessName={currentUser.business.name} />
+      )}
       <Sidebar role={role} isAdmin={isAdmin} />
       <div className="flex flex-1 flex-col min-w-0">
         <MobileTopBar role={role} isAdmin={isAdmin} />
