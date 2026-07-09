@@ -101,10 +101,14 @@ export async function requestPasscodeReset(
 
   const token = generateResetToken();
   const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  let name: string;
   if (lookup.role === "OWNER") {
     await businesses.setPasscodeResetToken(lookup.businessId, hashResetToken(token), expiresAt);
+    name = (await businesses.getBusiness(lookup.businessId)).ownerName;
   } else {
     await teamMembers.setTeamMemberResetToken(lookup.teamMemberId!, hashResetToken(token), expiresAt);
+    const teamMember = await teamMembers.getTeamMember(lookup.teamMemberId!, lookup.businessId);
+    name = teamMember?.name ?? "there";
   }
 
   const host = (await headers()).get("host");
@@ -112,7 +116,7 @@ export async function requestPasscodeReset(
   const resetUrl = `${protocol}://${host}/login/reset-passcode?token=${token}`;
 
   try {
-    await sendPasscodeResetEmail(email, resetUrl);
+    await sendPasscodeResetEmail(email, name, resetUrl);
   } catch (e) {
     return { message: null, error: e instanceof Error ? e.message : "Couldn't send the reset email. Try again later." };
   }
