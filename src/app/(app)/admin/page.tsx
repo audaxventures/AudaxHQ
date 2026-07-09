@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { getPlatformStats, listWorkspaces } from "@/lib/data/admin";
 import { requirePlatformAdmin } from "@/lib/currentUser";
 import { suspendWorkspace, reactivateWorkspace } from "@/app/(app)/admin/actions";
+import { DeleteWorkspaceButton } from "@/components/admin/DeleteWorkspaceButton";
 import { formatDate } from "@/lib/format";
 import type { Tone } from "@/lib/tone";
 
@@ -81,11 +82,18 @@ export default async function AdminPage() {
                     <div className="sm:w-24">
                       <Badge tone={isSuspended ? "brick" : "sage"}>{isSuspended ? "Suspended" : "Active"}</Badge>
                     </div>
-                    <form action={isSuspended ? reactivateWorkspace.bind(null, ws.id) : suspendWorkspace.bind(null, ws.id)} className="sm:w-28">
-                      <Button variant={isSuspended ? "primary" : "danger"} size="sm" type="submit" className="w-full">
-                        {isSuspended ? "Reactivate" : "Suspend"}
-                      </Button>
-                    </form>
+                    <div className="flex gap-2">
+                      <form action={isSuspended ? reactivateWorkspace.bind(null, ws.id) : suspendWorkspace.bind(null, ws.id)} className="sm:w-28">
+                        <Button variant={isSuspended ? "primary" : "danger"} size="sm" type="submit" className="w-full">
+                          {isSuspended ? "Reactivate" : "Suspend"}
+                        </Button>
+                      </form>
+                      {isSuspended && (
+                        <div className="sm:w-36">
+                          <DeleteWorkspaceButton businessId={ws.id} workspaceName={ws.name} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

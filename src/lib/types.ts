@@ -126,9 +126,11 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags: string[];
-  // present when returned from a query that joins in the owner's name
+  // present when returned from a query that joins in the owner's name/color
   clientName?: string;
   leadName?: string;
+  clientColor?: EntityColor | null;
+  leadColor?: EntityColor | null;
   /** Whose board this to-do is currently on — null means the workspace owner. */
   assignedToTeamMemberId: string | null;
   /** Who originally created it — null means the workspace owner. Differs from assignedToTeamMemberId once a to-do has been handed off to someone else. */

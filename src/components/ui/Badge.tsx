@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types";
 import { TASK_STATUS_LABELS, FIXED_TASK_TYPE_LABELS } from "@/lib/types";
 
-export type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue";
+export type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue" | "violet";
 
 export const TONE_CLASSES: Record<Tone, string> = {
   sage: "bg-sage-100 text-sage-600",
@@ -20,6 +20,7 @@ export const TONE_CLASSES: Record<Tone, string> = {
   burnt: "bg-burnt-100 text-burnt-600",
   navy: "bg-navy-100 text-navy-700",
   blue: "bg-blue-100 text-blue-600",
+  violet: "bg-violet-100 text-violet-600",
 };
 
 export function Badge({
@@ -111,8 +112,8 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 }
 
 const TASK_TYPE_TONE: Record<TaskType, Tone> = {
-  CLIENT: "navy",
-  LEAD: "burnt",
+  CLIENT: "sage",
+  LEAD: "violet",
   CUSTOM: "slate",
 };
 

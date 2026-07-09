@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
+import type { EntityColor, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 interface TaskRow {
   id: string;
@@ -18,6 +18,8 @@ interface TaskRow {
   tags: string[] | null;
   client_name?: string | null;
   lead_name?: string | null;
+  client_color?: EntityColor | null;
+  lead_color?: EntityColor | null;
   assigned_to_team_member_id: string | null;
   created_by_team_member_id: string | null;
   created_by_name: string | null;
@@ -41,6 +43,8 @@ function mapTask(row: TaskRow): Task {
     tags: (row.tags ?? []).filter(Boolean).sort(),
     clientName: row.client_name ?? undefined,
     leadName: row.lead_name ?? undefined,
+    clientColor: row.client_color ?? null,
+    leadColor: row.lead_color ?? null,
     assignedToTeamMemberId: row.assigned_to_team_member_id,
     createdByTeamMemberId: row.created_by_team_member_id,
     createdByName: row.created_by_name ?? "Owner",
@@ -82,6 +86,8 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
       c.company_name as client_name,
       l.company_name as lead_name,
+      c.color as client_color,
+      l.color as lead_color,
       creator_tm.name as created_by_name
     from todos t
     left join todo_types tt_lookup on tt_lookup.id = t.todo_type_id
@@ -115,7 +121,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
         or t.assigned_to_team_member_id is not distinct from ${visibleToValue}::uuid
         or t.created_by_team_member_id is not distinct from ${visibleToValue}::uuid
       )
-    group by t.id, tt_lookup.name, c.company_name, l.company_name, creator_tm.name
+    group by t.id, tt_lookup.name, c.company_name, l.company_name, c.color, l.color, creator_tm.name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc
   `) as unknown as TaskRow[];
   return rows.map(mapTask);
