@@ -33,5 +33,9 @@ export const config = {
   // requested by the login page itself, before the visitor has a valid
   // session cookie. favicon.ico stays excluded too since some browsers
   // probe for it regardless of the declared <link rel="icon">.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|logo.white.png|login|signup).*)"],
+  // dashboard-preview.png is the welcome-email's header graphic — email
+  // clients fetch it with no session cookie at all, so it must stay public.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|logo.white.png|dashboard-preview.png|login|signup).*)",
+  ],
 };
