@@ -195,6 +195,7 @@ export async function getDashboardData(
       assignedToTeamMemberId: row.assigned_to_team_member_id as string | null,
       createdByTeamMemberId: row.created_by_team_member_id as string | null,
       createdByName: (row.created_by_name as string | null) ?? "Owner",
+      meetingNoteId: row.meeting_note_id as string | null,
     };
   });
 

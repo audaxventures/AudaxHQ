@@ -98,7 +98,7 @@ export default async function DashboardPage() {
                 {overdueFollowUpCount > 0 ? `${overdueFollowUpCount} overdue` : "All caught up"}
               </span>
             }
-            href="/calendar?types=FOLLOW_UP"
+            href="/follow-ups"
           />
         </DashboardItem>
 

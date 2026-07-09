@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Input, Select, Label, FieldGroup } from "@/components/ui/Field";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { Button } from "@/components/ui/Button";
 import { createMeetingNote } from "@/lib/actions/meetingnotes";
 
@@ -101,8 +102,11 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
         <RichTextEditor id="notes" name="notes" rows={5} placeholder="What was discussed…" />
       </FieldGroup>
       <FieldGroup>
-        <Label htmlFor="actionItems">Action items</Label>
-        <RichTextEditor id="actionItems" name="actionItems" rows={3} placeholder="Follow-ups after the meeting…" />
+        <Label>Action items</Label>
+        <p className="text-xs text-navy-400 mb-1.5">
+          Each item becomes a to-do linked to this client/lead once you save.
+        </p>
+        <ActionItemsQuickAdd name="actionItems" />
       </FieldGroup>
       <SubmitButton />
     </form>

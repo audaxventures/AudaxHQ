@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql` + `migrations/019_drop_business_id_defaults.sql` + `migrations/020_business_suspension.sql` + `migrations/021_invoice_hourly.sql` + `migrations/022_owner_team_member_link.sql` + `migrations/023_business_onboarding.sql` + `migrations/024_meeting_note_title.sql` + `migrations/025_drop_billing_entities.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql` + `migrations/019_drop_business_id_defaults.sql` + `migrations/020_business_suspension.sql` + `migrations/021_invoice_hourly.sql` + `migrations/022_owner_team_member_link.sql` + `migrations/023_business_onboarding.sql` + `migrations/024_meeting_note_title.sql` + `migrations/025_drop_billing_entities.sql` + `migrations/026_meeting_note_action_items.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private buckets for client and lead document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
 - **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
@@ -54,6 +54,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/023_business_onboarding.sql
    psql "$DATABASE_URL" -f migrations/024_meeting_note_title.sql
    psql "$DATABASE_URL" -f migrations/025_drop_billing_entities.sql
+   psql "$DATABASE_URL" -f migrations/026_meeting_note_action_items.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -175,6 +176,9 @@ migrations/020_business_suspension.sql  adds businesses.suspended_at (platform a
 migrations/021_invoice_hourly.sql  adds invoices.invoice_type/hours/hourly_rate/description
 migrations/022_owner_team_member_link.sql  adds businesses.owner_team_member_id
 migrations/023_business_onboarding.sql  adds businesses.onboarding_dismissed_at (first-login welcome popup)
+migrations/024_meeting_note_title.sql  adds meeting_notes.title
+migrations/025_drop_billing_entities.sql  drops the unused billing_entities table
+migrations/026_meeting_note_action_items.sql  adds todos.meeting_note_id (action items quick-added from a meeting note become linked to-dos)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Users } from "lucide-react";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
+import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { formatDate } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
 import { createScopedMeetingNote } from "@/lib/actions/meetingnotes";
@@ -56,8 +57,8 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
           <RichTextEditor key={`notes-${formKey}`} id="notes" name="notes" rows={3} placeholder="What was discussed…" />
         </FieldGroup>
         <FieldGroup>
-          <Label htmlFor="actionItems">Action items</Label>
-          <RichTextEditor key={`actionItems-${formKey}`} id="actionItems" name="actionItems" rows={2} placeholder="Follow-ups after the meeting…" />
+          <Label>Action items</Label>
+          <ActionItemsQuickAdd key={`actionItems-${formKey}`} name="actionItems" />
         </FieldGroup>
         <button
           type="submit"

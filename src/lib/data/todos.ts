@@ -23,6 +23,7 @@ interface TaskRow {
   assigned_to_team_member_id: string | null;
   created_by_team_member_id: string | null;
   created_by_name: string | null;
+  meeting_note_id: string | null;
 }
 
 function mapTask(row: TaskRow): Task {
@@ -48,6 +49,7 @@ function mapTask(row: TaskRow): Task {
     assignedToTeamMemberId: row.assigned_to_team_member_id,
     createdByTeamMemberId: row.created_by_team_member_id,
     createdByName: row.created_by_name ?? "Owner",
+    meetingNoteId: row.meeting_note_id,
   };
 }
 
@@ -81,7 +83,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
   const rows = (await sql`
     select
       t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id,
-      t.created_at, t.updated_at, t.assigned_to_team_member_id, t.created_by_team_member_id,
+      t.created_at, t.updated_at, t.assigned_to_team_member_id, t.created_by_team_member_id, t.meeting_note_id,
       tt_lookup.name as todo_type_name,
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
       c.company_name as client_name,
@@ -235,6 +237,36 @@ export async function setTaskStatus(id: string, businessId: string, status: Task
         or created_by_team_member_id is not distinct from ${callerTeamMemberId}::uuid
       )
   `;
+}
+
+export interface ActionItemTaskInput {
+  title: string;
+  dueDate: string | null;
+  type: "CLIENT" | "LEAD";
+  clientId?: string | null;
+  leadId?: string | null;
+  meetingNoteId: string;
+}
+
+/**
+ * Quick-added from a meeting note's action items — a lighter path than
+ * createTask (no tags/description/custom type), always linked back to the
+ * meeting via meeting_note_id so the note can show these as a live checklist.
+ */
+export async function createActionItemTask(
+  businessId: string,
+  input: ActionItemTaskInput,
+  createdByTeamMemberId: string | null
+): Promise<string> {
+  const rows = await sql`
+    insert into todos (business_id, title, due_date, type, client_id, lead_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id)
+    values (
+      ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null},
+      ${input.meetingNoteId}, ${createdByTeamMemberId}, ${createdByTeamMemberId}
+    )
+    returning id
+  `;
+  return (rows[0] as Record<string, unknown>).id as string;
 }
 
 /**

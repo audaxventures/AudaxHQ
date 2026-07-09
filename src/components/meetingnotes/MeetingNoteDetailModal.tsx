@@ -4,11 +4,13 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
+import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { updateMeetingNote } from "@/lib/actions/meetingnotes";
+import { setTaskStatus } from "@/lib/actions/tasks";
 import { formatDateInput } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
 
@@ -23,7 +25,14 @@ export function MeetingNoteDetailModal({
   showOwner?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const [, startToggleTransition] = useTransition();
   const ownerHref = note.clientId ? `/clients/${note.clientId}` : `/leads/${note.leadId}`;
+
+  function toggleActionItem(taskId: string, completed: boolean) {
+    startToggleTransition(async () => {
+      await setTaskStatus(taskId, note.clientId, note.leadId, completed ? "COMPLETED" : "TO_BE_DONE");
+    });
+  }
 
   return (
     <Modal title="Meeting note" onClose={onClose}>
@@ -85,9 +94,19 @@ export function MeetingNoteDetailModal({
           <Label htmlFor="notes">Notes</Label>
           <RichTextEditor id="notes" name="notes" rows={6} defaultValue={note.notes} placeholder="What was discussed…" />
         </FieldGroup>
+        {note.actionItems && (
+          <FieldGroup>
+            <Label compact>Original action items</Label>
+            <RichTextView html={note.actionItems} className="text-sm text-navy-600" />
+          </FieldGroup>
+        )}
         <FieldGroup>
-          <Label htmlFor="actionItems">Action items</Label>
-          <RichTextEditor id="actionItems" name="actionItems" rows={3} defaultValue={note.actionItems} placeholder="Follow-ups after the meeting…" />
+          <Label>Action items</Label>
+          <ActionItemsQuickAdd
+            name="actionItems"
+            existingTasks={note.actionItemTasks}
+            onToggleExisting={toggleActionItem}
+          />
         </FieldGroup>
         <div className="flex items-center justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" size="sm" onClick={onClose}>

@@ -91,6 +91,48 @@ export async function listHotFollowUps(
   }));
 }
 
+/**
+ * Every follow-up across all clients and leads, upcoming or completed — the
+ * dedicated /follow-ups page (unlike listHotFollowUps, not capped to
+ * due-today-or-earlier). `accessibleClientIds` scoping matches listHotFollowUps.
+ */
+export async function listAllFollowUps(
+  businessId: string,
+  today: string,
+  accessibleClientIds?: string[] | null
+): Promise<HotFollowUp[]> {
+  const rows = await sql`
+    select
+      f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
+      f.assigned_to_team_member_id,
+      coalesce(c.company_name, l.company_name) as owner_name,
+      case when f.client_id is not null then 'client' else 'lead' end as owner_kind,
+      f.status = 'UPCOMING' and f.date < ${today}::date as is_overdue
+    from follow_ups f
+    left join clients c on c.id = f.client_id
+    left join leads l on l.id = f.lead_id
+    where f.business_id = ${businessId}
+      and (
+        ${accessibleClientIds ?? null}::uuid[] is null
+        or f.client_id is null
+        or f.client_id = any(${accessibleClientIds ?? null}::uuid[])
+      )
+    order by f.date asc
+  `;
+  return (
+    rows as unknown as (FollowUpRow & {
+      owner_name: string;
+      owner_kind: "client" | "lead";
+      is_overdue: boolean;
+    })[]
+  ).map((row) => ({
+    ...mapFollowUp(row),
+    ownerName: row.owner_name,
+    ownerKind: row.owner_kind,
+    isOverdue: row.is_overdue,
+  }));
+}
+
 export async function addFollowUp(
   owner: { clientId?: string; leadId?: string },
   businessId: string,

@@ -91,12 +91,22 @@ export interface MeetingNote {
   agenda: string | null;
   /** Rich text (sanitized HTML) — what was actually discussed. */
   notes: string | null;
-  /** Rich text (sanitized HTML) — follow-ups to do after the meeting. */
+  /** Rich text (sanitized HTML) — legacy free-text action items, from before the quick-add-to-do UI existed. Still shown read-only when present; no longer written to. */
   actionItems: string | null;
   createdAt: string;
   // present when returned from a query that joins in the owner's name/color
   ownerName?: string;
   ownerColor?: EntityColor | null;
+  /** To-dos quick-added from this meeting's action items — present when returned from listMeetingNotes. */
+  actionItemTasks?: MeetingActionItemTask[];
+}
+
+/** A minimal projection of a Task, for showing a meeting note's linked action items without a full Task join. */
+export interface MeetingActionItemTask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  dueDate: string | null;
 }
 
 export interface Document {
@@ -139,6 +149,8 @@ export interface Task {
   createdByTeamMemberId: string | null;
   /** "Owner" or the creating team member's name — only meaningful (and only shown by the UI) when it differs from who the to-do is assigned to now. */
   createdByName: string;
+  /** Set when this to-do was quick-added as an action item from a meeting note. */
+  meetingNoteId: string | null;
 }
 
 export interface Client {

@@ -3,12 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
+import * as todos from "@/lib/data/todos";
 import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
 import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
 import type { CurrentUser } from "@/lib/types";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null) {
   revalidatePath("/meeting-notes");
+  // Action items quick-added here land on the to-do board and dashboard too.
+  revalidatePath("/todos");
+  revalidatePath("/");
   if (clientId) revalidatePath(`/clients/${clientId}`);
   if (leadId) revalidatePath(`/leads/${leadId}`);
 }
@@ -20,17 +24,67 @@ async function resolveOwnerAccess(owner: { clientId?: string | null; leadId?: st
   throw new Error("Not authorized.");
 }
 
-/** Extracts and sanitizes the three rich-text fields, so an agenda can be saved on its own before the meeting happens. Returns null if all three are empty. */
-function extractRichTextFields(formData: FormData): { agenda: string | null; notes: string | null; actionItems: string | null } | null {
+/** Extracts and sanitizes the two rich-text fields, so an agenda can be saved on its own before the meeting happens. Returns null if both are empty. */
+function extractRichTextFields(formData: FormData): { agenda: string | null; notes: string | null } | null {
   const agenda = sanitizeRichText(String(formData.get("agenda") ?? ""));
   const notes = sanitizeRichText(String(formData.get("notes") ?? ""));
-  const actionItems = sanitizeRichText(String(formData.get("actionItems") ?? ""));
-  if (isRichTextEmpty(agenda) && isRichTextEmpty(notes) && isRichTextEmpty(actionItems)) return null;
+  if (isRichTextEmpty(agenda) && isRichTextEmpty(notes)) return null;
   return {
     agenda: isRichTextEmpty(agenda) ? null : agenda,
     notes: isRichTextEmpty(notes) ? null : notes,
-    actionItems: isRichTextEmpty(actionItems) ? null : actionItems,
   };
+}
+
+interface QueuedActionItem {
+  text: string;
+  dueDate: string | null;
+}
+
+/** Parses the JSON queue posted by ActionItemsQuickAdd. Malformed input just yields no items rather than erroring — this is quick-add UI, not a strict API. */
+function parseActionItems(formData: FormData): QueuedActionItem[] {
+  const raw = String(formData.get("actionItems") ?? "");
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (item): item is { text: unknown; dueDate: unknown } =>
+          typeof item === "object" && item !== null && typeof (item as { text: unknown }).text === "string"
+      )
+      .map((item) => ({ text: String(item.text).trim(), dueDate: typeof item.dueDate === "string" && item.dueDate ? item.dueDate : null }))
+      .filter((item) => item.text.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/** Turns each quick-added action item into a real to-do, linked back to the meeting note and the same client/lead it belongs to. */
+async function createActionItemTasks(
+  businessId: string,
+  meetingNoteId: string,
+  owner: { clientId?: string | null; leadId?: string | null },
+  items: QueuedActionItem[],
+  createdByTeamMemberId: string | null
+): Promise<void> {
+  for (const item of items) {
+    await todos.createActionItemTask(
+      businessId,
+      {
+        title: item.text,
+        dueDate: item.dueDate,
+        type: owner.clientId ? "CLIENT" : "LEAD",
+        clientId: owner.clientId ?? null,
+        leadId: owner.leadId ?? null,
+        meetingNoteId,
+      },
+      createdByTeamMemberId
+    );
+  }
+}
+
+function selfId(user: CurrentUser): string | null {
+  return user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
 }
 
 export async function createMeetingNote(formData: FormData) {
@@ -40,10 +94,20 @@ export async function createMeetingNote(formData: FormData) {
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
-  if ((!clientId && !leadId) || !meetingDate || !fields) return;
+  const actionItems = parseActionItems(formData);
+  if ((!clientId && !leadId) || !meetingDate || (!fields && actionItems.length === 0)) return;
   const user = await resolveOwnerAccess({ clientId, leadId });
 
-  await meetingNotes.createMeetingNote(user.businessId, { title, clientId, leadId, meetingDate, attendees, ...fields });
+  const noteId = await meetingNotes.createMeetingNote(user.businessId, {
+    title,
+    clientId,
+    leadId,
+    meetingDate,
+    attendees,
+    agenda: fields?.agenda ?? null,
+    notes: fields?.notes ?? null,
+  });
+  await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user));
   revalidateOwner(clientId, leadId);
   redirect(clientId ? `/clients/${clientId}` : `/leads/${leadId}`);
 }
@@ -58,20 +122,23 @@ export async function createScopedMeetingNote(
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
-  if (!meetingDate || !fields) return;
+  const actionItems = parseActionItems(formData);
+  if (!meetingDate || (!fields && actionItems.length === 0)) return;
 
-  await meetingNotes.createMeetingNote(user.businessId, {
+  const clientId = owner.type === "CLIENT" ? owner.clientId : undefined;
+  const leadId = owner.type === "LEAD" ? owner.leadId : undefined;
+
+  const noteId = await meetingNotes.createMeetingNote(user.businessId, {
     title,
-    clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
-    leadId: owner.type === "LEAD" ? owner.leadId : undefined,
+    clientId,
+    leadId,
     meetingDate,
     attendees,
-    ...fields,
+    agenda: fields?.agenda ?? null,
+    notes: fields?.notes ?? null,
   });
-  revalidateOwner(
-    owner.type === "CLIENT" ? owner.clientId : undefined,
-    owner.type === "LEAD" ? owner.leadId : undefined
-  );
+  await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user));
+  revalidateOwner(clientId, leadId);
 }
 
 export async function updateMeetingNote(
@@ -84,9 +151,17 @@ export async function updateMeetingNote(
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
-  if (!meetingDate || !fields) return;
+  const actionItems = parseActionItems(formData);
+  if (!meetingDate || (!fields && actionItems.length === 0)) return;
 
-  await meetingNotes.updateMeetingNote(id, user.businessId, { title, meetingDate, attendees, ...fields });
+  await meetingNotes.updateMeetingNote(id, user.businessId, {
+    title,
+    meetingDate,
+    attendees,
+    agenda: fields?.agenda ?? null,
+    notes: fields?.notes ?? null,
+  });
+  await createActionItemTasks(user.businessId, id, owner, actionItems, selfId(user));
   revalidateOwner(owner.clientId, owner.leadId);
 }
 

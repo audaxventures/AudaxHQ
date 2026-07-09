@@ -3,7 +3,7 @@
 import { useRef, useTransition } from "react";
 import Link from "next/link";
 import { motion, type PanInfo } from "framer-motion";
-import { Check, Flag, Hourglass, Send } from "lucide-react";
+import { Check, Flag, Hourglass, NotebookPen, Send } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Badge, TaskTypeBadge } from "@/components/ui/Badge";
 import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
@@ -155,6 +155,11 @@ export function TaskCard({
           >
             {ownerName}
           </Link>
+        )}
+        {task.meetingNoteId && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
+            <NotebookPen size={11} /> From meeting
+          </span>
         )}
         {task.status === "AWAITING_CLIENT_FEEDBACK" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-600">
