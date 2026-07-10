@@ -6,7 +6,7 @@ import { getBusinessToday } from "@/lib/data/businesses";
 import type { Client, ClientType, Task, TaskOwner, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
-  type: "invoice" | "lead-follow-up";
+  type: "invoice";
   message: string;
   href: string;
 }
@@ -75,7 +75,6 @@ export async function getDashboardData(
     activeRows,
     projectRemainingRows,
     hotFollowUps,
-    noFollowUpLeadRows,
     staleInvoiceRows,
     todoRows,
     pipelineSummary,
@@ -97,14 +96,6 @@ export async function getDashboardData(
         `
       : Promise.resolve([{ total: 0 }]),
     listHotFollowUps(businessId, today, accessibleClientIds),
-    sql`
-      select l.id, l.company_name
-      from leads l
-      where l.business_id = ${businessId}
-        and l.status not in ('WON', 'LOST')
-        and not exists (select 1 from follow_ups f where f.lead_id = l.id and f.status = 'UPCOMING')
-      order by l.created_at desc
-    `,
     isOwner
       ? sql`
           select c.id as client_id, c.company_name as client_name
@@ -168,15 +159,6 @@ export async function getDashboardData(
       href: `/clients/${r.client_id}`,
     });
   }
-  for (const row of noFollowUpLeadRows) {
-    const r = row as Record<string, unknown>;
-    attentionFlags.push({
-      type: "lead-follow-up",
-      message: `${r.company_name} has no follow-up scheduled`,
-      href: `/leads/${r.id}`,
-    });
-  }
-
   const todoSnapshot: Task[] = todoRows.map((r) => {
     const row = r as Record<string, unknown>;
     return {
