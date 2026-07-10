@@ -149,8 +149,8 @@ export default function MarketingHomePage() {
 
       <div className="bg-cream-100">
         <Section className="py-16 sm:py-20">
-          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl bg-navy-900 px-8 py-8 sm:px-12 sm:py-10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+          <div className="relative overflow-hidden rounded-2xl bg-navy-900 px-8 py-8 sm:px-12 sm:py-10">
+            <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
               <Quote size={36} fill="currentColor" stroke="none" className="shrink-0 text-burnt-500" />
               <div>
                 <p className="font-heading text-lg font-medium leading-snug text-cream-50 sm:text-xl">
