@@ -18,12 +18,9 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-2">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element -- small static brand mark */}
-              <img src="/favicon.png" alt="" className="h-7 w-7 rounded-full" />
-              <span className="font-heading text-base font-semibold text-cream-50">
-                AUDAX <span className="text-burnt-400">HQ</span>
-              </span>
+              <img src="/hqlogo.png" alt="Audax HQ" className="h-8 w-auto" />
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-navy-300">
               The business operating system for service businesses — clients, pipeline, revenue, and work, in one

@@ -20,12 +20,9 @@ export function MarketingNav() {
   return (
     <header className="sticky top-0 z-50 bg-navy-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
+        <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element -- small static brand mark */}
-          <img src="/favicon.png" alt="" className="h-8 w-8 rounded-full" />
-          <span className="font-heading text-lg font-semibold tracking-wide text-cream-50">
-            AUDAX <span className="text-burnt-400">HQ</span>
-          </span>
+          <img src="/hqlogo.png" alt="Audax HQ" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
