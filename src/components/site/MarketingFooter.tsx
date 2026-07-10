@@ -8,7 +8,7 @@ const PRODUCT_LINKS = [
 
 const COMPANY_LINKS = [
   { href: "/about", label: "About" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/about#faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
 

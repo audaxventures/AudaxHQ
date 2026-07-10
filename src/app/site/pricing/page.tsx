@@ -108,7 +108,7 @@ export default function PricingPage() {
           </div>
           <p className="mt-8 text-center text-sm text-navy-400">
             Questions about pricing or what’s included?{" "}
-            <Link href="/faq" className="font-medium text-burnt-600 hover:underline">
+            <Link href="/about#faq" className="font-medium text-burnt-600 hover:underline">
               Check the FAQ
             </Link>{" "}
             or{" "}
