@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { FAQAccordion } from "@/components/site/FAQAccordion";
+import { ScreenshotGallery } from "@/components/site/ScreenshotGallery";
 import { appPath } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -236,25 +237,7 @@ export default function AboutPage() {
               A closer look at the platform.
             </h2>
           </div>
-          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {GALLERY.map((shot, i) =>
-              shot.src ? (
-                <div key={shot.src} className="aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- real product screenshot, not a candidate for next/image in this static marketing gallery */}
-                  <img src={shot.src} alt={shot.alt} className="h-full w-full object-cover object-top" />
-                </div>
-              ) : (
-                <div
-                  key={shot.filename ?? i}
-                  className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-dashed border-navy-200 bg-white p-6 text-center"
-                >
-                  <span className="text-xs font-medium text-navy-400">
-                    {shot.label} — {shot.filename}
-                  </span>
-                </div>
-              )
-            )}
-          </div>
+          <ScreenshotGallery shots={GALLERY} />
         </Section>
       </div>
 
