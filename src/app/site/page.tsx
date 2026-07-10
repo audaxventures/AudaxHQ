@@ -60,7 +60,12 @@ const FEATURES = [
   },
 ];
 
-const PLATFORM_SHOTS = ["Platform image 1", "Platform image 2", "Platform image 3", "Platform image 4"];
+const PLATFORM_SHOTS = [
+  { src: "/demosidebarhandmobile.png", alt: "AudaxHQ mobile navigation menu, held in hand" },
+  { src: "/meetingnotesdesktop.png", alt: "AudaxHQ meeting notes list on desktop" },
+  { src: "/quickactionmobilehand.png", alt: "AudaxHQ quick actions menu on mobile" },
+  { src: "/todolaptop.png", alt: "AudaxHQ to-do board open on a laptop" },
+];
 
 export default function MarketingHomePage() {
   return (
@@ -134,12 +139,10 @@ export default function MarketingHomePage() {
       <div className="bg-cream-50">
         <Section className="py-0 pb-16 sm:pb-20">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
-            {PLATFORM_SHOTS.map((label) => (
-              <div
-                key={label}
-                className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed border-navy-200 bg-cream-100 p-4 text-center"
-              >
-                <span className="text-xs font-medium text-navy-400">{label}</span>
+            {PLATFORM_SHOTS.map((shot) => (
+              <div key={shot.src} className="aspect-[3/4] overflow-hidden rounded-xl shadow-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element -- real product photo, not a candidate for next/image in this static marketing grid */}
+                <img src={shot.src} alt={shot.alt} className="h-full w-full object-cover" />
               </div>
             ))}
           </div>
