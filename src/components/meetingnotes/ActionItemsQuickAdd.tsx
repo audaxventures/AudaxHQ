@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
+import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
-import type { MeetingActionItemTask } from "@/lib/types";
+import type { MeetingActionItemTask, TaskOwner } from "@/lib/types";
 
 interface QueuedActionItem {
   text: string;
   dueDate: string | null;
+  ownedBy: TaskOwner;
 }
 
 /**
@@ -18,14 +20,19 @@ interface QueuedActionItem {
  * the rest of the form) and, in edit mode, shows already-created to-dos
  * linked to this meeting as a live checklist. The server action turns each
  * queued item into a real to-do linked back to this note — see
- * lib/actions/meetingnotes.ts.
+ * lib/actions/meetingnotes.ts. Each item can be marked "Us" (goes on the
+ * team's own to-do board) or "Them" (the client/lead's own commitment —
+ * stays here as a checklist, never shows up on the team's board).
  */
 export function ActionItemsQuickAdd({
   name,
+  theirLabel = "Client",
   existingTasks,
   onToggleExisting,
 }: {
   name: string;
+  /** What to call the other party in the toggle/badge — "Client" or "Lead". */
+  theirLabel?: string;
   /** Already-created to-dos linked to this meeting note — edit mode only. */
   existingTasks?: MeetingActionItemTask[];
   /** Called when an existing linked to-do's checkbox is toggled. */
@@ -34,13 +41,15 @@ export function ActionItemsQuickAdd({
   const [items, setItems] = useState<QueuedActionItem[]>([]);
   const [text, setText] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [ownedBy, setOwnedBy] = useState<TaskOwner>("TEAM");
 
   function addItem() {
     const trimmed = text.trim();
     if (!trimmed) return;
-    setItems((prev) => [...prev, { text: trimmed, dueDate: dueDate || null }]);
+    setItems((prev) => [...prev, { text: trimmed, dueDate: dueDate || null, ownedBy }]);
     setText("");
     setDueDate("");
+    setOwnedBy("TEAM");
   }
 
   return (
@@ -67,6 +76,7 @@ export function ActionItemsQuickAdd({
                 <span className={cn("flex-1 text-sm", completed ? "text-navy-400 line-through" : "text-navy-800")}>
                   {task.title}
                 </span>
+                {task.ownedBy === "EXTERNAL" && <Badge tone="violet">{theirLabel}</Badge>}
                 {task.dueDate && <span className="text-xs text-navy-400">{formatDate(task.dueDate)}</span>}
               </li>
             );
@@ -79,6 +89,7 @@ export function ActionItemsQuickAdd({
           {items.map((item, i) => (
             <li key={i} className="flex items-center gap-2.5 rounded-lg bg-cream-100 px-2.5 py-1.5">
               <span className="flex-1 text-sm text-navy-800">{item.text}</span>
+              {item.ownedBy === "EXTERNAL" && <Badge tone="violet">{theirLabel}</Badge>}
               {item.dueDate && <span className="text-xs text-navy-400">{formatDate(item.dueDate)}</span>}
               <button
                 type="button"
@@ -106,6 +117,32 @@ export function ActionItemsQuickAdd({
           placeholder="Add an action item…"
           className="min-w-[10rem] flex-1"
         />
+        <div className="flex shrink-0 rounded-lg border border-navy-200 p-0.5">
+          <button
+            type="button"
+            aria-label="This action item is for our team"
+            aria-pressed={ownedBy === "TEAM"}
+            onClick={() => setOwnedBy("TEAM")}
+            className={cn(
+              "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+              ownedBy === "TEAM" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
+            )}
+          >
+            Us
+          </button>
+          <button
+            type="button"
+            aria-label={`This action item is for the ${theirLabel.toLowerCase()}`}
+            aria-pressed={ownedBy === "EXTERNAL"}
+            onClick={() => setOwnedBy("EXTERNAL")}
+            className={cn(
+              "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+              ownedBy === "EXTERNAL" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
+            )}
+          >
+            {theirLabel}
+          </button>
+        </div>
         <Input
           type="date"
           value={dueDate}

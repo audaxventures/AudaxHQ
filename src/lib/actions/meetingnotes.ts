@@ -6,7 +6,7 @@ import * as meetingNotes from "@/lib/data/meetingnotes";
 import * as todos from "@/lib/data/todos";
 import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
 import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
-import type { CurrentUser } from "@/lib/types";
+import type { CurrentUser, TaskOwner } from "@/lib/types";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null) {
   revalidatePath("/meeting-notes");
@@ -38,6 +38,7 @@ function extractRichTextFields(formData: FormData): { agenda: string | null; not
 interface QueuedActionItem {
   text: string;
   dueDate: string | null;
+  ownedBy: TaskOwner;
 }
 
 /** Parses the JSON queue posted by ActionItemsQuickAdd. Malformed input just yields no items rather than erroring — this is quick-add UI, not a strict API. */
@@ -49,10 +50,14 @@ function parseActionItems(formData: FormData): QueuedActionItem[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter(
-        (item): item is { text: unknown; dueDate: unknown } =>
+        (item): item is { text: unknown; dueDate: unknown; ownedBy: unknown } =>
           typeof item === "object" && item !== null && typeof (item as { text: unknown }).text === "string"
       )
-      .map((item) => ({ text: String(item.text).trim(), dueDate: typeof item.dueDate === "string" && item.dueDate ? item.dueDate : null }))
+      .map((item) => ({
+        text: String(item.text).trim(),
+        dueDate: typeof item.dueDate === "string" && item.dueDate ? item.dueDate : null,
+        ownedBy: item.ownedBy === "EXTERNAL" ? ("EXTERNAL" as const) : ("TEAM" as const),
+      }))
       .filter((item) => item.text.length > 0);
   } catch {
     return [];
@@ -77,6 +82,7 @@ async function createActionItemTasks(
         clientId: owner.clientId ?? null,
         leadId: owner.leadId ?? null,
         meetingNoteId,
+        ownedBy: item.ownedBy,
       },
       createdByTeamMemberId
     );

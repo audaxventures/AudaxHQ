@@ -58,7 +58,11 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
         </FieldGroup>
         <FieldGroup>
           <Label>Action items</Label>
-          <ActionItemsQuickAdd key={`actionItems-${formKey}`} name="actionItems" />
+          <ActionItemsQuickAdd
+            key={`actionItems-${formKey}`}
+            name="actionItems"
+            theirLabel={owner.type === "CLIENT" ? "Client" : "Lead"}
+          />
         </FieldGroup>
         <button
           type="submit"

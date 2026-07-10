@@ -50,7 +50,7 @@ export async function listMeetingNotes(businessId: string, filters: MeetingNoteF
       coalesce(c.color, l.color) as owner_color,
       coalesce(
         (
-          select json_agg(json_build_object('id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date) order by t.created_at asc)
+          select json_agg(json_build_object('id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date, 'ownedBy', t.owned_by) order by t.created_at asc)
           from todos t
           where t.meeting_note_id = m.id
         ),

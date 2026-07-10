@@ -70,6 +70,7 @@ export async function listCalendarEvents(
       left join clients c on c.id = t.client_id
       left join leads l on l.id = t.lead_id
       where t.business_id = ${businessId}
+        and t.owned_by = 'TEAM'
         and t.due_date is not null and t.due_date between ${from} and ${to}
         and (${filters.restrictToTeamMemberId ?? null}::uuid is null or t.assigned_to_team_member_id = ${filters.restrictToTeamMemberId ?? null})
     `,

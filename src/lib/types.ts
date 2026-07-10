@@ -101,12 +101,16 @@ export interface MeetingNote {
   actionItemTasks?: MeetingActionItemTask[];
 }
 
+/** Whose action item this is — 'TEAM' shows up on the workspace's own to-do board; 'EXTERNAL' is the client/lead's own commitment and stays attached to the meeting note only. */
+export type TaskOwner = "TEAM" | "EXTERNAL";
+
 /** A minimal projection of a Task, for showing a meeting note's linked action items without a full Task join. */
 export interface MeetingActionItemTask {
   id: string;
   title: string;
   status: TaskStatus;
   dueDate: string | null;
+  ownedBy: TaskOwner;
 }
 
 export interface Document {
@@ -151,6 +155,8 @@ export interface Task {
   createdByName: string;
   /** Set when this to-do was quick-added as an action item from a meeting note. */
   meetingNoteId: string | null;
+  /** 'TEAM' (default) shows on the workspace's own to-do board; 'EXTERNAL' is the client/lead's own commitment and is excluded from listTasks(). */
+  ownedBy: TaskOwner;
 }
 
 export interface Client {

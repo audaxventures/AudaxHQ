@@ -104,6 +104,7 @@ export function MeetingNoteDetailModal({
           <Label>Action items</Label>
           <ActionItemsQuickAdd
             name="actionItems"
+            theirLabel={note.clientId ? "Client" : "Lead"}
             existingTasks={note.actionItemTasks}
             onToggleExisting={toggleActionItem}
           />

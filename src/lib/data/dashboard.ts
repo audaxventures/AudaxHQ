@@ -3,7 +3,7 @@ import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
 import { getBusinessToday } from "@/lib/data/businesses";
-import type { Client, ClientType, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
+import type { Client, ClientType, Task, TaskOwner, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
   type: "invoice" | "lead-follow-up";
@@ -125,6 +125,7 @@ export async function getDashboardData(
       left join tags tg on tg.id = tt.tag_id
       left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
       where t.business_id = ${businessId}
+        and t.owned_by = 'TEAM'
         and t.status <> 'COMPLETED'
         and t.assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
       group by t.id, creator_tm.name
@@ -135,11 +136,13 @@ export async function getDashboardData(
     sql`
       select count(*)::int as count from todos
       where business_id = ${businessId}
+        and owned_by = 'TEAM'
         and status <> 'COMPLETED' and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
     `,
     sql`
       select count(*)::int as count from todos
       where business_id = ${businessId}
+        and owned_by = 'TEAM'
         and status <> 'COMPLETED' and due_date = ${today}::date
         and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
     `,
@@ -196,6 +199,7 @@ export async function getDashboardData(
       createdByTeamMemberId: row.created_by_team_member_id as string | null,
       createdByName: (row.created_by_name as string | null) ?? "Owner",
       meetingNoteId: row.meeting_note_id as string | null,
+      ownedBy: row.owned_by as TaskOwner,
     };
   });
 

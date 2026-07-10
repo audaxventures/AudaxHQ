@@ -104,9 +104,9 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
       <FieldGroup>
         <Label>Action items</Label>
         <p className="text-xs text-navy-400 mb-1.5">
-          Each item becomes a to-do linked to this client/lead once you save.
+          &ldquo;Us&rdquo; items become a to-do on your board; &ldquo;{ownerType === "CLIENT" ? "Client" : "Lead"}&rdquo; items stay here as their own commitment.
         </p>
-        <ActionItemsQuickAdd name="actionItems" />
+        <ActionItemsQuickAdd name="actionItems" theirLabel={ownerType === "CLIENT" ? "Client" : "Lead"} />
       </FieldGroup>
       <SubmitButton />
     </form>

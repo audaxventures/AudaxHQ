@@ -56,6 +56,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/025_drop_billing_entities.sql
    psql "$DATABASE_URL" -f migrations/026_meeting_note_action_items.sql
    psql "$DATABASE_URL" -f migrations/027_feedback.sql
+   psql "$DATABASE_URL" -f migrations/028_task_owned_by.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -181,6 +182,7 @@ migrations/024_meeting_note_title.sql  adds meeting_notes.title
 migrations/025_drop_billing_entities.sql  drops the unused billing_entities table
 migrations/026_meeting_note_action_items.sql  adds todos.meeting_note_id (action items quick-added from a meeting note become linked to-dos)
 migrations/027_feedback.sql  adds the feedback table (Feedback page + admin Feedback tab)
+migrations/028_task_owned_by.sql  adds todos.owned_by (TEAM/EXTERNAL — separates client/lead action items from the team's own to-do board)
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

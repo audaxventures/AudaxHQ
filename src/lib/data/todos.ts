@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { EntityColor, Task, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
+import type { EntityColor, Task, TaskOwner, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 interface TaskRow {
   id: string;
@@ -24,6 +24,7 @@ interface TaskRow {
   created_by_team_member_id: string | null;
   created_by_name: string | null;
   meeting_note_id: string | null;
+  owned_by: TaskOwner;
 }
 
 function mapTask(row: TaskRow): Task {
@@ -50,6 +51,7 @@ function mapTask(row: TaskRow): Task {
     createdByTeamMemberId: row.created_by_team_member_id,
     createdByName: row.created_by_name ?? "Owner",
     meetingNoteId: row.meeting_note_id,
+    ownedBy: row.owned_by,
   };
 }
 
@@ -83,7 +85,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
   const rows = (await sql`
     select
       t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id,
-      t.created_at, t.updated_at, t.assigned_to_team_member_id, t.created_by_team_member_id, t.meeting_note_id,
+      t.created_at, t.updated_at, t.assigned_to_team_member_id, t.created_by_team_member_id, t.meeting_note_id, t.owned_by,
       tt_lookup.name as todo_type_name,
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
       c.company_name as client_name,
@@ -99,6 +101,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
     left join leads l on l.id = t.lead_id
     left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
     where t.business_id = ${businessId}
+      and t.owned_by = 'TEAM'
       and (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
       and (${filters.priority ?? null}::task_priority is null or t.priority = ${filters.priority ?? null})
       and (${filters.type ?? null}::text is null or t.type = ${filters.type ?? null})
@@ -246,23 +249,27 @@ export interface ActionItemTaskInput {
   clientId?: string | null;
   leadId?: string | null;
   meetingNoteId: string;
+  ownedBy: TaskOwner;
 }
 
 /**
  * Quick-added from a meeting note's action items — a lighter path than
  * createTask (no tags/description/custom type), always linked back to the
  * meeting via meeting_note_id so the note can show these as a live checklist.
+ * An 'EXTERNAL' item (the client/lead's own commitment, not the team's) is
+ * never assigned to anyone on the team — assignment doesn't apply to it.
  */
 export async function createActionItemTask(
   businessId: string,
   input: ActionItemTaskInput,
   createdByTeamMemberId: string | null
 ): Promise<string> {
+  const assignedTo = input.ownedBy === "EXTERNAL" ? null : createdByTeamMemberId;
   const rows = await sql`
-    insert into todos (business_id, title, due_date, type, client_id, lead_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id)
+    insert into todos (business_id, title, due_date, type, client_id, lead_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id, owned_by)
     values (
       ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null},
-      ${input.meetingNoteId}, ${createdByTeamMemberId}, ${createdByTeamMemberId}
+      ${input.meetingNoteId}, ${assignedTo}, ${createdByTeamMemberId}, ${input.ownedBy}
     )
     returning id
   `;
