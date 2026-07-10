@@ -61,6 +61,8 @@ const AUDIENCE = [
 const GALLERY = [
   { src: "/demodashboardweb.png", alt: "AudaxHQ dashboard overview" },
   { src: "/democlientweb.png", alt: "AudaxHQ clients list" },
+  { src: "/meetingnotes.png", alt: "AudaxHQ meeting notes list" },
+  { src: "/todo.png", alt: "AudaxHQ to-do board" },
   { src: null, filename: "leadsdesktop.png", label: "Leads & Pipeline" },
   { src: null, filename: "revenuedesktop.png", label: "Revenue Tracking" },
   { src: null, filename: "timetrackerdesktop.png", label: "Time & Cost Tracker" },
