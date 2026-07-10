@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
+import { ArrowRight, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
@@ -60,6 +60,8 @@ const FEATURES = [
   },
 ];
 
+const PLATFORM_SHOTS = ["Platform image 1", "Platform image 2", "Platform image 3", "Platform image 4"];
+
 export default function MarketingHomePage() {
   return (
     <>
@@ -96,25 +98,7 @@ export default function MarketingHomePage() {
               </Link>
             </div>
           </div>
-          <div className="relative">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-6 hidden rounded-[2rem] border border-dashed border-navy-600/70 sm:block"
-            />
-            <DashboardHeroMock />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -left-5 top-8 hidden h-11 w-11 items-center justify-center rounded-full border border-navy-600 bg-navy-800 text-burnt-400 shadow-lg sm:flex"
-            >
-              <BarChart3 size={18} />
-            </span>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -right-4 bottom-12 hidden h-11 w-11 items-center justify-center rounded-full border border-navy-600 bg-navy-800 text-sage-600 shadow-lg sm:flex"
-            >
-              <Users size={18} />
-            </span>
-          </div>
+          <DashboardHeroMock />
         </Section>
       </div>
 
@@ -144,6 +128,21 @@ export default function MarketingHomePage() {
             </div>
           </div>
           <DeviceShowcase />
+        </Section>
+      </div>
+
+      <div className="bg-cream-50">
+        <Section className="py-0 pb-16 sm:pb-20">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
+            {PLATFORM_SHOTS.map((label) => (
+              <div
+                key={label}
+                className="flex aspect-[3/4] items-center justify-center rounded-xl border border-dashed border-navy-200 bg-cream-100 p-4 text-center"
+              >
+                <span className="text-xs font-medium text-navy-400">{label}</span>
+              </div>
+            ))}
+          </div>
         </Section>
       </div>
 
