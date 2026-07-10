@@ -149,13 +149,18 @@ export default function MarketingHomePage() {
 
       <div className="bg-cream-100">
         <Section className="py-16 sm:py-20">
-          <div className="relative mx-auto max-w-xl overflow-hidden rounded-2xl bg-navy-900 px-8 py-10 sm:px-10 sm:py-12">
-            <Quote size={40} fill="currentColor" stroke="none" className="text-burnt-500" />
-            <p className="mt-5 font-heading text-xl font-medium leading-snug text-cream-50 sm:text-2xl">
-              We&rsquo;ve replaced four different tools with AudaxHQ, and our team is more organized and productive
-              than ever. AudaxHQ has changed how we manage clients, leads and daily operations, all in one place!
-            </p>
-            <p className="mt-6 text-sm text-navy-300">— Denise Zaporzan, Asteria Global</p>
+          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl bg-navy-900 px-8 py-8 sm:px-12 sm:py-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+              <Quote size={36} fill="currentColor" stroke="none" className="shrink-0 text-burnt-500" />
+              <div>
+                <p className="font-heading text-lg font-medium leading-snug text-cream-50 sm:text-xl">
+                  We&rsquo;ve replaced four different tools with AudaxHQ, and our team is more organized and
+                  productive than ever. AudaxHQ has changed how we manage clients, leads and daily operations, all
+                  in one place!
+                </p>
+                <p className="mt-3 text-sm text-navy-300">— Denise Zaporzan, Asteria Global</p>
+              </div>
+            </div>
           </div>
         </Section>
       </div>
