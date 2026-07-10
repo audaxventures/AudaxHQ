@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { appPath } from "@/lib/site";
 
-const PRODUCT_LINKS = [
-  { href: "/#features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-];
+const PRODUCT_LINKS = [{ href: "/#features", label: "Features" }];
 
 const COMPANY_LINKS = [
   { href: "/about", label: "About" },

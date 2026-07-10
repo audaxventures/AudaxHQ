@@ -8,7 +8,6 @@ import { appPath } from "@/lib/site";
 
 const LINKS = [
   { href: "/#features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
