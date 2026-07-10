@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as admin from "@/lib/data/admin";
 import { requirePlatformAdmin } from "@/lib/currentUser";
 import { deleteAllBusinessFiles } from "@/lib/storage";
+import type { FeedbackStatus } from "@/lib/types";
 
 export async function suspendWorkspace(businessId: string) {
   await requirePlatformAdmin();
@@ -34,4 +35,10 @@ export async function deleteWorkspacePermanently(businessId: string, confirmName
   }
   await admin.deleteBusiness(businessId, confirmName);
   revalidatePath("/admin");
+}
+
+export async function updateFeedbackStatus(feedbackId: string, status: FeedbackStatus) {
+  await requirePlatformAdmin();
+  await admin.setFeedbackStatus(feedbackId, status);
+  revalidatePath("/admin/feedback");
 }

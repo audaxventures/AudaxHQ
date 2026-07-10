@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import type {
   ClientStatus,
+  FeedbackStatus,
   FollowUpStatus,
   InvoiceAgeBracket,
   InvoiceStatus,
@@ -138,4 +139,20 @@ const INVOICE_AGE_BRACKET_TONE: Record<InvoiceAgeBracket, Tone> = {
 
 export function InvoiceAgeBracketBadge({ bracket, label }: { bracket: InvoiceAgeBracket; label: string }) {
   return <Badge tone={INVOICE_AGE_BRACKET_TONE[bracket]}>{label}</Badge>;
+}
+
+const FEEDBACK_STATUS_TONE: Record<FeedbackStatus, Tone> = {
+  new: "slate",
+  planned: "gold",
+  done: "sage",
+};
+
+const FEEDBACK_STATUS_LABEL: Record<FeedbackStatus, string> = {
+  new: "New",
+  planned: "Planned",
+  done: "Done",
+};
+
+export function FeedbackStatusBadge({ status }: { status: FeedbackStatus }) {
+  return <Badge tone={FEEDBACK_STATUS_TONE[status]}>{FEEDBACK_STATUS_LABEL[status]}</Badge>;
 }

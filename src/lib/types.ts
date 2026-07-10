@@ -238,6 +238,20 @@ export type CurrentUser =
   | { role: "OWNER"; businessId: string; business: Business }
   | { role: "TEAM_MEMBER"; businessId: string; business: Business; teamMember: TeamMember };
 
+export type FeedbackStatus = "new" | "planned" | "done";
+
+/** A feature request or bug report submitted from within a workspace (Feedback page) — reviewed platform-wide from the admin dashboard. */
+export interface Feedback {
+  id: string;
+  businessId: string;
+  /** Denormalized at submission time so the record survives the submitter later being deactivated or deleted. */
+  submittedByName: string;
+  submittedByRole: SessionRole;
+  message: string;
+  status: FeedbackStatus;
+  createdAt: string;
+}
+
 export interface WorkCategory {
   id: string;
   name: string;
