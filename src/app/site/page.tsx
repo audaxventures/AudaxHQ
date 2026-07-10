@@ -4,6 +4,7 @@ import { ArrowRight, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Tar
 import { Section } from "@/components/site/Section";
 import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
+import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
 import { appPath } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -138,14 +139,7 @@ export default function MarketingHomePage() {
 
       <div className="bg-cream-50">
         <Section className="py-0 pb-16 sm:pb-20">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
-            {PLATFORM_SHOTS.map((shot) => (
-              <div key={shot.src} className="aspect-[3/4] overflow-hidden rounded-xl shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element -- real product photo, not a candidate for next/image in this static marketing grid */}
-                <img src={shot.src} alt={shot.alt} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
+          <PlatformShotsGallery shots={PLATFORM_SHOTS} />
         </Section>
       </div>
 
