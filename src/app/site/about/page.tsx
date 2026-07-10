@@ -160,8 +160,13 @@ export default function AboutPage() {
                 It’s the platform we always wished existed.
               </p>
             </div>
-            <div className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-dashed border-navy-200 bg-cream-100 p-6 text-center">
-              <span className="text-xs font-medium text-navy-400">Client detail page — clientdetaildesktop.png</span>
+            <div className="aspect-[3/4] overflow-hidden rounded-2xl shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
+              <img
+                src="/clientsdesktopdesk.png"
+                alt="A person reviewing their AudaxHQ clients list on their desktop"
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </Section>
