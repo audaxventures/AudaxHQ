@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, CheckSquare, Clock, Flag, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
@@ -63,14 +63,19 @@ const FEATURES = [
 export default function MarketingHomePage() {
   return (
     <>
-      <div className="bg-navy-900">
-        <Section className="grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-28">
+      <div className="relative overflow-hidden bg-navy-900">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 right-[-10%] h-[560px] w-[560px] rounded-full bg-burnt-500/25 blur-[130px]" />
+          <div className="absolute -bottom-32 -left-16 h-[420px] w-[420px] rounded-full bg-blue-600/15 blur-[120px]" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-navy-600 to-transparent" />
+        </div>
+        <Section className="relative grid items-center gap-16 py-20 lg:grid-cols-2 lg:py-28">
           <div>
-            <span className="inline-flex items-center rounded-full border border-navy-700 bg-navy-800 px-3.5 py-1.5 text-xs font-medium text-navy-200">
+            <span className="inline-flex items-center rounded-full border border-burnt-400/40 bg-burnt-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-burnt-300">
               Built for service businesses
             </span>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.08] text-cream-50 sm:text-5xl lg:text-[3.25rem]">
-              Run your business from one command center.
+              Run your business from <span className="text-burnt-400">one command center</span>.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-navy-300">
               Clients, pipeline, invoicing, meetings, time, and tasks — finally in one workspace instead of six
@@ -91,33 +96,24 @@ export default function MarketingHomePage() {
               </Link>
             </div>
           </div>
-          <DashboardHeroMock />
-        </Section>
-      </div>
-
-      <div className="bg-cream-100">
-        <Section className="py-12 sm:py-14">
-          <div className="flex flex-col items-start gap-4 rounded-2xl border border-navy-100 bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-            <div>
-              <span className="inline-flex items-center rounded-full bg-burnt-100 px-3 py-1 text-xs font-semibold text-burnt-600">
-                Now in early access
-              </span>
-              <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-navy-600">
-                Audax HQ is a new product, built by people who’ve run service businesses themselves. We’re bringing
-                on our first customers now — early feedback shapes what we build next.
-              </p>
-            </div>
-            <ul className="flex shrink-0 flex-col gap-1.5 text-sm text-navy-700 sm:items-end">
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-sage-600" /> Free to get started
-              </li>
-              <li className="flex items-center gap-2 sm:justify-end">
-                <span className="h-1.5 w-1.5 rounded-full bg-sage-600" /> No credit card required
-              </li>
-              <li className="flex items-center gap-2 sm:justify-end">
-                <span className="h-1.5 w-1.5 rounded-full bg-sage-600" /> Your data, always exportable
-              </li>
-            </ul>
+          <div className="relative">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-6 hidden rounded-[2rem] border border-dashed border-navy-600/70 sm:block"
+            />
+            <DashboardHeroMock />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -left-5 top-8 hidden h-11 w-11 items-center justify-center rounded-full border border-navy-600 bg-navy-800 text-burnt-400 shadow-lg sm:flex"
+            >
+              <BarChart3 size={18} />
+            </span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-4 bottom-12 hidden h-11 w-11 items-center justify-center rounded-full border border-navy-600 bg-navy-800 text-sage-600 shadow-lg sm:flex"
+            >
+              <Users size={18} />
+            </span>
           </div>
         </Section>
       </div>
@@ -153,16 +149,13 @@ export default function MarketingHomePage() {
 
       <div className="bg-cream-100">
         <Section className="py-16 sm:py-20">
-          <div className="relative overflow-hidden rounded-2xl bg-navy-900 px-7 py-10 sm:px-12 sm:py-14">
-            <Quote size={56} className="text-burnt-400/25" />
-            <p className="mt-4 max-w-2xl font-heading text-xl font-medium leading-snug text-cream-50 sm:text-2xl">
-              “Audax HQ changed the way we run our business. We save hours every week and nothing falls through the
-              cracks.”
+          <div className="relative mx-auto max-w-xl overflow-hidden rounded-2xl bg-navy-900 px-8 py-10 sm:px-10 sm:py-12">
+            <Quote size={40} fill="currentColor" stroke="none" className="text-burnt-500" />
+            <p className="mt-5 font-heading text-xl font-medium leading-snug text-cream-50 sm:text-2xl">
+              We&rsquo;ve replaced four different tools with AudaxHQ, and our team is more organized and productive
+              than ever. AudaxHQ has changed how we manage clients, leads and daily operations, all in one place!
             </p>
-            <p className="mt-6 text-sm text-navy-300">
-              — Ryan Peterson, Northpine Advisors{" "}
-              <span className="text-navy-500">(placeholder quote — to be replaced with a real customer story)</span>
-            </p>
+            <p className="mt-6 text-sm text-navy-300">— Denise Zaporzan, Asteria Global</p>
           </div>
         </Section>
       </div>
@@ -172,10 +165,10 @@ export default function MarketingHomePage() {
           <div className="relative min-h-[440px] overflow-hidden rounded-2xl border border-navy-100 sm:min-h-[480px]">
             {/* eslint-disable-next-line @next/next/no-img-element -- large decorative photo, not a candidate for next/image in this static marketing card */}
             <img src="/sidebar.png" alt="" className="absolute inset-0 h-full w-full object-cover object-bottom" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-50/90 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cream-50/85 via-cream-50/40 to-transparent" />
             <div className="relative flex h-full flex-col justify-center px-7 py-10 sm:px-12 sm:py-14 lg:max-w-md">
               <span className="flex h-10 w-10 items-center justify-center rounded-full border border-navy-300 text-navy-700">
-                <Flag size={18} />
+                <Check size={18} />
               </span>
               <h2 className="mt-5 font-heading text-3xl font-semibold leading-tight text-navy-900 sm:text-4xl">
                 Ready to simplify your business?
