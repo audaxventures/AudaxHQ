@@ -263,23 +263,14 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
   ).join("");
 
   const html = `
-    <div style="background: #f0e6d2; padding: 32px 16px; font-family: Helvetica, Arial, sans-serif;">
-      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin: 0 auto;">
+    <div style="background: #f0e6d2; padding: 24px 8px; font-family: Helvetica, Arial, sans-serif;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; margin: 0 auto;">
         <tr>
-          <td style="border-radius: 20px 20px 0 0; overflow: hidden; background: linear-gradient(135deg, #e9ecf2, #dceaf2);">
+          <td style="border-radius: 20px 20px 0 0; overflow: hidden; background: linear-gradient(135deg, #101d33, #182b4a);">
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td style="padding: 28px 32px; vertical-align: middle;">
-                  <table role="presentation" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td style="vertical-align: middle; padding-right: 8px;">
-                        <img src="${origin}/favicon.png" width="24" height="24" alt="" style="display: block; border-radius: 50%;" />
-                      </td>
-                      <td style="vertical-align: middle;">
-                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">AUDAX <span style="color: #be5a1e;">HQ</span></span>
-                      </td>
-                    </tr>
-                  </table>
+                  <img src="${origin}/hqlogo.png" width="200" height="53" alt="Audax HQ" style="display: block;" />
                 </td>
                 <td style="padding: 16px 20px 0 0; text-align: right;">
                   <img src="${previewImageUrl}" width="230" alt="" style="display: inline-block; max-width: 230px; height: auto; border-radius: 10px; box-shadow: 0 8px 24px -8px rgba(16,29,51,0.35);" />
