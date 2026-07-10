@@ -351,10 +351,10 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
   }
 }
 
-/** Sent when someone submits the marketing site's contact form — lands in the shared support inbox with reply_to set to the submitter, so replying goes straight to them. */
+/** Sent when someone submits the marketing site's contact form — lands in Joshua's inbox with reply_to set to the submitter, so replying goes straight to them. */
 export async function sendContactFormEmail(name: string, fromEmail: string, message: string): Promise<void> {
   const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "joshua@audaxventures.ca";
 
   const escapedMessage = message
     .replace(/&/g, "&amp;")
