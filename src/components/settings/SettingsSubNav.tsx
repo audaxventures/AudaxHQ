@@ -13,6 +13,7 @@ import {
   DollarSign,
   Shield,
   Upload,
+  MessageSquare,
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/invoice-aging", label: "Invoice Aging", icon: DollarSign },
   { href: "/settings/passcode", label: "Access", icon: Shield },
   { href: "/settings/data-export", label: "Data Export", icon: Upload },
+  { href: "/settings/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
 export function SettingsSubNav() {

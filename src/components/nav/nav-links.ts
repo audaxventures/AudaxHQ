@@ -9,7 +9,6 @@ export const NAV_LINKS = [
   { href: "/invoices", label: "Revenue Tracking", tabLabel: "Revenue", icon: "invoices" },
   { href: "/tracker", label: "Hour & Cost Tracker", tabLabel: "Tracker", icon: "tracker" },
   { href: "/todos", label: "To-Dos", icon: "todos" },
-  { href: "/feedback", label: "Feedback", icon: "feedback" },
 ] as const;
 
 export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings" | "admin";

@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Send } from "lucide-react";
 import { Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import { submitFeedback } from "@/app/(app)/feedback/actions";
+import { submitFeedback } from "@/app/(app)/settings/actions";
 
 export function FeedbackForm() {
   const [pending, startTransition] = useTransition();

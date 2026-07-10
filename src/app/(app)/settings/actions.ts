@@ -5,6 +5,7 @@ import * as businesses from "@/lib/data/businesses";
 import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
+import * as feedback from "@/lib/data/feedback";
 import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
 import { requireOwner } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
@@ -213,4 +214,17 @@ export async function dismissOnboarding() {
   const user = await requireOwner();
   await businesses.dismissOnboarding(user.businessId);
   revalidatePath("/", "layout");
+}
+
+export async function submitFeedback(formData: FormData) {
+  const user = await requireOwner();
+  const message = String(formData.get("message") ?? "").trim();
+  if (!message) return;
+
+  await feedback.createFeedback(user.businessId, {
+    submittedByName: user.business.ownerName,
+    submittedByRole: "OWNER",
+    message,
+  });
+  revalidatePath("/settings/feedback");
 }
