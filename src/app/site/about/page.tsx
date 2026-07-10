@@ -166,8 +166,8 @@ export default function AboutPage() {
             <div className="aspect-[3/4] overflow-hidden rounded-2xl shadow-lg">
               {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
               <img
-                src="/clientsdesktopdesk.png"
-                alt="A person reviewing their AudaxHQ clients list on their desktop"
+                src="/meetingnotesdesktop.png"
+                alt="A person reviewing their AudaxHQ meeting notes on their desktop"
                 className="h-full w-full object-cover"
               />
             </div>
