@@ -203,14 +203,6 @@ export default function AboutPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-8">
-                <Link
-                  href="/#features"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-burnt-600 hover:text-burnt-700"
-                >
-                  See all features <ArrowRight size={16} />
-                </Link>
-              </div>
             </div>
           </div>
         </Section>
