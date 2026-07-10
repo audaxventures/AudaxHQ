@@ -41,14 +41,14 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 }
 
 export interface GrowthPoint {
-  month: string;
+  day: string;
   label: string;
   workspaces: number;
   users: number;
 }
 
 /**
- * Cumulative workspace + user counts by month, for the growth chart. There's
+ * Cumulative workspace + user counts by day, for the growth chart. There's
  * no "login granted at" timestamp on account_emails, so "users" is
  * approximated as one event per business (the owner) plus one event per
  * team member row that has a login — close enough for a trend line, not
@@ -57,12 +57,12 @@ export interface GrowthPoint {
 export async function getGrowthSeries(): Promise<GrowthPoint[]> {
   const [workspaceRows, userRows] = await Promise.all([
     sql`
-      select date_trunc('month', created_at)::date as month, count(*)::int as n
+      select date_trunc('day', created_at)::date as day, count(*)::int as n
       from businesses
       group by 1
     `,
     sql`
-      select date_trunc('month', created_at)::date as month, count(*)::int as n
+      select date_trunc('day', created_at)::date as day, count(*)::int as n
       from (
         select created_at from businesses
         union all
@@ -76,37 +76,37 @@ export async function getGrowthSeries(): Promise<GrowthPoint[]> {
   // Neon returns a `date`-typed column as a JS Date object at runtime (not a
   // string, despite the ::date cast), so every key must be normalized before
   // use as a Map key or it'll never match the string keys built below.
-  const monthKey = (value: unknown) => new Date(value as string | Date).toISOString().slice(0, 10);
+  const dayKey = (value: unknown) => new Date(value as string | Date).toISOString().slice(0, 10);
 
-  const workspacesByMonth = new Map<string, number>();
+  const workspacesByDay = new Map<string, number>();
   for (const r of workspaceRows as Record<string, unknown>[]) {
-    workspacesByMonth.set(monthKey(r.month), r.n as number);
+    workspacesByDay.set(dayKey(r.day), r.n as number);
   }
-  const usersByMonth = new Map<string, number>();
+  const usersByDay = new Map<string, number>();
   for (const r of userRows as Record<string, unknown>[]) {
-    usersByMonth.set(monthKey(r.month), r.n as number);
+    usersByDay.set(dayKey(r.day), r.n as number);
   }
 
-  const months = [...workspacesByMonth.keys()].sort();
-  const start = new Date(months[0]);
+  const days = [...workspacesByDay.keys()].sort();
+  const start = new Date(days[0]);
   const end = new Date();
-  end.setDate(1);
+  end.setUTCHours(0, 0, 0, 0);
 
   const points: GrowthPoint[] = [];
   let cumulativeWorkspaces = 0;
   let cumulativeUsers = 0;
-  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   while (cursor <= end) {
     const key = cursor.toISOString().slice(0, 10);
-    cumulativeWorkspaces += workspacesByMonth.get(key) ?? 0;
-    cumulativeUsers += usersByMonth.get(key) ?? 0;
+    cumulativeWorkspaces += workspacesByDay.get(key) ?? 0;
+    cumulativeUsers += usersByDay.get(key) ?? 0;
     points.push({
-      month: key,
-      label: cursor.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+      day: key,
+      label: cursor.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       workspaces: cumulativeWorkspaces,
       users: cumulativeUsers,
     });
-    cursor.setMonth(cursor.getMonth() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return points;
 }

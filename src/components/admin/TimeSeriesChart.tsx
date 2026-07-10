@@ -94,7 +94,8 @@ export function TimeSeriesChart({
           />
         ))}
         <path d={areaPath} fill={fillColor} stroke="none" />
-        <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke={color} strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" />
+        {n === 1 && <circle cx={x(0)} cy={y(data[0].value)} r={5.5} fill={color} stroke="white" strokeWidth={2} />}
         {hoverIndex !== null && (
           <>
             <line
@@ -105,7 +106,7 @@ export function TimeSeriesChart({
               stroke="#d3d9e5"
               strokeWidth={1}
             />
-            <circle cx={x(hoverIndex)} cy={y(data[hoverIndex].value)} r={4} fill={color} stroke="white" strokeWidth={1.5} />
+            <circle cx={x(hoverIndex)} cy={y(data[hoverIndex].value)} r={5.5} fill={color} stroke="white" strokeWidth={2} />
           </>
         )}
         {labelIndices.map((i) => (
