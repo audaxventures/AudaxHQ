@@ -230,7 +230,7 @@ const WELCOME_STEPS: { title: string; body: string; bg: string; fg: string }[] =
  * (no React Email / template engine) to match sendPasscodeResetEmail's
  * dependency-free approach — email clients need inline CSS regardless, so a
  * template component wouldn't save much here. The dashboard mockup image is
- * the same static /dashboard-preview.png used in the in-app welcome popup
+ * the same static /demodashboardweb.png used in the in-app welcome popup
  * (see src/components/WelcomeModal.tsx) — regenerate it there if the app's
  * look changes.
  */
@@ -238,7 +238,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
   const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
   const firstName = ownerName.trim().split(/\s+/)[0] || ownerName;
   const origin = new URL(appUrl).origin;
-  const previewImageUrl = `${origin}/dashboard-preview.png`;
+  const previewImageUrl = `${origin}/demodashboardweb.png`;
   const supportEmail = "info@audaxventures.ca";
 
   const stepsHtml = WELCOME_STEPS.map(

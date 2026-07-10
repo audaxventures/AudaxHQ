@@ -63,10 +63,11 @@ const GALLERY = [
   { src: "/democlientweb.png", alt: "AudaxHQ clients list" },
   { src: "/meetingnotes.png", alt: "AudaxHQ meeting notes list" },
   { src: "/todo.png", alt: "AudaxHQ to-do board" },
-  { src: null, filename: "leadsdesktop.png", label: "Leads & Pipeline" },
-  { src: null, filename: "revenuedesktop.png", label: "Revenue Tracking" },
-  { src: null, filename: "timetrackerdesktop.png", label: "Time & Cost Tracker" },
-  { src: null, filename: "calendardesktop.png", label: "Calendar & Follow-ups" },
+  { src: "/leadsdesktop.png", alt: "AudaxHQ leads pipeline" },
+  { src: "/newclientdesktop.png", alt: "AudaxHQ new client form" },
+  { src: "/revenuetrackingdesktop.png", alt: "AudaxHQ revenue tracking" },
+  { src: "/costtrackerdesktop.png", alt: "AudaxHQ hour and cost tracker" },
+  { src: "/settingsdesktop.png", alt: "AudaxHQ settings" },
 ];
 
 const FAQ_ITEMS = [
@@ -177,30 +178,40 @@ export default function AboutPage() {
 
       <div id="features" className="bg-cream-100">
         <Section>
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">Core features</span>
-            <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Everything you need to run your business.
-            </h2>
-          </div>
-          <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-navy-100 bg-white p-5">
-                <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${FEATURE_TONE[f.tone]}`}>
-                  <f.icon size={20} />
-                </span>
-                <h3 className="mt-3 font-heading text-base font-semibold text-navy-900">{f.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-navy-500">{f.description}</p>
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div className="aspect-[3/4] overflow-hidden rounded-2xl shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
+              <img
+                src="/todolaptop.png"
+                alt="A person reviewing their AudaxHQ to-do board on their laptop"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">Core features</span>
+              <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
+                Everything you need to run your business.
+              </h2>
+              <div className="mt-8 grid grid-cols-2 gap-6">
+                {FEATURES.map((f) => (
+                  <div key={f.title} className="rounded-2xl border border-navy-100 bg-white p-5">
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${FEATURE_TONE[f.tone]}`}>
+                      <f.icon size={20} />
+                    </span>
+                    <h3 className="mt-3 font-heading text-base font-semibold text-navy-900">{f.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-navy-500">{f.description}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <Link
-              href="/#features"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-burnt-600 hover:text-burnt-700"
-            >
-              See all features <ArrowRight size={16} />
-            </Link>
+              <div className="mt-8">
+                <Link
+                  href="/#features"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-burnt-600 hover:text-burnt-700"
+                >
+                  See all features <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
           </div>
         </Section>
       </div>

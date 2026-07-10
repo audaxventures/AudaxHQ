@@ -77,7 +77,7 @@ export function WelcomeModal({ ownerName, businessName }: { ownerName: string; b
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element -- static illustrative screenshot, not a real image asset needing optimization */}
           <img
-            src="/dashboard-preview.png"
+            src="/demodashboardweb.png"
             alt=""
             className="mt-8 w-full -rotate-1 rounded-xl shadow-lg ring-1 ring-navy-900/5"
           />
