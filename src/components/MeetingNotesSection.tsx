@@ -64,7 +64,7 @@ export function MeetingNotesSection({ owner, notes }: { owner: Owner; notes: Mee
           type="submit"
           className="rounded-lg bg-navy-900 px-3.5 py-1.5 text-sm font-medium text-cream-50 hover:bg-navy-800 cursor-pointer transition-colors"
         >
-          Add meeting note
+          Save meeting note
         </button>
       </form>
 
