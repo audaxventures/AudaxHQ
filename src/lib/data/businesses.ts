@@ -40,25 +40,35 @@ export interface CreateBusinessInput {
 
 /**
  * Creates a new tenant workspace: the business row, its account_emails
- * entry, and a starter set of lookup rows (work types, lead sources,
- * to-do types) so the new owner isn't dropped into an empty picklist
- * everywhere. All in one transaction — account_emails' primary key on
- * email is what actually enforces global email uniqueness (see
- * lookupAccountEmail), so if the email is already taken this whole
- * transaction rolls back atomically and no orphan business row is left
- * behind. The business id is generated here (rather than left to the
- * column's default) so it can be reused across every statement in the
- * batch, since sql.transaction() can't reference an earlier statement's
- * result from a later one.
+ * entry, a team_members row for the owner (linked back via
+ * owner_team_member_id — see migration 022) so they can log their own
+ * time entries and appear in Settings > Team Members immediately instead
+ * of needing to add and link themselves manually, and a starter set of
+ * lookup rows (work types, lead sources, to-do types) so the new owner
+ * isn't dropped into an empty picklist everywhere. All in one transaction
+ * — account_emails' primary key on email is what actually enforces global
+ * email uniqueness (see lookupAccountEmail), so if the email is already
+ * taken this whole transaction rolls back atomically and no orphan
+ * business row is left behind. The business id and owner team_members id
+ * are both generated here (rather than left to their columns' defaults)
+ * so they can be reused across every statement in the batch, since
+ * sql.transaction() can't reference an earlier statement's result from a
+ * later one. The owner's team_members row is inserted before the
+ * businesses.owner_team_member_id update (rather than in the same insert
+ * as the business) because the two tables' foreign keys point at each
+ * other and neither is deferrable.
  */
 export async function createBusiness(input: CreateBusinessInput): Promise<Business> {
   const businessId = randomUUID();
+  const ownerTeamMemberId = randomUUID();
   await sql.transaction([
     sql`
       insert into businesses (id, name, owner_name, owner_email, owner_passcode_hash, owner_passcode_salt, timezone)
       values (${businessId}, ${input.name}, ${input.ownerName}, ${input.ownerEmail}, ${input.passcodeHash}, ${input.passcodeSalt}, ${input.timezone})
     `,
     sql`insert into account_emails (email, business_id, role) values (${input.ownerEmail}, ${businessId}, 'OWNER')`,
+    sql`insert into team_members (id, business_id, name) values (${ownerTeamMemberId}, ${businessId}, ${input.ownerName})`,
+    sql`update businesses set owner_team_member_id = ${ownerTeamMemberId} where id = ${businessId}`,
     sql`
       insert into work_types (business_id, name, is_fallback) values
         (${businessId}, 'Consulting', false),
