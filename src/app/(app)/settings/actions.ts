@@ -228,3 +228,9 @@ export async function submitFeedback(formData: FormData) {
   });
   revalidatePath("/settings/feedback");
 }
+
+export async function deleteFeedback(feedbackId: string) {
+  const user = await requireOwner();
+  await feedback.deleteFeedback(user.businessId, feedbackId);
+  revalidatePath("/settings/feedback");
+}

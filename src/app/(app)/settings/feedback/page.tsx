@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackStatusBadge } from "@/components/ui/Badge";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
+import { DeleteFeedbackButton } from "@/components/feedback/DeleteFeedbackButton";
 import { listFeedbackForBusiness } from "@/lib/data/feedback";
 import { requireOwner } from "@/lib/currentUser";
 import { formatDate } from "@/lib/format";
@@ -33,7 +34,10 @@ export default async function FeedbackSettingsPage() {
                 <p className="text-xs text-navy-400">
                   {f.submittedByName} · {formatDate(f.createdAt)}
                 </p>
-                <FeedbackStatusBadge status={f.status} />
+                <div className="flex items-center gap-3">
+                  <FeedbackStatusBadge status={f.status} />
+                  <DeleteFeedbackButton feedbackId={f.id} />
+                </div>
               </div>
               <p className="text-sm text-navy-700 whitespace-pre-wrap">{f.message}</p>
             </div>

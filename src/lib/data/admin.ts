@@ -237,12 +237,13 @@ function mapFeedbackItem(row: Record<string, unknown>): AdminFeedbackItem {
   };
 }
 
-/** Every feedback submission across every workspace, newest first. */
+/** Every open feedback submission across every workspace, newest first — completed items drop off this triage list once marked done. */
 export async function listAllFeedback(): Promise<AdminFeedbackItem[]> {
   const rows = await sql`
     select f.*, b.name as business_name
     from feedback f
     join businesses b on b.id = f.business_id
+    where f.status != 'done'
     order by f.created_at desc
   `;
   return rows.map((r) => mapFeedbackItem(r as Record<string, unknown>));
@@ -250,6 +251,10 @@ export async function listAllFeedback(): Promise<AdminFeedbackItem[]> {
 
 export async function setFeedbackStatus(feedbackId: string, status: FeedbackStatus): Promise<void> {
   await sql`update feedback set status = ${status} where id = ${feedbackId}`;
+}
+
+export async function deleteFeedback(feedbackId: string): Promise<void> {
+  await sql`delete from feedback where id = ${feedbackId}`;
 }
 
 export async function suspendBusiness(businessId: string): Promise<void> {

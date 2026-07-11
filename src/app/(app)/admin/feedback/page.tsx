@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackStatusSelect } from "@/components/admin/FeedbackStatusSelect";
+import { DeleteFeedbackButton } from "@/components/admin/DeleteFeedbackButton";
 import { listAllFeedback } from "@/lib/data/admin";
 import { formatDate } from "@/lib/format";
 
@@ -25,7 +26,10 @@ export default async function AdminFeedbackPage() {
                     {f.submittedByName} ({f.submittedByRole === "OWNER" ? "Owner" : "Team member"}) · {formatDate(f.createdAt)}
                   </p>
                 </div>
-                <FeedbackStatusSelect feedbackId={f.id} status={f.status} />
+                <div className="flex items-center gap-3">
+                  <FeedbackStatusSelect feedbackId={f.id} status={f.status} />
+                  <DeleteFeedbackButton feedbackId={f.id} />
+                </div>
               </div>
               <p className="text-sm text-navy-700 whitespace-pre-wrap">{f.message}</p>
             </div>

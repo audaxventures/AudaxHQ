@@ -141,7 +141,7 @@ export function InvoiceAgeBracketBadge({ bracket, label }: { bracket: InvoiceAge
   return <Badge tone={INVOICE_AGE_BRACKET_TONE[bracket]}>{label}</Badge>;
 }
 
-const FEEDBACK_STATUS_TONE: Record<FeedbackStatus, Tone> = {
+export const FEEDBACK_STATUS_TONE: Record<FeedbackStatus, Tone> = {
   new: "slate",
   planned: "gold",
   done: "sage",

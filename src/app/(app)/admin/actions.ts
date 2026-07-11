@@ -42,3 +42,9 @@ export async function updateFeedbackStatus(feedbackId: string, status: FeedbackS
   await admin.setFeedbackStatus(feedbackId, status);
   revalidatePath("/admin/feedback");
 }
+
+export async function deleteFeedback(feedbackId: string) {
+  await requirePlatformAdmin();
+  await admin.deleteFeedback(feedbackId);
+  revalidatePath("/admin/feedback");
+}

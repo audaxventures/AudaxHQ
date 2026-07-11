@@ -35,3 +35,8 @@ export async function listFeedbackForBusiness(businessId: string): Promise<Feedb
   `;
   return rows.map((r) => mapFeedback(r as Record<string, unknown>));
 }
+
+/** Scoped by businessId so a workspace can only delete its own submissions. */
+export async function deleteFeedback(businessId: string, feedbackId: string): Promise<void> {
+  await sql`delete from feedback where id = ${feedbackId} and business_id = ${businessId}`;
+}
