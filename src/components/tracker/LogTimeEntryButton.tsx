@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Plus, Building2, Calendar, User, List, Clock, DollarSign, FileText } from "lucide-react";
+import { Plus, Building2, User, List, Clock, DollarSign, FileText } from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
@@ -288,7 +288,7 @@ export function LogTimeDrawer({
                 type="date"
                 required
                 defaultValue={entry ? formatDateInput(entry.date) : undefined}
-                icon={Calendar}
+                className="min-w-0"
               />
             </FieldGroup>
             <div className={cn("grid gap-3", lockedTeamMember ? "grid-cols-1" : "grid-cols-2")}>
@@ -374,7 +374,7 @@ export function LogTimeDrawer({
                 type="date"
                 required
                 defaultValue={entry ? formatDateInput(entry.date) : undefined}
-                icon={Calendar}
+                className="min-w-0"
               />
             </FieldGroup>
             <FieldGroup>

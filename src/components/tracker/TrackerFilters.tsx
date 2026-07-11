@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Calendar, DollarSign, List, Search, Target, User } from "lucide-react";
+import { Building2, DollarSign, List, Search, Target, User } from "lucide-react";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import type { TeamMember, WorkCategory } from "@/lib/types";
 
@@ -137,7 +137,7 @@ export function TrackerFilters({
             type="date"
             value={filters.dateFrom ?? ""}
             onChange={(e) => update("dateFrom", e.target.value)}
-            icon={Calendar}
+            className="min-w-0"
           />
         </FieldGroup>
         <FieldGroup>
@@ -147,7 +147,7 @@ export function TrackerFilters({
             type="date"
             value={filters.dateTo ?? ""}
             onChange={(e) => update("dateTo", e.target.value)}
-            icon={Calendar}
+            className="min-w-0"
           />
         </FieldGroup>
       </div>

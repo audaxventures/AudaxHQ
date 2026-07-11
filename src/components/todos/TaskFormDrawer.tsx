@@ -178,7 +178,7 @@ export function TaskFormDrawer({
         <input type="hidden" name="clientId" value={resolvedClientId} />
         <input type="hidden" name="leadId" value={resolvedLeadId} />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FieldGroup>
             <Label htmlFor="task-owner">Client / Lead</Label>
             <Select
