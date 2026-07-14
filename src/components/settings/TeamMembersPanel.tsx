@@ -1,12 +1,12 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { Calendar, Check, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { InfoNote } from "@/components/ui/InfoNote";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
-import type { TeamMember } from "@/lib/types";
+import type { CalendarFeed, TeamMember } from "@/lib/types";
 import {
   activateTeamMember,
   createTeamMember,
@@ -20,6 +20,7 @@ import {
   updateClientAccess,
   updateTeamMember,
 } from "@/app/(app)/tracker/actions";
+import { addCalendarFeed, removeCalendarFeed, syncCalendarFeedNow } from "@/lib/actions/calendarFeeds";
 
 interface ClientOption {
   id: string;
@@ -268,19 +269,119 @@ function AccessPanel({
   );
 }
 
+function CalendarFeedPanel({ member, feeds, onClose }: { member: TeamMember; feeds: CalendarFeed[]; onClose: () => void }) {
+  const [adding, setAdding] = useState(feeds.length === 0);
+  const [, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  return (
+    <div className="space-y-3 rounded-lg border border-navy-100 bg-navy-50/50 p-3">
+      {feeds.map((feed) => (
+        <div key={feed.id} className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-navy-800">{feed.label}</p>
+            <p className="text-xs text-navy-400">
+              {feed.lastSyncError ? (
+                <span className="text-brick-600">Couldn&apos;t sync: {feed.lastSyncError}</span>
+              ) : feed.lastSyncedAt ? (
+                `Synced ${new Date(feed.lastSyncedAt).toLocaleString()}`
+              ) : (
+                "Not synced yet"
+              )}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => startTransition(() => void syncCalendarFeedNow(feed.id))}
+              className="p-1.5 text-navy-300 hover:text-navy-600 cursor-pointer"
+              aria-label="Sync now"
+              title="Sync now"
+            >
+              <RefreshCw size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`Remove "${feed.label}"? Its events will disappear from the calendar.`)) {
+                  startTransition(() => void removeCalendarFeed(feed.id));
+                }
+              }}
+              className="p-1.5 text-navy-300 hover:text-brick-600 cursor-pointer"
+              aria-label="Remove calendar"
+              title="Remove"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {adding ? (
+        <form
+          ref={formRef}
+          action={(formData) => {
+            startTransition(async () => {
+              await addCalendarFeed(member.id, formData);
+            });
+            formRef.current?.reset();
+            setAdding(false);
+          }}
+          className="space-y-2"
+        >
+          <Input name="label" placeholder="Label (e.g. Google Calendar)" />
+          <Input name="feedUrl" type="url" placeholder="Secret address in iCal format" required />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 cursor-pointer"
+            >
+              Connect
+            </button>
+            {feeds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAdding(false)}
+                className="rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-600 cursor-pointer"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-1.5 text-xs font-medium text-navy-600 hover:text-navy-900 cursor-pointer"
+        >
+          <Plus size={12} /> Connect another calendar
+        </button>
+      )}
+
+      <button type="button" onClick={onClose} className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer">
+        Close
+      </button>
+    </div>
+  );
+}
+
 function TeamMemberRow({
   member,
   clients,
   accessibleClientIds,
   isLinkedToOwner,
+  feeds,
 }: {
   member: TeamMember;
   clients: ClientOption[];
   accessibleClientIds: string[];
   isLinkedToOwner: boolean;
+  feeds: CalendarFeed[];
 }) {
   const [editing, setEditing] = useState(false);
   const [managingAccess, setManagingAccess] = useState(false);
+  const [managingCalendar, setManagingCalendar] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -301,7 +402,7 @@ function TeamMemberRow({
       {editing ? (
         <TeamMemberEditForm member={member} onDone={() => setEditing(false)} />
       ) : (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <p className={cn("truncate text-sm font-medium", member.active ? "text-navy-900" : "text-navy-400")}>
@@ -319,7 +420,7 @@ function TeamMemberRow({
               {member.hasLogin ? ` · Has login` : " · No login"}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
             <button
               type="button"
               onClick={() =>
@@ -342,6 +443,18 @@ function TeamMemberRow({
               aria-label="Manage login and access"
             >
               <ShieldCheck size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setManagingCalendar((v) => !v)}
+              className={cn(
+                "p-1.5 cursor-pointer",
+                managingCalendar ? "text-burnt-600" : "text-navy-300 hover:text-navy-600"
+              )}
+              aria-label="Manage connected calendar"
+              title="Connect their calendar"
+            >
+              <Calendar size={14} />
             </button>
             <button
               type="button"
@@ -387,6 +500,12 @@ function TeamMemberRow({
             accessibleClientIds={accessibleClientIds}
             onClose={() => setManagingAccess(false)}
           />
+        </div>
+      )}
+
+      {managingCalendar && !editing && (
+        <div className="mt-3">
+          <CalendarFeedPanel member={member} feeds={feeds} onClose={() => setManagingCalendar(false)} />
         </div>
       )}
     </div>
@@ -445,11 +564,13 @@ export function TeamMembersPanel({
   clients,
   clientAccess,
   ownerTeamMemberId,
+  calendarFeeds,
 }: {
   teamMembers: TeamMember[];
   clients: ClientOption[];
   clientAccess: Record<string, string[]>;
   ownerTeamMemberId: string | null;
+  calendarFeeds: CalendarFeed[];
 }) {
   return (
     <div>
@@ -464,6 +585,7 @@ export function TeamMembersPanel({
               clients={clients}
               accessibleClientIds={clientAccess[m.id] ?? []}
               isLinkedToOwner={m.id === ownerTeamMemberId}
+              feeds={calendarFeeds.filter((f) => f.teamMemberId === m.id)}
             />
           ))}
         </div>
@@ -480,6 +602,11 @@ export function TeamMembersPanel({
           <p className="mt-2 text-navy-500">
             If you added a row here to track your own hours, click <strong>This is me</strong> on it — otherwise
             to-dos assigned to that row won&apos;t show up on your own board.
+          </p>
+          <p className="mt-2 text-navy-500">
+            Click the <Calendar size={13} className="inline -mt-0.5 text-navy-600" /> calendar icon to connect their
+            Google/Outlook/Apple calendar (paste its &ldquo;secret address in iCal format&rdquo;) so their busy time
+            shows up on the shared calendar too — read-only, nothing is written back to it.
           </p>
         </InfoNote>
       </div>

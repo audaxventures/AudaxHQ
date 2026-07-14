@@ -25,3 +25,41 @@ export function listTimezones(): string[] {
   }
   return [DEFAULT_TIMEZONE];
 }
+
+/** How far `timeZone`'s wall clock is ahead of UTC, in ms, at the given instant (negative west of UTC). */
+function tzOffsetMillis(timeZone: string, atUtcMillis: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(atUtcMillis));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  return asUtc - atUtcMillis;
+}
+
+/**
+ * Converts a wall-clock date/time in `timeZone` to the UTC instant it represents — e.g. for
+ * parsing an ICS `DTSTART;TZID=America/Edmonton:20260719T143000` value. Iterates once to handle
+ * the DST-transition edge case where the offset at the guessed instant differs from the offset
+ * that actually applies to the wall-clock time.
+ */
+export function zonedTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  timeZone: string
+): Date {
+  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  const offset = tzOffsetMillis(timeZone, naiveUtc);
+  const offset2 = tzOffsetMillis(timeZone, naiveUtc - offset);
+  return new Date(naiveUtc - offset2);
+}

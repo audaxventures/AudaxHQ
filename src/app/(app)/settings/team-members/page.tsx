@@ -4,14 +4,16 @@ import { TeamMembersPanel } from "@/components/settings/TeamMembersPanel";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listAllClientAccess } from "@/lib/data/clientAccess";
 import { listClients } from "@/lib/data/clients";
+import { listCalendarFeeds } from "@/lib/data/calendarFeeds";
 import { requireOwner } from "@/lib/currentUser";
 
 export default async function TeamMembersSettingsPage() {
   const user = await requireOwner();
-  const [teamMembers, clients, clientAccess] = await Promise.all([
+  const [teamMembers, clients, clientAccess, calendarFeeds] = await Promise.all([
     listTeamMembers(user.businessId, { includeInactive: true }),
     listClients(user.businessId),
     listAllClientAccess(user.businessId),
+    listCalendarFeeds(user.businessId),
   ]);
   return (
     <Card className="p-6">
@@ -24,6 +26,7 @@ export default async function TeamMembersSettingsPage() {
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         clientAccess={clientAccess}
         ownerTeamMemberId={user.business.ownerTeamMemberId}
+        calendarFeeds={calendarFeeds}
       />
     </Card>
   );

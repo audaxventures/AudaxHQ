@@ -6,7 +6,7 @@ Internal client, lead, and task management app for Audax Ventures. Single-user, 
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — brand theme (navy / cream / burnt orange) defined in `src/app/globals.css`
-- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql` + `migrations/019_drop_business_id_defaults.sql` + `migrations/020_business_suspension.sql` + `migrations/021_invoice_hourly.sql` + `migrations/022_owner_team_member_link.sql` + `migrations/023_business_onboarding.sql` + `migrations/024_meeting_note_title.sql` + `migrations/025_drop_billing_entities.sql` + `migrations/026_meeting_note_action_items.sql` + `migrations/027_feedback.sql` + `migrations/028_task_owned_by.sql` + `migrations/029_meeting_scheduling.sql`; query helpers in `src/lib/data/`
+- **`@neondatabase/serverless`** — talks to Postgres over HTTP, no ORM. Schema lives in `migrations/001_init.sql` + `migrations/002_feature_update.sql` + `migrations/003_work_type_update.sql` + `migrations/004_documents.sql` + `migrations/005_hour_cost_tracker.sql` + `migrations/006_work_categories.sql` + `migrations/007_settings.sql` + `migrations/008_editable_categories.sql` + `migrations/009_todo_priority.sql` + `migrations/010_profile_timezone.sql` + `migrations/011_client_lead_color.sql` + `migrations/012_business_logo.sql` + `migrations/013_passcode_reset.sql` + `migrations/014_team_member_access.sql` + `migrations/015_followup_assignment.sql` + `migrations/016_lead_documents.sql` + `migrations/017_meeting_note_agenda.sql` + `migrations/018_businesses.sql` + `migrations/019_drop_business_id_defaults.sql` + `migrations/020_business_suspension.sql` + `migrations/021_invoice_hourly.sql` + `migrations/022_owner_team_member_link.sql` + `migrations/023_business_onboarding.sql` + `migrations/024_meeting_note_title.sql` + `migrations/025_drop_billing_entities.sql` + `migrations/026_meeting_note_action_items.sql` + `migrations/027_feedback.sql` + `migrations/028_task_owned_by.sql` + `migrations/029_meeting_scheduling.sql` + `migrations/030_calendar_feeds.sql`; query helpers in `src/lib/data/`
 - **Supabase Storage** — private buckets for client and lead document uploads and a public bucket for the business logo (`src/lib/storage.ts`); Neon only stores metadata and storage paths, never the files themselves
 - **Resend** — sends "forgot passcode" reset emails (`src/lib/email.ts`); optional, everything else works without it
 - **Framer Motion** for page-transition polish
@@ -58,6 +58,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/027_feedback.sql
    psql "$DATABASE_URL" -f migrations/028_task_owned_by.sql
    psql "$DATABASE_URL" -f migrations/029_meeting_scheduling.sql
+   psql "$DATABASE_URL" -f migrations/030_calendar_feeds.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -185,6 +186,7 @@ migrations/026_meeting_note_action_items.sql  adds todos.meeting_note_id (action
 migrations/027_feedback.sql  adds the feedback table (Feedback page + admin Feedback tab)
 migrations/028_task_owned_by.sql  adds todos.owned_by (TEAM/EXTERNAL — separates client/lead action items from the team's own to-do board)
 migrations/029_meeting_scheduling.sql  adds meeting_notes.start_time/duration_minutes/location — lets a meeting note be scheduled ahead of time, not just logged after
+migrations/030_calendar_feeds.sql      adds calendar_feeds + calendar_feed_events — one-way ICS import of a team member's existing calendar onto the shared Audax calendar (Settings > Team Members > the calendar icon on a row; paste their calendar's "secret address in iCal format" from Google/Outlook/Apple). Read-only, no OAuth: fetched and re-parsed lazily whenever someone opens /calendar and a feed hasn't synced in the last 30 minutes (same lazy pattern as recurring invoices below), or on demand via "Sync now" in Settings
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

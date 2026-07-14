@@ -6,6 +6,7 @@ import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { syncStaleCalendarFeeds } from "@/lib/data/calendarFeeds";
 import { requireCurrentUser } from "@/lib/currentUser";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -34,7 +35,8 @@ export default async function CalendarPage({
   const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
   const accessibleClientIds = await accessibleClientIdsFor(user);
 
-  const allEvents = await listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, {
+  await syncStaleCalendarFeeds(user.businessId, timezone);
+  const allEvents = await listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, timezone, {
     restrictToTeamMemberId: teamMember?.id,
     accessibleClientIds,
   });

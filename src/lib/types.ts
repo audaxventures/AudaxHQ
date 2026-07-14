@@ -234,6 +234,18 @@ export interface TeamMember {
   hasLogin: boolean;
 }
 
+/** A team member's connected external calendar (Google/Outlook/Apple "secret ICS URL") — see migration 030. One-way, read-only import. */
+export interface CalendarFeed {
+  id: string;
+  teamMemberId: string;
+  teamMemberName: string;
+  label: string;
+  feedUrl: string;
+  lastSyncedAt: string | null;
+  lastSyncError: string | null;
+  createdAt: string;
+}
+
 export type SessionRole = "OWNER" | "TEAM_MEMBER";
 
 /** The signed session cookie's payload — decoded on every request, so keep it minimal. */
