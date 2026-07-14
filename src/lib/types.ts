@@ -234,11 +234,17 @@ export interface TeamMember {
   hasLogin: boolean;
 }
 
-/** A team member's connected external calendar (Google/Outlook/Apple "secret ICS URL") — see migration 030. One-way, read-only import. */
+/**
+ * A connected external calendar (Google/Outlook/Apple "secret ICS URL") — see migration 030.
+ * One-way, read-only, self-managed: owned by whoever connected it, identified by
+ * teamMemberId (null means the business owner's own feed, since they may not have a
+ * team_members row).
+ */
 export interface CalendarFeed {
   id: string;
-  teamMemberId: string;
-  teamMemberName: string;
+  teamMemberId: string | null;
+  /** Display name of whoever connected it — the team member's name, or the business owner's name. */
+  ownerName: string;
   label: string;
   feedUrl: string;
   lastSyncedAt: string | null;

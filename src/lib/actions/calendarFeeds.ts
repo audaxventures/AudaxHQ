@@ -2,34 +2,38 @@
 
 import { revalidatePath } from "next/cache";
 import * as calendarFeeds from "@/lib/data/calendarFeeds";
-import { requireOwner } from "@/lib/currentUser";
+import { requireCurrentUser } from "@/lib/currentUser";
 
-function revalidate() {
-  revalidatePath("/settings/team-members");
-  revalidatePath("/calendar");
+/** null = the current user is the business owner, connecting their own (not a team member's) calendar. */
+async function currentIdentity() {
+  const user = await requireCurrentUser();
+  const teamMemberId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
+  return { businessId: user.businessId, teamMemberId, timezone: user.business.timezone };
 }
 
-export async function addCalendarFeed(teamMemberId: string, formData: FormData) {
-  const user = await requireOwner();
+export async function addMyCalendarFeed(formData: FormData) {
+  const { businessId, teamMemberId, timezone } = await currentIdentity();
   const feedUrl = String(formData.get("feedUrl") ?? "").trim();
   const label = String(formData.get("label") ?? "").trim() || "Calendar";
   if (!feedUrl) return;
 
-  const feed = await calendarFeeds.createCalendarFeed(user.businessId, { teamMemberId, label, feedUrl });
-  await calendarFeeds.syncCalendarFeed(feed.id, user.businessId, feed.feedUrl, user.business.timezone);
-  revalidate();
+  const feed = await calendarFeeds.createCalendarFeed(businessId, { teamMemberId, label, feedUrl });
+  await calendarFeeds.syncCalendarFeed(feed.id, businessId, feed.feedUrl, timezone);
+  revalidatePath("/calendar");
 }
 
-export async function removeCalendarFeed(id: string) {
-  const user = await requireOwner();
-  await calendarFeeds.deleteCalendarFeed(id, user.businessId);
-  revalidate();
+export async function removeMyCalendarFeed(id: string) {
+  const { businessId, teamMemberId } = await currentIdentity();
+  const feed = await calendarFeeds.getCalendarFeed(id, businessId);
+  if (!feed || feed.teamMemberId !== teamMemberId) return;
+  await calendarFeeds.deleteCalendarFeed(id, businessId);
+  revalidatePath("/calendar");
 }
 
-export async function syncCalendarFeedNow(id: string) {
-  const user = await requireOwner();
-  const feed = await calendarFeeds.getCalendarFeed(id, user.businessId);
-  if (!feed) return;
-  await calendarFeeds.syncCalendarFeed(id, user.businessId, feed.feedUrl, user.business.timezone);
-  revalidate();
+export async function syncMyCalendarFeedNow(id: string) {
+  const { businessId, teamMemberId, timezone } = await currentIdentity();
+  const feed = await calendarFeeds.getCalendarFeed(id, businessId);
+  if (!feed || feed.teamMemberId !== teamMemberId) return;
+  await calendarFeeds.syncCalendarFeed(id, businessId, feed.feedUrl, timezone);
+  revalidatePath("/calendar");
 }

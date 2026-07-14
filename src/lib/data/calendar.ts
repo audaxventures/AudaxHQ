@@ -27,7 +27,7 @@ export interface CalendarEvent {
 }
 
 export interface CalendarEventFilters {
-  /** Team-member scoping: only their own assigned tasks. Undefined/null = no restriction (owner). */
+  /** Team-member scoping: only their own assigned tasks, and only their own connected calendar (never a teammate's). Undefined/null = no restriction (owner). */
   restrictToTeamMemberId?: string | null;
   /** Team-member scoping: client-owned follow-ups/meetings restricted to this list — lead-owned ones are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
   accessibleClientIds?: string[] | null;
@@ -83,12 +83,17 @@ export async function listCalendarEvents(
     sql`
       select cfe.id, (cfe.start_at at time zone ${timezone})::date as date, cfe.title, cfe.all_day,
         to_char(cfe.start_at at time zone ${timezone}, 'HH24:MI:SS') as start_time_text,
-        tm.name as owner_name
+        coalesce(tm.name, b.owner_name) as owner_name
       from calendar_feed_events cfe
       join calendar_feeds cf on cf.id = cfe.feed_id
-      join team_members tm on tm.id = cf.team_member_id
+      left join team_members tm on tm.id = cf.team_member_id
+      left join businesses b on b.id = cf.business_id
       where cfe.business_id = ${businessId}
         and (cfe.start_at at time zone ${timezone})::date between ${from} and ${to}
+        and (
+          ${filters.restrictToTeamMemberId ?? null}::uuid is null
+          or cf.team_member_id = ${filters.restrictToTeamMemberId ?? null}
+        )
     `,
   ]);
 

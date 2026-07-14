@@ -8,8 +8,8 @@ const STALE_AFTER_MINUTES = 30;
 function mapCalendarFeed(row: Record<string, unknown>): CalendarFeed {
   return {
     id: row.id as string,
-    teamMemberId: row.team_member_id as string,
-    teamMemberName: row.team_member_name as string,
+    teamMemberId: (row.team_member_id as string | null) ?? null,
+    ownerName: row.owner_name as string,
     label: row.label as string,
     feedUrl: row.feed_url as string,
     lastSyncedAt: (row.last_synced_at as string | null) ?? null,
@@ -18,19 +18,21 @@ function mapCalendarFeed(row: Record<string, unknown>): CalendarFeed {
   };
 }
 
-export async function listCalendarFeeds(businessId: string): Promise<CalendarFeed[]> {
+/** teamMemberId null = the business owner's own feed(s). */
+export async function listMyCalendarFeeds(businessId: string, teamMemberId: string | null): Promise<CalendarFeed[]> {
   const rows = await sql`
-    select cf.*, tm.name as team_member_name
+    select cf.*, coalesce(tm.name, b.owner_name) as owner_name
     from calendar_feeds cf
-    join team_members tm on tm.id = cf.team_member_id
-    where cf.business_id = ${businessId}
-    order by tm.name asc, cf.created_at asc
+    left join team_members tm on tm.id = cf.team_member_id
+    left join businesses b on b.id = cf.business_id
+    where cf.business_id = ${businessId} and cf.team_member_id is not distinct from ${teamMemberId}
+    order by cf.created_at asc
   `;
   return rows.map((r) => mapCalendarFeed(r as Record<string, unknown>));
 }
 
 export interface CreateCalendarFeedInput {
-  teamMemberId: string;
+  teamMemberId: string | null;
   label: string;
   feedUrl: string;
 }
@@ -39,16 +41,19 @@ export async function createCalendarFeed(businessId: string, input: CreateCalend
   const rows = await sql`
     insert into calendar_feeds (business_id, team_member_id, label, feed_url)
     values (${businessId}, ${input.teamMemberId}, ${input.label}, ${input.feedUrl})
-    returning *, (select name from team_members where id = ${input.teamMemberId}) as team_member_name
+    returning id
   `;
-  return mapCalendarFeed(rows[0] as Record<string, unknown>);
+  const feed = await getCalendarFeed((rows[0] as Record<string, unknown>).id as string, businessId);
+  if (!feed) throw new Error("Couldn't create calendar feed.");
+  return feed;
 }
 
 export async function getCalendarFeed(id: string, businessId: string): Promise<CalendarFeed | null> {
   const rows = await sql`
-    select cf.*, tm.name as team_member_name
+    select cf.*, coalesce(tm.name, b.owner_name) as owner_name
     from calendar_feeds cf
-    join team_members tm on tm.id = cf.team_member_id
+    left join team_members tm on tm.id = cf.team_member_id
+    left join businesses b on b.id = cf.business_id
     where cf.id = ${id} and cf.business_id = ${businessId}
   `;
   return rows[0] ? mapCalendarFeed(rows[0] as Record<string, unknown>) : null;

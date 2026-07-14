@@ -1,9 +1,13 @@
 -- Audax HQ — one-way calendar feed import (phase 2 of the calendar
--- enhancement). A team member's existing calendar (Google/Outlook/Apple
--- "secret address in iCal format") gets pulled in read-only so the whole
--- team can see when they're busy, without any OAuth or two-way sync. Feed
--- URLs are owner-managed, the same way the owner already manages hourly
--- rates and client access for every team member in Settings > Team Members.
+-- enhancement). Anyone with a login (owner or team member) can connect
+-- their own existing calendar (Google/Outlook/Apple "secret address in
+-- iCal format") from the Calendar page, so their busy time shows up
+-- read-only, without any OAuth or two-way sync. Self-managed: only the
+-- connecting person can see, sync, or remove their own feed.
+--
+-- team_member_id is nullable — null means the feed belongs to the
+-- business owner (a business has exactly one, so that's unambiguous),
+-- since the owner doesn't necessarily have a team_members row.
 --
 -- Not breaking, purely additive.
 --
@@ -12,7 +16,7 @@
 create table calendar_feeds (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
-  team_member_id uuid not null references team_members(id) on delete cascade,
+  team_member_id uuid references team_members(id) on delete cascade,
   label text not null default 'Calendar',
   feed_url text not null,
   last_synced_at timestamptz,
