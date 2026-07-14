@@ -163,7 +163,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={NotebookPen} tone="slate" title="Meeting notes" />
-            <MeetingNotesSection owner={owner} notes={client.meetingNotes} />
+            <MeetingNotesSection owner={owner} notes={client.meetingNotes} today={today} />
           </Card>
 
           <Card className="p-6">

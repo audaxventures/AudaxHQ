@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import { formatDateInput } from "@/lib/format";
+import { formatDateInput, formatTime } from "@/lib/format";
 
 export type CalendarEventKind = "FOLLOW_UP" | "MEETING" | "TASK";
 
@@ -16,6 +16,8 @@ export interface CalendarEvent {
   kind: CalendarEventKind;
   date: string;
   title: string;
+  /** Formatted start time (e.g. "2:30 PM") — meetings only, and only when one was set. */
+  time: string | null;
   ownerName: string | null;
   href: string;
   completed: boolean;
@@ -50,7 +52,7 @@ export async function listCalendarEvents(
         )
     `,
     sql`
-      select m.id, m.meeting_date as date, m.client_id, m.lead_id,
+      select m.id, m.meeting_date as date, m.title, m.start_time, m.client_id, m.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name
       from meeting_notes m
       left join clients c on c.id = m.client_id
@@ -86,6 +88,7 @@ export async function listCalendarEvents(
       kind: "FOLLOW_UP",
       date: formatDateInput(row.date as string | Date),
       title: row.label as string,
+      time: null,
       ownerName: (row.owner_name as string | null) ?? null,
       href,
       completed: false,
@@ -99,7 +102,8 @@ export async function listCalendarEvents(
       id: row.id as string,
       kind: "MEETING",
       date: formatDateInput(row.date as string | Date),
-      title: "Meeting notes",
+      title: (row.title as string | null) ?? "Meeting",
+      time: formatTime(row.start_time as string | null),
       ownerName: (row.owner_name as string | null) ?? null,
       href,
       completed: false,
@@ -116,6 +120,7 @@ export async function listCalendarEvents(
       kind: "TASK",
       date: formatDateInput(row.date as string | Date),
       title: row.title as string,
+      time: null,
       ownerName: (row.owner_name as string | null) ?? null,
       href,
       completed: row.status === "COMPLETED",

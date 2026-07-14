@@ -7,6 +7,9 @@ interface MeetingNoteRow {
   client_id: string | null;
   lead_id: string | null;
   meeting_date: string;
+  start_time: string | null;
+  duration_minutes: number | null;
+  location: string | null;
   attendees: string | null;
   agenda: string | null;
   notes: string | null;
@@ -24,6 +27,9 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
     clientId: row.client_id,
     leadId: row.lead_id,
     meetingDate: row.meeting_date,
+    startTime: row.start_time,
+    durationMinutes: row.duration_minutes,
+    location: row.location,
     attendees: row.attendees,
     agenda: row.agenda,
     notes: row.notes,
@@ -45,7 +51,8 @@ export interface MeetingNoteFilters {
 export async function listMeetingNotes(businessId: string, filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
   const rows = await sql`
     select
-      m.id, m.title, m.client_id, m.lead_id, m.meeting_date, m.attendees, m.agenda, m.notes, m.action_items, m.created_at,
+      m.id, m.title, m.client_id, m.lead_id, m.meeting_date, m.start_time, m.duration_minutes, m.location,
+      m.attendees, m.agenda, m.notes, m.action_items, m.created_at,
       coalesce(c.company_name, l.company_name) as owner_name,
       coalesce(c.color, l.color) as owner_color,
       coalesce(
@@ -77,6 +84,9 @@ export interface CreateMeetingNoteInput {
   clientId?: string;
   leadId?: string;
   meetingDate: string;
+  startTime?: string | null;
+  durationMinutes?: number | null;
+  location?: string | null;
   attendees?: string | null;
   agenda?: string | null;
   notes?: string | null;
@@ -84,9 +94,12 @@ export interface CreateMeetingNoteInput {
 
 export async function createMeetingNote(businessId: string, input: CreateMeetingNoteInput): Promise<string> {
   const rows = await sql`
-    insert into meeting_notes (title, client_id, lead_id, business_id, meeting_date, attendees, agenda, notes)
+    insert into meeting_notes (
+      title, client_id, lead_id, business_id, meeting_date, start_time, duration_minutes, location, attendees, agenda, notes
+    )
     values (
-      ${input.title ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${businessId}, ${input.meetingDate}, ${input.attendees ?? null},
+      ${input.title ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${businessId}, ${input.meetingDate},
+      ${input.startTime ?? null}, ${input.durationMinutes ?? null}, ${input.location ?? null}, ${input.attendees ?? null},
       ${input.agenda ?? null}, ${input.notes ?? null}
     )
     returning id
@@ -97,6 +110,9 @@ export async function createMeetingNote(businessId: string, input: CreateMeeting
 export interface UpdateMeetingNoteInput {
   title?: string | null;
   meetingDate: string;
+  startTime?: string | null;
+  durationMinutes?: number | null;
+  location?: string | null;
   attendees?: string | null;
   agenda?: string | null;
   notes?: string | null;
@@ -111,8 +127,9 @@ export interface UpdateMeetingNoteInput {
 export async function updateMeetingNote(id: string, businessId: string, input: UpdateMeetingNoteInput): Promise<void> {
   await sql`
     update meeting_notes
-    set title = ${input.title ?? null}, meeting_date = ${input.meetingDate}, attendees = ${input.attendees ?? null},
-      agenda = ${input.agenda ?? null}, notes = ${input.notes ?? null}
+    set title = ${input.title ?? null}, meeting_date = ${input.meetingDate}, start_time = ${input.startTime ?? null},
+      duration_minutes = ${input.durationMinutes ?? null}, location = ${input.location ?? null},
+      attendees = ${input.attendees ?? null}, agenda = ${input.agenda ?? null}, notes = ${input.notes ?? null}
     where id = ${id} and business_id = ${businessId}
   `;
 }

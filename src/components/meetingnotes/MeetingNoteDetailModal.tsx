@@ -2,17 +2,27 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { Clock, MapPin } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
+import { AddToCalendarLinks } from "@/components/meetingnotes/AddToCalendarLinks";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { updateMeetingNote } from "@/lib/actions/meetingnotes";
 import { setTaskStatus } from "@/lib/actions/tasks";
-import { formatDateInput } from "@/lib/format";
+import { formatDateInput, formatTimeInput } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
+
+const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
+
+function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = minutes / 60;
+  return `${hours} hr${hours > 1 ? "s" : ""}`;
+}
 
 export function MeetingNoteDetailModal({
   note,
@@ -86,6 +96,37 @@ export function MeetingNoteDetailModal({
             <Input id="attendees" name="attendees" defaultValue={note.attendees ?? ""} placeholder="Jane, Bob…" />
           </FieldGroup>
         </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FieldGroup>
+            <Label htmlFor="startTime">Time (optional)</Label>
+            <Input id="startTime" name="startTime" type="time" defaultValue={formatTimeInput(note.startTime)} className="min-w-0" />
+          </FieldGroup>
+          <FieldGroup>
+            <Label htmlFor="durationMinutes">Duration</Label>
+            <Select id="durationMinutes" name="durationMinutes" defaultValue={String(note.durationMinutes ?? 30)} icon={Clock}>
+              {DURATION_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {durationLabel(m)}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        </div>
+        <FieldGroup>
+          <Label htmlFor="location">Location (optional)</Label>
+          <Input id="location" name="location" defaultValue={note.location ?? ""} placeholder="Zoom, address, phone call…" icon={MapPin} />
+        </FieldGroup>
+        {note.meetingDate && (
+          <AddToCalendarLinks
+            meeting={{
+              title: note.title ?? "Meeting",
+              location: note.location,
+              date: formatDateInput(note.meetingDate),
+              startTime: note.startTime,
+              durationMinutes: note.durationMinutes,
+            }}
+          />
+        )}
         <FieldGroup>
           <Label htmlFor="agenda">Agenda</Label>
           <RichTextEditor id="agenda" name="agenda" rows={3} defaultValue={note.agenda} placeholder="What's planned for this meeting…" />

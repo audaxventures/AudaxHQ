@@ -39,6 +39,24 @@ export function formatDateInput(value: string | Date | null | undefined): string
   return date.toISOString().slice(0, 10);
 }
 
+/** Formats a Postgres `time` string ("14:30:00" or "14:30") as "2:30 PM". */
+export function formatTime(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const [hoursStr, minutesStr] = value.split(":");
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${displayHours}:${String(minutes).padStart(2, "0")} ${period}`;
+}
+
+/** "HH:MM" (24-hour, for a <input type="time"> defaultValue) from a Postgres `time` string. */
+export function formatTimeInput(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.slice(0, 5);
+}
+
 const MONTH_NAMES = [
   "January",
   "February",

@@ -35,6 +35,22 @@ function extractRichTextFields(formData: FormData): { agenda: string | null; not
   };
 }
 
+/** Start time / duration / location — see migration 029. All optional, shared by every create/update/schedule entry point. */
+function extractSchedulingFields(formData: FormData): {
+  startTime: string | null;
+  durationMinutes: number | null;
+  location: string | null;
+} {
+  const startTime = (formData.get("startTime") as string) || null;
+  const durationRaw = Number(formData.get("durationMinutes"));
+  const location = (formData.get("location") as string)?.trim() || null;
+  return {
+    startTime,
+    durationMinutes: Number.isFinite(durationRaw) && durationRaw > 0 ? durationRaw : null,
+    location,
+  };
+}
+
 interface QueuedActionItem {
   text: string;
   dueDate: string | null;
@@ -103,12 +119,14 @@ export async function createMeetingNote(formData: FormData) {
   const actionItems = parseActionItems(formData);
   if ((!clientId && !leadId) || !meetingDate || (!fields && actionItems.length === 0)) return;
   const user = await resolveOwnerAccess({ clientId, leadId });
+  const scheduling = extractSchedulingFields(formData);
 
   const noteId = await meetingNotes.createMeetingNote(user.businessId, {
     title,
     clientId,
     leadId,
     meetingDate,
+    ...scheduling,
     attendees,
     agenda: fields?.agenda ?? null,
     notes: fields?.notes ?? null,
@@ -133,17 +151,49 @@ export async function createScopedMeetingNote(
 
   const clientId = owner.type === "CLIENT" ? owner.clientId : undefined;
   const leadId = owner.type === "LEAD" ? owner.leadId : undefined;
+  const scheduling = extractSchedulingFields(formData);
 
   const noteId = await meetingNotes.createMeetingNote(user.businessId, {
     title,
     clientId,
     leadId,
     meetingDate,
+    ...scheduling,
     attendees,
     agenda: fields?.agenda ?? null,
     notes: fields?.notes ?? null,
   });
   await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user));
+  revalidateOwner(clientId, leadId);
+}
+
+/**
+ * Fast-path scheduling: just a date/time/duration/location, no agenda/notes/
+ * action items required — that's the whole point (booking a slot shouldn't
+ * demand a full write-up). The same underlying record can be opened later
+ * via the full edit modal to add notes once the meeting has happened.
+ */
+export async function scheduleMeeting(
+  owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
+  formData: FormData
+) {
+  const user =
+    owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+  const meetingDate = String(formData.get("meetingDate") ?? "");
+  if (!meetingDate) return;
+
+  const clientId = owner.type === "CLIENT" ? owner.clientId : undefined;
+  const leadId = owner.type === "LEAD" ? owner.leadId : undefined;
+  const title = (formData.get("title") as string)?.trim() || null;
+  const scheduling = extractSchedulingFields(formData);
+
+  await meetingNotes.createMeetingNote(user.businessId, {
+    title,
+    clientId,
+    leadId,
+    meetingDate,
+    ...scheduling,
+  });
   revalidateOwner(clientId, leadId);
 }
 
@@ -158,11 +208,16 @@ export async function updateMeetingNote(
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
   const actionItems = parseActionItems(formData);
-  if (!meetingDate || (!fields && actionItems.length === 0)) return;
+  // Unlike create, an update is never rejected for being "empty" — the
+  // record already exists, and a meeting that's scheduled but hasn't
+  // happened yet (no agenda/notes) is a legitimate state to save.
+  if (!meetingDate) return;
+  const scheduling = extractSchedulingFields(formData);
 
   await meetingNotes.updateMeetingNote(id, user.businessId, {
     title,
     meetingDate,
+    ...scheduling,
     attendees,
     agenda: fields?.agenda ?? null,
     notes: fields?.notes ?? null,

@@ -161,7 +161,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={NotebookPen} tone="slate" title="Meeting notes" />
-            <MeetingNotesSection owner={owner} notes={lead.meetingNotes} />
+            <MeetingNotesSection owner={owner} notes={lead.meetingNotes} today={today} />
           </Card>
 
           <Card className="p-6">

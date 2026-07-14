@@ -86,6 +86,10 @@ export interface MeetingNote {
   clientId: string | null;
   leadId: string | null;
   meetingDate: string;
+  /** "HH:MM:SS" (24-hour) or null if only a date was set — see migration 029. */
+  startTime: string | null;
+  durationMinutes: number | null;
+  location: string | null;
   attendees: string | null;
   /** Rich text (sanitized HTML) — what's planned to be discussed, fillable before the meeting happens. */
   agenda: string | null;

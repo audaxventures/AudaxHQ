@@ -10,10 +10,11 @@ const KIND_PILL_CLASS: Record<CalendarEvent["kind"], string> = {
 
 export function CalendarPill({ event, truncate = true }: { event: CalendarEvent; truncate?: boolean }) {
   const label = event.ownerName ? `${event.title} — ${event.ownerName}` : event.title;
+  const fullLabel = event.time ? `${event.time} · ${label}` : label;
   return (
     <Link
       href={event.href}
-      title={label}
+      title={fullLabel}
       className={cn(
         "block rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight transition-colors",
         truncate ? "truncate" : "whitespace-normal",
@@ -21,6 +22,7 @@ export function CalendarPill({ event, truncate = true }: { event: CalendarEvent;
         event.completed && "opacity-50 line-through"
       )}
     >
+      {event.time && <span className="font-normal opacity-70">{event.time} · </span>}
       {label}
     </Link>
   );

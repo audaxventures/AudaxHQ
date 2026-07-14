@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
+import { Clock, MapPin } from "lucide-react";
 import { Input, Select, Label, FieldGroup } from "@/components/ui/Field";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
@@ -11,6 +12,14 @@ import { createMeetingNote } from "@/lib/actions/meetingnotes";
 interface Option {
   id: string;
   companyName: string;
+}
+
+const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
+
+function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = minutes / 60;
+  return `${hours} hr${hours > 1 ? "s" : ""}`;
 }
 
 function SubmitButton() {
@@ -93,6 +102,26 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
           <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
         </FieldGroup>
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FieldGroup>
+          <Label htmlFor="startTime">Time (optional)</Label>
+          <Input id="startTime" name="startTime" type="time" className="min-w-0" />
+        </FieldGroup>
+        <FieldGroup>
+          <Label htmlFor="durationMinutes">Duration</Label>
+          <Select id="durationMinutes" name="durationMinutes" defaultValue="30" icon={Clock}>
+            {DURATION_OPTIONS.map((m) => (
+              <option key={m} value={m}>
+                {durationLabel(m)}
+              </option>
+            ))}
+          </Select>
+        </FieldGroup>
+      </div>
+      <FieldGroup>
+        <Label htmlFor="location">Location (optional)</Label>
+        <Input id="location" name="location" placeholder="Zoom, address, phone call…" icon={MapPin} />
+      </FieldGroup>
       <FieldGroup>
         <Label htmlFor="agenda">Agenda</Label>
         <RichTextEditor id="agenda" name="agenda" rows={3} placeholder="What's planned for this meeting…" />
