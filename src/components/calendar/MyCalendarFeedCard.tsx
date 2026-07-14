@@ -1,10 +1,44 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { CalendarPlus, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { CalendarPlus, HelpCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import type { CalendarFeed } from "@/lib/types";
 import { addMyCalendarFeed, removeMyCalendarFeed, syncMyCalendarFeedNow } from "@/lib/actions/calendarFeeds";
+
+function WhereToFindIt() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs font-medium text-navy-500 hover:text-navy-800 cursor-pointer"
+      >
+        <HelpCircle size={12} /> Where do I find this?
+      </button>
+      {open && (
+        <dl className="mt-2 space-y-2 rounded-lg border border-navy-100 bg-white p-3 text-xs text-navy-600">
+          <div>
+            <dt className="font-medium text-navy-800">Google Calendar</dt>
+            <dd>
+              Settings → click the calendar under &ldquo;Settings for my calendars&rdquo; → Integrate calendar →
+              copy &ldquo;Secret address in iCal format.&rdquo;
+            </dd>
+          </div>
+          <div>
+            <dt className="font-medium text-navy-800">Outlook.com</dt>
+            <dd>Settings → Calendar → Shared calendars → Publish a calendar → choose it → copy the ICS link.</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-navy-800">Apple Calendar / iCloud</dt>
+            <dd>Right-click the calendar → Share Calendar → turn on Public Calendar → copy the link.</dd>
+          </div>
+        </dl>
+      )}
+    </div>
+  );
+}
 
 /** Self-service — each person connects (and can only manage) their own calendar. Collapsed by default so it doesn't crowd the grid once set up. */
 export function MyCalendarFeedCard({ feeds }: { feeds: CalendarFeed[] }) {
@@ -41,8 +75,8 @@ export function MyCalendarFeedCard({ feeds }: { feeds: CalendarFeed[] }) {
         </button>
       </div>
       <p className="mb-3 text-xs text-navy-500">
-        Paste your Google/Outlook/Apple calendar&apos;s &ldquo;secret address in iCal format&rdquo; so your busy time
-        shows up here — read-only, nothing is written back to it. Only you can see and manage this.
+        Paste the sharing link from your Google, Outlook, or Apple calendar so your busy time shows up here —
+        read-only, nothing is written back to it. Only you can see and manage this.
       </p>
 
       {feeds.map((feed) => (
@@ -99,7 +133,8 @@ export function MyCalendarFeedCard({ feeds }: { feeds: CalendarFeed[] }) {
           className="space-y-2"
         >
           <Input name="label" placeholder="Label (e.g. Google Calendar)" />
-          <Input name="feedUrl" type="url" placeholder="Secret address in iCal format" required />
+          <Input name="feedUrl" type="url" placeholder="Calendar sharing link (ICS/webcal URL)" required />
+          <WhereToFindIt />
           <div className="flex gap-2">
             <button
               type="submit"

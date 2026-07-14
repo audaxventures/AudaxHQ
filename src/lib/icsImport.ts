@@ -303,9 +303,14 @@ export async function fetchAndParseIcsFeed(
   feedUrl: string,
   fallbackTimeZone: string
 ): Promise<{ events: ParsedIcsEvent[] } | { error: string }> {
+  // Apple's "Public Calendar" share link uses webcal:// — a scheme meant to be handed off to
+  // whatever calendar app is registered to open it, functionally identical to https:// for a
+  // plain fetch. Normalizing it here means people can paste it exactly as Calendar.app gives it.
+  const normalizedUrl = feedUrl.replace(/^webcals?:\/\//i, "https://");
+
   let url: URL;
   try {
-    url = new URL(feedUrl);
+    url = new URL(normalizedUrl);
   } catch {
     return { error: "That doesn't look like a valid URL." };
   }
