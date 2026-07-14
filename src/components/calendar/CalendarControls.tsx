@@ -93,5 +93,4 @@ export const KIND_DOT_CLASS: Record<CalendarEventKind, string> = {
   FOLLOW_UP: "bg-burnt-500",
   MEETING: "bg-navy-500",
   TASK: "bg-gold-600",
-  EXTERNAL: "bg-slate-400",
 };

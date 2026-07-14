@@ -3,11 +3,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { CalendarControls } from "@/components/calendar/CalendarControls";
 import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
-import { MyCalendarFeedCard } from "@/components/calendar/MyCalendarFeedCard";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { listMyCalendarFeeds, syncStaleCalendarFeeds } from "@/lib/data/calendarFeeds";
 import { requireCurrentUser } from "@/lib/currentUser";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -36,14 +34,10 @@ export default async function CalendarPage({
   const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
   const accessibleClientIds = await accessibleClientIdsFor(user);
 
-  await syncStaleCalendarFeeds(user.businessId, timezone);
-  const [allEvents, myCalendarFeeds] = await Promise.all([
-    listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, timezone, {
-      restrictToTeamMemberId: teamMember?.id,
-      accessibleClientIds,
-    }),
-    listMyCalendarFeeds(user.businessId, teamMember?.id ?? null),
-  ]);
+  const allEvents = await listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, {
+    restrictToTeamMemberId: teamMember?.id,
+    accessibleClientIds,
+  });
   const events = allEvents.filter((e) => activeTypes.has(e.kind));
 
   const eventsByDate = new Map<string, typeof events>();
@@ -62,8 +56,6 @@ export default async function CalendarPage({
         title="Calendar"
         description="Follow-ups, meeting notes, and task due dates, all in one place."
       />
-
-      <MyCalendarFeedCard feeds={myCalendarFeeds} />
 
       <CalendarControls year={year} month={month} activeTypes={activeTypes} today={today} />
 

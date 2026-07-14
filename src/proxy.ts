@@ -8,12 +8,6 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 // replacement for the requireOwner() checks in the server actions themselves.
 const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/export", "/api/invoice-aging/export", "/api/reports"];
 
-// Routes temporarily disabled for everyone, owner included — the feature is
-// still fully built (page, data layer, migrations) but not ready to expose
-// while its scope gets rethought. Remove a prefix here (and the matching
-// nav-links.ts entry) to bring a feature back.
-const HIDDEN_PATH_PREFIXES = ["/calendar"];
-
 // Hostnames that serve the public marketing site (src/app/site/*) instead of
 // the app. Requests here are rewritten to /site/* and never reach the
 // passcode gate below — the marketing site has no session-gated content.
@@ -49,10 +43,6 @@ export function proxy(request: NextRequest) {
   }
 
   if (claims.role === "TEAM_MEMBER" && OWNER_ONLY_PATH_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p))) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (HIDDEN_PATH_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p))) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
