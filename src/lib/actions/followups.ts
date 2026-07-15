@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as followups from "@/lib/data/followups";
 import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
+import { resolveAssignedTeamMemberId } from "@/lib/assign";
 import type { CurrentUser, FollowUpStatus } from "@/lib/types";
 
 function revalidateOwner(clientId?: string, leadId?: string) {
@@ -18,12 +19,6 @@ async function resolveOwnerAccess(owner: { clientId?: string; leadId?: string })
   throw new Error("Not authorized.");
 }
 
-/** See resolveAssignee in lib/actions/tasks.ts — same normalization, for follow-ups. */
-function normalizeAssignee(assignedToTeamMemberId: string | null, user: CurrentUser): string | null {
-  if (assignedToTeamMemberId === user.business.ownerTeamMemberId) return null;
-  return assignedToTeamMemberId;
-}
-
 export async function addFollowUp(
   owner: { clientId: string } | { leadId: string },
   formData: FormData
@@ -32,7 +27,8 @@ export async function addFollowUp(
   const label = String(formData.get("label") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   if (!label || !date) return;
-  const assignedToTeamMemberId = normalizeAssignee(String(formData.get("assignedTo") ?? "") || null, user);
+  const raw = formData.get("assignedTo");
+  const assignedToTeamMemberId = resolveAssignedTeamMemberId(raw === null ? null : String(raw), user);
   await followups.addFollowUp(owner, user.businessId, { label, date, assignedToTeamMemberId });
   revalidateOwner("clientId" in owner ? owner.clientId : undefined, "leadId" in owner ? owner.leadId : undefined);
 }
@@ -49,11 +45,12 @@ export async function setFollowUpStatus(
 
 export async function setFollowUpAssignee(
   id: string,
-  assignedToTeamMemberId: string | null,
+  rawAssignedTo: string,
   owner: { clientId?: string; leadId?: string }
 ) {
   const user = await resolveOwnerAccess(owner);
-  await followups.setFollowUpAssignee(id, user.businessId, normalizeAssignee(assignedToTeamMemberId, user));
+  const assignedToTeamMemberId = resolveAssignedTeamMemberId(rawAssignedTo, user);
+  await followups.setFollowUpAssignee(id, user.businessId, assignedToTeamMemberId);
   revalidateOwner(owner.clientId, owner.leadId);
 }
 

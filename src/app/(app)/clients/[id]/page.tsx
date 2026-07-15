@@ -37,6 +37,7 @@ import { formatCurrency, isDateInRange } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { Button } from "@/components/ui/Button";
+import { buildAssignOptions, selfId } from "@/lib/assign";
 
 export default async function ClientDetailPage({
   params,
@@ -72,6 +73,8 @@ export default async function ClientDetailPage({
   // the current viewer's own to-dos for that client, never a colleague's.
   const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const myTasks = client.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
+  const assignOptions = buildAssignOptions(user, teamMembers);
+  const currentAssigneeId = selfId(user);
 
   const isArchived = client.status === "CHURNED";
   const boundArchiveClient = archiveClient.bind(null, id);
@@ -158,7 +161,13 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ clientId: id }} followUps={client.followUps} today={today} teamMembers={teamMembers} />
+            <FollowUpsList
+              owner={{ clientId: id }}
+              followUps={client.followUps}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           </Card>
 
           <Card className="p-6">

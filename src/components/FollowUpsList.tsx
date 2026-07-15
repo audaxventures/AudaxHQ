@@ -5,21 +5,25 @@ import { Trash2, Plus, CalendarClock, UserCircle2 } from "lucide-react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import { formatDate, isOverdue } from "@/lib/format";
-import type { FollowUp, TeamMember } from "@/lib/types";
+import { assigneeSelectValue } from "@/lib/assign";
+import type { FollowUp } from "@/lib/types";
 import { addFollowUp, deleteFollowUp, setFollowUpAssignee, setFollowUpStatus } from "@/lib/actions/followups";
 
 type Owner = { clientId: string } | { leadId: string };
+type AssignOption = { value: string; label: string };
 
 function FollowUpRow({
   followUp,
   owner,
   today,
-  teamMembers,
+  assignOptions,
+  currentAssigneeId,
 }: {
   followUp: FollowUp;
   owner: Owner;
   today: string;
-  teamMembers: TeamMember[];
+  assignOptions: AssignOption[];
+  currentAssigneeId: string | null;
 }) {
   const [, startTransition] = useTransition();
   const [assignError, setAssignError] = useState<string | null>(null);
@@ -58,13 +62,13 @@ function FollowUpRow({
               {overdue ? "Overdue: " : ""}
               {formatDate(followUp.date)}
             </span>
-            {teamMembers.length > 0 && (
+            {assignOptions.length > 1 && (
               <label className="inline-flex items-center gap-1 text-xs text-navy-400">
                 <UserCircle2 size={12} />
                 <select
-                  value={followUp.assignedToTeamMemberId ?? ""}
+                  value={assigneeSelectValue(followUp.assignedToTeamMemberId, currentAssigneeId)}
                   onChange={(e) => {
-                    const nextValue = e.target.value || null;
+                    const nextValue = e.target.value;
                     setAssignError(null);
                     startTransition(async () => {
                       try {
@@ -77,10 +81,9 @@ function FollowUpRow({
                   aria-label="Assign to"
                   className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-navy-500 hover:text-navy-700 focus:ring-0"
                 >
-                  <option value="">Unassigned</option>
-                  {teamMembers.map((tm) => (
-                    <option key={tm.id} value={tm.id}>
-                      {tm.name}
+                  {assignOptions.map((opt) => (
+                    <option key={opt.value || "self"} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
@@ -106,13 +109,16 @@ export function FollowUpsList({
   owner,
   followUps,
   today,
-  teamMembers = [],
+  assignOptions,
+  currentAssigneeId,
 }: {
   owner: Owner;
   followUps: FollowUp[];
   today: string;
-  /** Who this follow-up can be assigned to. Omitted entirely when there's no one to assign to yet. */
-  teamMembers?: TeamMember[];
+  /** Who this follow-up can be assigned to — "Me" plus whoever else is on the team. */
+  assignOptions: AssignOption[];
+  /** The viewer's own board identity — null for the owner, a team member's id otherwise. */
+  currentAssigneeId: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
@@ -127,10 +133,24 @@ export function FollowUpsList({
       ) : (
         <ul className="space-y-0.5 mb-3">
           {upcoming.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} teamMembers={teamMembers} />
+            <FollowUpRow
+              key={f.id}
+              followUp={f}
+              owner={owner}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           ))}
           {completed.map((f) => (
-            <FollowUpRow key={f.id} followUp={f} owner={owner} today={today} teamMembers={teamMembers} />
+            <FollowUpRow
+              key={f.id}
+              followUp={f}
+              owner={owner}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           ))}
         </ul>
       )}
@@ -157,14 +177,13 @@ export function FollowUpsList({
           <Label htmlFor="followup-date">Date</Label>
           <Input id="followup-date" name="date" type="date" required className="w-40" />
         </FieldGroup>
-        {teamMembers.length > 0 && (
+        {assignOptions.length > 1 && (
           <FieldGroup>
             <Label htmlFor="followup-assigned-to">Assign to</Label>
             <Select id="followup-assigned-to" name="assignedTo" defaultValue="" className="w-40" icon={UserCircle2}>
-              <option value="">Unassigned</option>
-              {teamMembers.map((tm) => (
-                <option key={tm.id} value={tm.id}>
-                  {tm.name}
+              {assignOptions.map((opt) => (
+                <option key={opt.value || "self"} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </Select>

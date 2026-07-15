@@ -9,8 +9,10 @@ import { AvatarChip } from "@/components/ui/AvatarChip";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { setFollowUpStatus, setFollowUpAssignee } from "@/lib/actions/followups";
-import type { TeamMember } from "@/lib/types";
+import { assigneeSelectValue } from "@/lib/assign";
 import type { HotFollowUp } from "@/lib/data/followups";
+
+type AssignOption = { value: string; label: string };
 
 function ownerOf(followUp: HotFollowUp) {
   return followUp.ownerKind === "client"
@@ -18,7 +20,15 @@ function ownerOf(followUp: HotFollowUp) {
     : { href: `/leads/${followUp.leadId}`, id: { leadId: followUp.leadId! } };
 }
 
-function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMembers: TeamMember[] }) {
+function FollowUpRow({
+  followUp,
+  assignOptions,
+  currentAssigneeId,
+}: {
+  followUp: HotFollowUp;
+  assignOptions: AssignOption[];
+  currentAssigneeId: string | null;
+}) {
   const [, startTransition] = useTransition();
   const [assignError, setAssignError] = useState<string | null>(null);
   const completed = followUp.status === "COMPLETED";
@@ -60,13 +70,13 @@ function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMem
         </div>
       </div>
 
-      {teamMembers.length > 0 && (
+      {assignOptions.length > 1 && (
         <label className="inline-flex shrink-0 items-center gap-1 text-xs text-navy-400">
           <UserCircle2 size={13} />
           <select
-            value={followUp.assignedToTeamMemberId ?? ""}
+            value={assigneeSelectValue(followUp.assignedToTeamMemberId, currentAssigneeId)}
             onChange={(e) => {
-              const nextValue = e.target.value || null;
+              const nextValue = e.target.value;
               setAssignError(null);
               startTransition(async () => {
                 try {
@@ -79,10 +89,9 @@ function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMem
             aria-label="Assign to"
             className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-navy-500 hover:text-navy-700 focus:ring-0"
           >
-            <option value="">Unassigned</option>
-            {teamMembers.map((tm) => (
-              <option key={tm.id} value={tm.id}>
-                {tm.name}
+            {assignOptions.map((opt) => (
+              <option key={opt.value || "self"} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
@@ -95,10 +104,14 @@ function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMem
 
 export function FollowUpsWorkspace({
   followUps,
-  teamMembers,
+  assignOptions,
+  currentAssigneeId,
 }: {
   followUps: HotFollowUp[];
-  teamMembers: TeamMember[];
+  /** Who a follow-up can be assigned to — "Me" plus whoever else is on the team. */
+  assignOptions: AssignOption[];
+  /** The viewer's own board identity — null for the owner, a team member's id otherwise. */
+  currentAssigneeId: string | null;
 }) {
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
 
@@ -133,7 +146,12 @@ export function FollowUpsWorkspace({
               </h2>
               <ul className="space-y-2">
                 {overdue.map((f) => (
-                  <FollowUpRow key={f.id} followUp={f} teamMembers={teamMembers} />
+                  <FollowUpRow
+                    key={f.id}
+                    followUp={f}
+                    assignOptions={assignOptions}
+                    currentAssigneeId={currentAssigneeId}
+                  />
                 ))}
               </ul>
             </div>
@@ -148,7 +166,12 @@ export function FollowUpsWorkspace({
               </h2>
               <ul className="space-y-2">
                 {upcoming.map((f) => (
-                  <FollowUpRow key={f.id} followUp={f} teamMembers={teamMembers} />
+                  <FollowUpRow
+                    key={f.id}
+                    followUp={f}
+                    assignOptions={assignOptions}
+                    currentAssigneeId={currentAssigneeId}
+                  />
                 ))}
               </ul>
             </div>
@@ -164,7 +187,12 @@ export function FollowUpsWorkspace({
         >
           <div className="space-y-2">
             {completed.map((f) => (
-              <FollowUpRow key={f.id} followUp={f} teamMembers={teamMembers} />
+              <FollowUpRow
+                key={f.id}
+                followUp={f}
+                assignOptions={assignOptions}
+                currentAssigneeId={currentAssigneeId}
+              />
             ))}
             {completed.length === 0 && <p className="text-sm text-navy-400">Nothing completed yet.</p>}
           </div>

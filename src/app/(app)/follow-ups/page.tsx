@@ -6,6 +6,7 @@ import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { requireCurrentUser } from "@/lib/currentUser";
+import { buildAssignOptions, selfId } from "@/lib/assign";
 
 export default async function FollowUpsPage() {
   const user = await requireCurrentUser();
@@ -15,6 +16,8 @@ export default async function FollowUpsPage() {
     listAllFollowUps(user.businessId, today, accessibleClientIds),
     listTeamMembers(user.businessId),
   ]);
+  const assignOptions = buildAssignOptions(user, teamMembers);
+  const currentAssigneeId = selfId(user);
 
   return (
     <div>
@@ -25,7 +28,7 @@ export default async function FollowUpsPage() {
         title="Follow-ups"
         description="What's coming up and what's overdue, across every client and lead"
       />
-      <FollowUpsWorkspace followUps={followUps} teamMembers={teamMembers} />
+      <FollowUpsWorkspace followUps={followUps} assignOptions={assignOptions} currentAssigneeId={currentAssigneeId} />
     </div>
   );
 }

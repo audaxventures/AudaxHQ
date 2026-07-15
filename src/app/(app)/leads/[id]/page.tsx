@@ -26,6 +26,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
 import { getBusinessToday } from "@/lib/data/businesses";
+import { buildAssignOptions, selfId } from "@/lib/assign";
 import Link from "next/link";
 
 export default async function LeadDetailPage({
@@ -60,6 +61,8 @@ export default async function LeadDetailPage({
   // current viewer's own to-dos for that lead, never a colleague's.
   const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
   const myTasks = lead.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
+  const assignOptions = buildAssignOptions(user, teamMembers);
+  const currentAssigneeId = selfId(user);
 
   const boundDeleteLead = deleteLead.bind(null, id);
   const boundConvert = convertLeadToClient.bind(null, id);
@@ -156,7 +159,13 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
-            <FollowUpsList owner={{ leadId: id }} followUps={lead.followUps} today={today} teamMembers={teamMembers} />
+            <FollowUpsList
+              owner={{ leadId: id }}
+              followUps={lead.followUps}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           </Card>
 
           <Card className="p-6">
