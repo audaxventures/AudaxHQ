@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Trash2, Plus, CalendarClock, UserCircle2 } from "lucide-react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
@@ -22,6 +22,7 @@ function FollowUpRow({
   teamMembers: TeamMember[];
 }) {
   const [, startTransition] = useTransition();
+  const [assignError, setAssignError] = useState<string | null>(null);
   const overdue = followUp.status === "UPCOMING" && isOverdue(followUp.date, today);
   const completed = followUp.status === "COMPLETED";
 
@@ -62,11 +63,17 @@ function FollowUpRow({
                 <UserCircle2 size={12} />
                 <select
                   value={followUp.assignedToTeamMemberId ?? ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const nextValue = e.target.value || null;
+                    setAssignError(null);
                     startTransition(async () => {
-                      await setFollowUpAssignee(followUp.id, e.target.value || null, owner);
-                    })
-                  }
+                      try {
+                        await setFollowUpAssignee(followUp.id, nextValue, owner);
+                      } catch (err) {
+                        setAssignError(err instanceof Error ? err.message : "Couldn't update the assignee.");
+                      }
+                    });
+                  }}
                   aria-label="Assign to"
                   className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-navy-500 hover:text-navy-700 focus:ring-0"
                 >
@@ -79,6 +86,7 @@ function FollowUpRow({
                 </select>
               </label>
             )}
+            {assignError && <span className="text-xs text-brick-600">{assignError}</span>}
           </div>
         </div>
       </div>
@@ -108,6 +116,7 @@ export function FollowUpsList({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
+  const [addError, setAddError] = useState<string | null>(null);
   const upcoming = followUps.filter((f) => f.status === "UPCOMING");
   const completed = followUps.filter((f) => f.status === "COMPLETED");
 
@@ -128,10 +137,15 @@ export function FollowUpsList({
       <form
         ref={formRef}
         action={(formData) => {
+          setAddError(null);
           startTransition(async () => {
-            await addFollowUp(owner, formData);
+            try {
+              await addFollowUp(owner, formData);
+              formRef.current?.reset();
+            } catch (err) {
+              setAddError(err instanceof Error ? err.message : "Couldn't add that follow-up.");
+            }
           });
-          formRef.current?.reset();
         }}
         className="flex flex-wrap items-end gap-2"
       >
@@ -163,6 +177,7 @@ export function FollowUpsList({
         >
           <Plus size={16} />
         </button>
+        {addError && <p className="w-full text-xs text-brick-600">{addError}</p>}
       </form>
     </div>
   );

@@ -20,6 +20,7 @@ function ownerOf(followUp: HotFollowUp) {
 
 function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMembers: TeamMember[] }) {
   const [, startTransition] = useTransition();
+  const [assignError, setAssignError] = useState<string | null>(null);
   const completed = followUp.status === "COMPLETED";
   const owner = ownerOf(followUp);
 
@@ -64,9 +65,17 @@ function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMem
           <UserCircle2 size={13} />
           <select
             value={followUp.assignedToTeamMemberId ?? ""}
-            onChange={(e) =>
-              startTransition(async () => setFollowUpAssignee(followUp.id, e.target.value || null, owner.id))
-            }
+            onChange={(e) => {
+              const nextValue = e.target.value || null;
+              setAssignError(null);
+              startTransition(async () => {
+                try {
+                  await setFollowUpAssignee(followUp.id, nextValue, owner.id);
+                } catch (err) {
+                  setAssignError(err instanceof Error ? err.message : "Couldn't update the assignee.");
+                }
+              });
+            }}
             aria-label="Assign to"
             className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-navy-500 hover:text-navy-700 focus:ring-0"
           >
@@ -79,6 +88,7 @@ function FollowUpRow({ followUp, teamMembers }: { followUp: HotFollowUp; teamMem
           </select>
         </label>
       )}
+      {assignError && <span className="text-xs text-brick-600">{assignError}</span>}
     </li>
   );
 }
