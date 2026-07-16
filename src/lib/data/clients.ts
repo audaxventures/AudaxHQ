@@ -232,6 +232,25 @@ export async function setClientColor(id: string, businessId: string, color: Enti
   await sql`update clients set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
+/**
+ * Permanently erases a client and everything under it (follow-ups, meeting
+ * notes, invoices, time/cost entries, documents, notes, links — all
+ * cascade-deleted by their foreign keys). Only allowed once the client is
+ * already archived, mirroring the equivalent "must be suspended first" guard
+ * on deleteBusiness — a hard stop against deleting a client that's still in
+ * active use.
+ */
+export async function deleteClient(id: string, businessId: string): Promise<void> {
+  const rows = await sql`
+    delete from clients
+    where id = ${id} and business_id = ${businessId} and status = 'CHURNED'
+    returning id
+  `;
+  if (rows.length === 0) {
+    throw new Error("Archive this client before deleting it permanently.");
+  }
+}
+
 // --- Notes ---
 
 export async function addClientNote(clientId: string, businessId: string, body: string): Promise<void> {

@@ -27,6 +27,7 @@ import { ClientForm } from "@/components/clients/ClientForm";
 import { ClientLinks } from "@/components/clients/ClientLinks";
 import { InvoicesList } from "@/components/clients/InvoicesList";
 import { FollowUpsList } from "@/components/FollowUpsList";
+import { DeleteClientButton } from "@/components/clients/DeleteClientButton";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { EmailSection } from "@/components/EmailSection";
 import { DocumentsSection } from "@/components/DocumentsSection";
@@ -102,11 +103,14 @@ export default async function ClientDetailPage({
             )}
           </div>
         </div>
-        <form action={isArchived ? boundActivateClient : boundArchiveClient}>
-          <Button variant={isArchived ? "primary" : "secondary"} size="sm" type="submit">
-            {isArchived ? "Activate client" : "Archive client"}
-          </Button>
-        </form>
+        <div className="flex flex-col items-end gap-2">
+          <form action={isArchived ? boundActivateClient : boundArchiveClient}>
+            <Button variant={isArchived ? "primary" : "secondary"} size="sm" type="submit">
+              {isArchived ? "Activate client" : "Archive client"}
+            </Button>
+          </form>
+          {isOwner && isArchived && <DeleteClientButton clientId={id} companyName={client.companyName} />}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

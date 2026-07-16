@@ -61,3 +61,15 @@ export async function deleteAllBusinessFiles(businessId: string): Promise<void> 
     }
   }
 }
+
+/**
+ * Removes every document a single client has ever had uploaded (DOCUMENTS_BUCKET
+ * only — see newDocumentStoragePath). Used when permanently deleting a client,
+ * mirroring deleteAllBusinessFiles's prefix sweep but scoped to one client.
+ */
+export async function deleteClientFiles(businessId: string, clientId: string): Promise<void> {
+  const paths = await listAllFilePaths(DOCUMENTS_BUCKET, `${businessId}/${clientId}`);
+  if (paths.length > 0) {
+    await supabase.storage.from(DOCUMENTS_BUCKET).remove(paths);
+  }
+}

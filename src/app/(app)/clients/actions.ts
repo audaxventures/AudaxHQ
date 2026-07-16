@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as clients from "@/lib/data/clients";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireClientAccess, requireCurrentUser, requireOwner } from "@/lib/currentUser";
+import { deleteClientFiles } from "@/lib/storage";
 import type { EntityColor } from "@/lib/types";
 
 const clientSchema = z.object({
@@ -91,6 +92,26 @@ export async function activateClient(id: string) {
   const user = await requireClientAccess(id);
   await clients.setClientStatus(id, user.businessId, "ACTIVE");
   revalidatePath(`/clients/${id}`);
+  revalidatePath("/clients");
+  revalidatePath("/");
+}
+
+/**
+ * Owner-only, and only once a client is archived (enforced again in
+ * clients.deleteClient) — same "must be suspended first" precondition as
+ * the platform admin's deleteWorkspacePermanently, scaled down to one
+ * client. Storage cleanup failures are logged rather than thrown so an
+ * already-missing or unreachable file never blocks the record itself from
+ * being deleted.
+ */
+export async function deleteClientPermanently(id: string) {
+  const user = await requireOwnerClientAccess(id);
+  try {
+    await deleteClientFiles(user.businessId, id);
+  } catch (err) {
+    console.error(`Failed to clean up storage for deleted client ${id}`, err);
+  }
+  await clients.deleteClient(id, user.businessId);
   revalidatePath("/clients");
   revalidatePath("/");
 }
