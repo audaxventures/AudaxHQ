@@ -11,7 +11,6 @@ import {
   Handshake,
   Megaphone,
   NotebookPen,
-  Palette,
   Receipt,
   Scale,
   Sparkles,
@@ -62,10 +61,13 @@ const AUDIENCE = [
     description: "Run every client engagement from one workspace instead of juggling separate setups per client.",
   },
   { icon: Briefcase, title: "Consulting Firms", description: "Manage clients, projects, and deliverables in one place." },
-  { icon: Megaphone, title: "Marketing Agencies", description: "Streamline campaigns, tasks, and client communication." },
+  {
+    icon: Megaphone,
+    title: "Marketing & Creative Agencies",
+    description: "Streamline campaigns, deadlines, and client feedback together.",
+  },
   { icon: Scale, title: "Professional Services", description: "Built for accountants, advisors, coaches, and more." },
   { icon: Code2, title: "IT & Software Teams", description: "Track projects, time, and client success in one workspace." },
-  { icon: Palette, title: "Creative Studios", description: "Manage projects, deadlines, and client feedback together." },
   { icon: Sparkles, title: "And more", description: "Any service business that runs on client relationships." },
 ];
 
