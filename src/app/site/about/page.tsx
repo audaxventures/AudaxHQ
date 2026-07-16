@@ -43,7 +43,7 @@ const FEATURES = [
   { icon: Target, title: "Leads & Pipeline", tone: "gold", description: "Track opportunities from first contact to close." },
   { icon: NotebookPen, title: "Meeting Notes", tone: "violet", description: "Capture every conversation, searchable later." },
   { icon: Calendar, title: "Calendar & Follow-ups", tone: "blue", description: "Never miss a check-in or a deadline." },
-  { icon: Receipt, title: "Revenue Tracking", tone: "teal", description: "Invoicing and cash flow, always up to date." },
+  { icon: Receipt, title: "Revenue Tracking", tone: "teal", description: "Revenue and cash flow, always up to date." },
   { icon: Clock, title: "Hour & Cost Tracker", tone: "rose", description: "Track time and costs against every client." },
   { icon: CheckSquare, title: "To-Dos & Tasks", tone: "brick", description: "Stay on top of what matters most, together." },
   { icon: BarChart3, title: "Dashboard & Reports", tone: "slate", description: "A real-time view of how the business is doing." },
@@ -74,7 +74,7 @@ const FAQ_ITEMS = [
   {
     question: "What is Audax HQ?",
     answer:
-      "A single workspace for running a service business — clients and leads, pipeline, revenue and invoicing, meeting notes, time and cost tracking, and tasks, all connected to the same client record instead of spread across separate tools.",
+      "A single workspace for running a service business — clients and leads, pipeline, revenue tracking, meeting notes, time and cost tracking, and tasks, all connected to the same client record instead of spread across separate tools.",
   },
   {
     question: "Who is it built for?",
@@ -99,7 +99,7 @@ const FAQ_ITEMS = [
   {
     question: "Can I get my data out if I ever need to?",
     answer:
-      "Yes — Settings includes a data export for your clients, leads, invoices, tasks, and time entries at any point, so you're never locked in.",
+      "Yes — Settings includes a data export for your clients, leads, revenue records, tasks, and time entries at any point, so you're never locked in.",
   },
   {
     question: "How do I get help if I'm stuck?",
@@ -132,7 +132,7 @@ export default function AboutPage() {
               Built by operators, for operators.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-navy-700">
-              We’ve run service businesses ourselves — juggling client work, chasing invoices, and losing track of
+              We’ve run service businesses ourselves — juggling client work, chasing payments, and losing track of
               things across too many tools. Audax HQ is the operating system we wished existed: one place to run
               the whole business, instead of stitching six of them together.
             </p>
@@ -156,8 +156,8 @@ export default function AboutPage() {
               </p>
               <p className="mt-4 text-base leading-relaxed text-navy-600">
                 Time was going into stitching together a spreadsheet for the pipeline, email for client history, a
-                separate calendar, shared docs for meeting notes, and an invoicing tool for revenue — when all of it
-                should have lived in one place from the start.
+                separate calendar, shared docs for meeting notes, and a separate tool for tracking revenue — when
+                all of it should have lived in one place from the start.
               </p>
               <p className="mt-4 text-base leading-relaxed text-navy-600">
                 Audax HQ brings it together in one connected workspace, built specifically for service businesses.

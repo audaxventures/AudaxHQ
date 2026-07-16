@@ -17,7 +17,7 @@ const TIERS = [
     highlight: false,
     features: [
       "Unlimited clients & leads",
-      "Pipeline, invoicing & revenue tracking",
+      "Pipeline & revenue tracking",
       "Meeting notes, time tracking & tasks",
       "Data export, anytime",
     ],

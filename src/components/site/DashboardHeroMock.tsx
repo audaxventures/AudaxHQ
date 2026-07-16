@@ -13,20 +13,20 @@ export function DashboardHeroMock() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="relative lg:-mr-4 lg:w-[104%] xl:-mr-20 xl:w-[124%]">
+    <div className="relative lg:-mr-10 lg:w-[112%] xl:-mr-28 xl:w-[136%]">
       <div
         aria-hidden
         className="pointer-events-none absolute -inset-16 rounded-full bg-burnt-500/35 blur-[110px]"
       />
       <motion.div
-        initial={{ opacity: 0, y: 16, rotateY: reduceMotion ? 0 : -14, rotateX: reduceMotion ? 0 : 5 }}
-        animate={{ opacity: 1, y: 0, rotateY: -9, rotateX: 3 }}
+        initial={{ opacity: 0, y: 16, rotateY: reduceMotion ? 0 : -26, rotateX: reduceMotion ? 0 : 7 }}
+        animate={{ opacity: 1, y: 0, rotateY: -20, rotateX: 5 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        whileHover={reduceMotion ? undefined : { rotateY: -4, rotateX: 1.5, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
+        whileHover={reduceMotion ? undefined : { rotateY: -14, rotateX: 3, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
         style={{ perspective: 1600, transformStyle: "preserve-3d" }}
         className="relative"
       >
-        <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-[0_50px_100px_-24px_rgba(0,0,0,0.65)]">
+        <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-[0_60px_120px_-24px_rgba(0,0,0,0.7)]">
           {/* eslint-disable-next-line @next/next/no-img-element -- real product screenshot, not a candidate for next/image in this static marketing card */}
           <img
             src="/demodashboardweb.png"

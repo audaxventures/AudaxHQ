@@ -10,7 +10,7 @@ import { appPath } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Audax HQ — The business operating system for service businesses",
   description:
-    "Clients, pipeline, invoicing, meetings, time, and tasks — all in one workspace instead of six disconnected tools.",
+    "Clients, pipeline, revenue tracking, meetings, time, and tasks — all in one workspace instead of six disconnected tools.",
 };
 
 const FEATURE_TONE: Record<string, string> = {
@@ -86,7 +86,7 @@ export default function MarketingHomePage() {
               Run your business from <span className="text-burnt-400">one command center</span>.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-navy-300">
-              Clients, pipeline, invoicing, meetings, time, and tasks — finally in one workspace instead of six
+              Clients, pipeline, revenue tracking, meetings, time, and tasks — finally in one workspace instead of six
               disconnected tools.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
