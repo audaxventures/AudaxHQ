@@ -80,7 +80,7 @@ export default function MarketingHomePage() {
         <Section className="relative grid items-center gap-16 py-20 lg:grid-cols-2 lg:py-28">
           <div>
             <span className="inline-flex items-center rounded-full border border-burnt-400/40 bg-burnt-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-burnt-300">
-              Built for service businesses
+              Built for Fractional Executives &amp; Service Based Business Owners
             </span>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.08] text-cream-50 sm:text-5xl lg:text-[3.25rem]">
               Run your business from <span className="text-burnt-400">one command center</span>.
