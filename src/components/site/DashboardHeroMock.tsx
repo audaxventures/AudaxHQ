@@ -19,10 +19,10 @@ export function DashboardHeroMock() {
         className="pointer-events-none absolute -inset-16 rounded-full bg-burnt-500/35 blur-[110px]"
       />
       <motion.div
-        initial={{ opacity: 0, y: 16, rotateY: reduceMotion ? 0 : -26, rotateX: reduceMotion ? 0 : 7 }}
-        animate={{ opacity: 1, y: 0, rotateY: -20, rotateX: 5 }}
+        initial={{ opacity: 0, y: 16, rotateY: reduceMotion ? 0 : 26, rotateX: reduceMotion ? 0 : 7 }}
+        animate={{ opacity: 1, y: 0, rotateY: 20, rotateX: 5 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        whileHover={reduceMotion ? undefined : { rotateY: -14, rotateX: 3, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
+        whileHover={reduceMotion ? undefined : { rotateY: 14, rotateX: 3, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
         style={{ perspective: 1600, transformStyle: "preserve-3d" }}
         className="relative"
       >
