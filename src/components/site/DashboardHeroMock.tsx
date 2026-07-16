@@ -30,7 +30,7 @@ export function DashboardHeroMock() {
           {/* eslint-disable-next-line @next/next/no-img-element -- real product screenshot, not a candidate for next/image in this static marketing card */}
           <img
             src="/demodashboardweb.png"
-            alt="AudaxHQ dashboard for NorthBridge Consulting, showing projected revenue, to-dos, clients, and follow-ups at a glance"
+            alt="Verclara dashboard for NorthBridge Consulting, showing projected revenue, to-dos, clients, and follow-ups at a glance"
             className="block h-auto w-full"
           />
         </div>

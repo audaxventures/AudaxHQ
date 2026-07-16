@@ -5,8 +5,8 @@ import { Section } from "@/components/site/Section";
 import { cn } from "@/lib/cn";
 import { appPath } from "@/lib/site";
 
-const TITLE = "Pricing — Audax HQ";
-const DESCRIPTION = "Audax HQ is free during early access. Here's the plan structure we're building toward.";
+const TITLE = "Pricing — Verclara";
+const DESCRIPTION = "Verclara is free during early access. Here's the plan structure we're building toward.";
 
 export const metadata: Metadata = {
   title: TITLE,

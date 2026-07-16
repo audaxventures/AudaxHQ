@@ -7,7 +7,7 @@ import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
 import { appPath } from "@/lib/site";
 
-const TITLE = "Audax HQ — The business operating system for service businesses";
+const TITLE = "Verclara — The business operating system for service businesses";
 const DESCRIPTION =
   "Clients, pipeline, revenue tracking, meetings, time, and tasks — all in one workspace instead of six disconnected tools.";
 
@@ -67,10 +67,10 @@ const FEATURES = [
 ];
 
 const PLATFORM_SHOTS = [
-  { src: "/demosidebarhandmobile.png", alt: "AudaxHQ mobile navigation menu, held in hand" },
-  { src: "/meetingnotesdesktop.png", alt: "AudaxHQ meeting notes list on desktop" },
-  { src: "/quickactionmobilehand.png", alt: "AudaxHQ quick actions menu on mobile" },
-  { src: "/todolaptop.png", alt: "AudaxHQ to-do board open on a laptop" },
+  { src: "/demosidebarhandmobile.png", alt: "Verclara mobile navigation menu, held in hand" },
+  { src: "/meetingnotesdesktop.png", alt: "Verclara meeting notes list on desktop" },
+  { src: "/quickactionmobilehand.png", alt: "Verclara quick actions menu on mobile" },
+  { src: "/todolaptop.png", alt: "Verclara to-do board open on a laptop" },
 ];
 
 export default function MarketingHomePage() {
@@ -123,7 +123,7 @@ export default function MarketingHomePage() {
             </h2>
             <span className="mt-4 block h-1 w-10 rounded-full bg-burnt-500" />
             <p className="mt-5 max-w-md text-base leading-relaxed text-navy-500">
-              Audax HQ brings every part of your business together so you can stay organized, deliver exceptional
+              Verclara brings every part of your business together so you can stay organized, deliver exceptional
               work, and grow with confidence.
             </p>
             <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8">
@@ -155,8 +155,8 @@ export default function MarketingHomePage() {
               <Quote size={36} fill="currentColor" stroke="none" className="shrink-0 text-burnt-500" />
               <div>
                 <p className="font-heading text-lg font-medium leading-snug text-cream-50 sm:text-xl">
-                  We&rsquo;ve replaced four different tools with AudaxHQ, and our team is more organized and
-                  productive than ever. AudaxHQ has changed how we manage clients, leads and daily operations, all
+                  We&rsquo;ve replaced four different tools with Verclara, and our team is more organized and
+                  productive than ever. Verclara has changed how we manage clients, leads and daily operations, all
                   in one place!
                 </p>
                 <p className="mt-3 text-sm text-navy-300">— Denise Zaporzan, Asteria Global</p>

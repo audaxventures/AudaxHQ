@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // so fail closed to the more restrictive role rather than crashing.
   const role = currentUser?.role ?? "TEAM_MEMBER";
   const logoUrl = currentUser?.business.logoUrl ?? null;
-  const businessName = currentUser?.business.name ?? "Audax HQ";
+  const businessName = currentUser?.business.name ?? "Verclara";
   const isAdmin = currentUser ? isPlatformAdmin(currentUser) : false;
 
   const showWelcome = currentUser?.role === "OWNER" && !currentUser.business.onboardingDismissedAt;

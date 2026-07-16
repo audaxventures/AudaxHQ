@@ -52,8 +52,7 @@ export async function renderOgImage(): Promise<ImageResponse> {
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", fontSize: 44, fontWeight: 700 }}>
-            <span style={{ color: "#fdfbf6" }}>AUDAX</span>
-            <span style={{ color: "#be5a1e", marginLeft: 14 }}>HQ</span>
+            <span style={{ color: "#fdfbf6" }}>Verclara</span>
           </div>
           <div
             style={{

@@ -3,8 +3,8 @@ import { Mail } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { ContactForm } from "@/components/site/ContactForm";
 
-const TITLE = "Contact — Audax HQ";
-const DESCRIPTION = "Get in touch with the Audax HQ team.";
+const TITLE = "Contact — Verclara";
+const DESCRIPTION = "Get in touch with the Verclara team.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -27,7 +27,7 @@ export default function ContactPage() {
             </h1>
             <p className="mt-3 font-heading text-lg text-navy-700">We’d love to hear from you.</p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-navy-600">
-              Questions about Audax HQ, want to see it in action, or need help with your workspace — send us a
+              Questions about Verclara, want to see it in action, or need help with your workspace — send us a
               message and we’ll get back to you directly.
             </p>
             <a

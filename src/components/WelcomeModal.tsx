@@ -69,7 +69,7 @@ export function WelcomeModal({ ownerName, businessName }: { ownerName: string; b
             <h2 className="font-heading text-3xl font-semibold leading-tight text-navy-900">
               Welcome to
               <br />
-              Audax HQ
+              Verclara
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-navy-500">
               Your business operating system is all set up and ready to go.

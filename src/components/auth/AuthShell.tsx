@@ -62,21 +62,12 @@ export function AuthShell({
             }}
           />
           <div className="relative z-10 mx-auto max-w-md text-center lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
-            {/* The source file has uneven transparent margins (much wider on the right than the
-                left), so centering the <img> itself still looks off-center above the title. This
-                wrapper clips to the logo's actual content box, measured from the source PNG. */}
-            <div className="mx-auto mb-10 overflow-hidden" style={{ width: 180, height: 56 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
-              <img
-                src="/logo.png"
-                alt="Audax Ventures"
-                style={{ width: 211, maxWidth: "none", position: "relative", left: -9.7, top: -7 }}
-              />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded logo, dimensions unknown */}
+            <img src="/logo.png" alt="Audax Ventures" className="mx-auto mb-10" style={{ height: 56, width: "auto" }} />
             <h1 className="text-balance font-heading text-4xl font-medium leading-tight text-navy-900 sm:text-5xl">
               Welcome to
               <br />
-              <span className="font-bold text-burnt-500">Audax HQ</span>
+              <span className="font-bold text-burnt-500">Verclara</span>
             </h1>
             <p className="mt-4 text-lg font-medium text-navy-600">Your business command center.</p>
             <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-navy-500">

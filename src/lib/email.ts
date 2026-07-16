@@ -22,7 +22,7 @@ function resendApiKey(): string {
  * footer support line — see the comment above that function.
  */
 export async function sendPasscodeResetEmail(to: string, name: string, resetUrl: string): Promise<void> {
-  const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
   const firstName = name.trim().split(/\s+/)[0] || name;
   const origin = new URL(resetUrl).origin;
   const supportEmail = "info@audaxventures.ca";
@@ -49,7 +49,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
                         <img src="${origin}/favicon.png" width="24" height="24" alt="" style="display: block; border-radius: 50%;" />
                       </td>
                       <td style="vertical-align: middle;">
-                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">AUDAX <span style="color: #be5a1e;">HQ</span></span>
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">Verclara</span>
                       </td>
                     </tr>
                   </table>
@@ -67,7 +67,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
               <tr>
                 <td style="vertical-align: top; width: 60%;">
                   <span style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%; background: #ffffff; font-size: 20px; margin-bottom: 16px;">&#128274;</span>
-                  <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">Reset your Audax HQ passcode</h1>
+                  <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">Reset your Verclara passcode</h1>
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">We received a request to reset the passcode for your workspace.</p>
                 </td>
                 <td style="vertical-align: middle; width: 40%; text-align: right;">
@@ -155,7 +155,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
                         <img src="${origin}/favicon.png" width="18" height="18" alt="" style="display: block; border-radius: 50%;" />
                       </td>
                       <td style="vertical-align: middle;">
-                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; color: #101d33;">AUDAX <span style="color: #be5a1e;">HQ</span></span>
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; color: #101d33;">Verclara</span>
                       </td>
                     </tr>
                   </table>
@@ -181,7 +181,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
     body: JSON.stringify({
       from,
       to,
-      subject: "Reset your Audax HQ passcode",
+      subject: "Reset your Verclara passcode",
       html,
     }),
   });
@@ -235,7 +235,7 @@ const WELCOME_STEPS: { title: string; body: string; bg: string; fg: string }[] =
  * look changes.
  */
 export async function sendWelcomeEmail(to: string, ownerName: string, businessName: string, appUrl: string): Promise<void> {
-  const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
   const firstName = ownerName.trim().split(/\s+/)[0] || ownerName;
   const origin = new URL(appUrl).origin;
   const previewImageUrl = `${origin}/demodashboardweb.png`;
@@ -270,7 +270,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td style="padding: 28px 32px; vertical-align: middle;">
-                  <img src="${origin}/hqlogo.png" width="200" height="53" alt="Audax HQ" style="display: block;" />
+                  <img src="${origin}/hqlogo.png" width="200" height="66" alt="Verclara" style="display: block;" />
                 </td>
                 <td style="padding: 16px 20px 0 0; text-align: right;">
                   <img src="${previewImageUrl}" width="230" alt="" style="display: inline-block; max-width: 230px; height: auto; border-radius: 10px; box-shadow: 0 8px 24px -8px rgba(16,29,51,0.35);" />
@@ -298,7 +298,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
               <tr>
                 <td style="border-radius: 10px; background: #101d33;">
-                  <a href="${appUrl}" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Open Audax HQ &rarr;</a>
+                  <a href="${appUrl}" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Open Verclara &rarr;</a>
                 </td>
                 <td style="padding-left: 14px; font-size: 13px; color: #7c8aa3;">Your business, organized and running in one place.</td>
               </tr>
@@ -321,7 +321,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
                   </p>
                 </td>
                 <td style="vertical-align: bottom; text-align: right; padding-left: 12px; white-space: nowrap;">
-                  <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: #4c5f82;">The Audax HQ Team</span>
+                  <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: #4c5f82;">The Verclara Team</span>
                 </td>
               </tr>
             </table>
@@ -340,7 +340,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
     body: JSON.stringify({
       from,
       to,
-      subject: "Welcome to Audax HQ — here's how to get started",
+      subject: "Welcome to Verclara — here's how to get started",
       html,
     }),
   });
@@ -353,7 +353,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
 
 /** Sent when someone submits the marketing site's contact form — lands in Joshua's inbox with reply_to set to the submitter, so replying goes straight to them. */
 export async function sendContactFormEmail(name: string, fromEmail: string, message: string): Promise<void> {
-  const from = process.env.RESEND_FROM_EMAIL || "Audax HQ <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
   const supportEmail = "joshua@audaxventures.ca";
 
   const escapedMessage = message

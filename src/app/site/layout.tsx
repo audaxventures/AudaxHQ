@@ -13,7 +13,7 @@ const marketingHost = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca
 export const metadata: Metadata = {
   metadataBase: new URL(`https://${marketingHost}`),
   openGraph: {
-    siteName: "Audax HQ",
+    siteName: "Verclara",
     type: "website",
     locale: "en_CA",
   },
@@ -37,7 +37,7 @@ const structuredData = {
     },
     {
       "@type": "SoftwareApplication",
-      name: "Audax HQ",
+      name: "Verclara",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:

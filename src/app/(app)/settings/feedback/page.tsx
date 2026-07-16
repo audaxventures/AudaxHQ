@@ -16,7 +16,7 @@ export default async function FeedbackSettingsPage() {
     <Card className="p-6">
       <SettingsPanelHeader
         title="Feedback"
-        description="Tell us what's working, what's broken, or what you wish Audax HQ could do."
+        description="Tell us what's working, what's broken, or what you wish Verclara could do."
       />
 
       <div className="mb-6">

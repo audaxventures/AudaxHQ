@@ -1,4 +1,4 @@
-# Audax HQ
+# Verclara
 
 Internal client, lead, and task management app for Audax Ventures. Single-user, passcode-gated, deployed on Vercel with a Neon Postgres database.
 
@@ -117,7 +117,7 @@ The "Forgot passcode?" link on the login page emails a time-limited reset link. 
 
 1. Create a free account at [resend.com](https://resend.com).
 2. Go to **API Keys** and create a key. Set it as `RESEND_API_KEY`.
-3. By default, emails send from Resend's shared `onboarding@resend.dev` address, which works immediately but has weaker deliverability and looks less trustworthy. When ready, verify your own sending domain in Resend and set `RESEND_FROM_EMAIL` to an address on it (e.g. `Audax HQ <noreply@yourdomain.com>`).
+3. By default, emails send from Resend's shared `onboarding@resend.dev` address, which works immediately but has weaker deliverability and looks less trustworthy. When ready, verify your own sending domain in Resend and set `RESEND_FROM_EMAIL` to an address on it (e.g. `Verclara <noreply@yourdomain.com>`).
 
 ### 4. Set environment variables in Vercel
 
@@ -131,7 +131,7 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase project's `service_role` secret key |
 | `RESEND_API_KEY` | (optional) Your Resend API key, enables "Forgot passcode?" emails |
-| `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Audax HQ <noreply@yourdomain.com>` |
+| `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Verclara <noreply@yourdomain.com>` |
 | `PLATFORM_ADMIN_EMAILS` | (optional) Comma-separated business-owner emails allowed onto the platform admin portal at `/admin` — sign in normally, no separate credential |
 | `MARKETING_HOSTS` | (optional) Comma-separated hostnames that should serve the public marketing site instead of the app, e.g. `audaxhq.ca,www.audaxhq.ca`. Defaults to those two hosts if unset |
 | `NEXT_PUBLIC_APP_URL` | (optional) Origin the marketing site's "Sign in" / "Start for free" links point to, e.g. `https://app.audaxhq.ca`. Defaults to same-origin (empty string) for local dev |

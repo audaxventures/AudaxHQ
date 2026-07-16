@@ -73,7 +73,7 @@ export function buildIcsContent(input: CalendarLinkInput): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Audax HQ//Meeting//EN",
+    "PRODID:-//Verclara//Meeting//EN",
     "BEGIN:VEVENT",
     `UID:${crypto.randomUUID()}@audaxhq.ca`,
     `DTSTAMP:${toUtcStamp(new Date())}`,

@@ -16,13 +16,13 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Audax HQ",
+  title: "Verclara",
   description: "Client, lead, and task management for Audax Ventures.",
   icons: {
     // Versioned so browsers that cached an older favicon under this exact
     // URL (favicons are cached unusually aggressively, especially on the
     // marketing subdomain) are forced to refetch instead of holding onto it.
-    icon: "/favicon.png?v=2",
+    icon: "/favicon.png?v=3",
   },
 };
 

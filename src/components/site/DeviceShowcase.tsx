@@ -8,7 +8,7 @@ export function DeviceShowcase() {
       {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
       <img
         src="/clientsdesktopdesk.png"
-        alt="A person reviewing their AudaxHQ clients list on their desktop"
+        alt="A person reviewing their Verclara clients list on their desktop"
         className="h-auto w-full"
       />
     </div>

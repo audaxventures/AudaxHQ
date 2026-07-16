@@ -22,8 +22,8 @@ import { FAQAccordion } from "@/components/site/FAQAccordion";
 import { ScreenshotGallery } from "@/components/site/ScreenshotGallery";
 import { appPath } from "@/lib/site";
 
-const TITLE = "About — Audax HQ";
-const DESCRIPTION = "Audax HQ was built by operators, for operators — one workspace instead of a stack of disconnected tools.";
+const TITLE = "About — Verclara";
+const DESCRIPTION = "Verclara was built by operators, for operators — one workspace instead of a stack of disconnected tools.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -72,20 +72,20 @@ const AUDIENCE = [
 ];
 
 const GALLERY = [
-  { src: "/demodashboardweb.png", alt: "AudaxHQ dashboard overview" },
-  { src: "/democlientweb.png", alt: "AudaxHQ clients list" },
-  { src: "/meetingnotes.png", alt: "AudaxHQ meeting notes list" },
-  { src: "/todo.png", alt: "AudaxHQ to-do board" },
-  { src: "/leadsdesktop.png", alt: "AudaxHQ leads pipeline" },
-  { src: "/newclientdesktop.png", alt: "AudaxHQ new client form" },
-  { src: "/revenuetrackingdesktop.png", alt: "AudaxHQ revenue tracking" },
-  { src: "/costtrackerdesktop.png", alt: "AudaxHQ hour and cost tracker" },
-  { src: "/settingsdesktop.png", alt: "AudaxHQ settings" },
+  { src: "/demodashboardweb.png", alt: "Verclara dashboard overview" },
+  { src: "/democlientweb.png", alt: "Verclara clients list" },
+  { src: "/meetingnotes.png", alt: "Verclara meeting notes list" },
+  { src: "/todo.png", alt: "Verclara to-do board" },
+  { src: "/leadsdesktop.png", alt: "Verclara leads pipeline" },
+  { src: "/newclientdesktop.png", alt: "Verclara new client form" },
+  { src: "/revenuetrackingdesktop.png", alt: "Verclara revenue tracking" },
+  { src: "/costtrackerdesktop.png", alt: "Verclara hour and cost tracker" },
+  { src: "/settingsdesktop.png", alt: "Verclara settings" },
 ];
 
 const FAQ_ITEMS = [
   {
-    question: "What is Audax HQ?",
+    question: "What is Verclara?",
     answer:
       "A single workspace for running a service business — clients and leads, pipeline, revenue tracking, meeting notes, time and cost tracking, and tasks, all connected to the same client record instead of spread across separate tools.",
   },
@@ -97,7 +97,7 @@ const FAQ_ITEMS = [
   {
     question: "Is there a free trial?",
     answer:
-      "Audax HQ is free to use during early access — no credit card, no time limit. We'll introduce paid plans later, and we'll give existing workspaces plenty of notice before anything changes.",
+      "Verclara is free to use during early access — no credit card, no time limit. We'll introduce paid plans later, and we'll give existing workspaces plenty of notice before anything changes.",
   },
   {
     question: "Can I add my team?",
@@ -139,14 +139,14 @@ export default function AboutPage() {
         <Section className="relative flex min-h-[420px] flex-col justify-center py-16 sm:min-h-[480px] lg:py-20">
           <div className="max-w-xl">
             <span className="inline-flex items-center rounded-full border border-burnt-300 bg-burnt-100 px-3.5 py-1.5 text-xs font-medium text-burnt-700">
-              About Audax HQ
+              About Verclara
             </span>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.1] text-navy-900 sm:text-5xl">
               Built by operators, for operators.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-navy-700">
               We’ve run service businesses ourselves — juggling client work, chasing payments, and losing track of
-              things across too many tools. Audax HQ is the operating system we wished existed: one place to run
+              things across too many tools. Verclara is the operating system we wished existed: one place to run
               the whole business, instead of stitching six of them together.
             </p>
           </div>
@@ -158,13 +158,13 @@ export default function AboutPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">
-                Why we built Audax HQ
+                Why we built Verclara
               </span>
               <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
                 Built from the ground up to solve real problems.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-navy-600">
-                We built Audax HQ because we lived the same problems you’re dealing with today — too many tools,
+                We built Verclara because we lived the same problems you’re dealing with today — too many tools,
                 scattered information, and manual follow-ups that fall through the cracks.
               </p>
               <p className="mt-4 text-base leading-relaxed text-navy-600">
@@ -173,7 +173,7 @@ export default function AboutPage() {
                 all of it should have lived in one place from the start.
               </p>
               <p className="mt-4 text-base leading-relaxed text-navy-600">
-                Audax HQ brings it together in one connected workspace, built specifically for service businesses.
+                Verclara brings it together in one connected workspace, built specifically for service businesses.
                 It’s the platform we always wished existed.
               </p>
             </div>
@@ -181,7 +181,7 @@ export default function AboutPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
               <img
                 src="/meetingnotesdesktop.png"
-                alt="A person reviewing their AudaxHQ meeting notes on their desktop"
+                alt="A person reviewing their Verclara meeting notes on their desktop"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -196,7 +196,7 @@ export default function AboutPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this static marketing card */}
               <img
                 src="/todolaptop.png"
-                alt="A person reviewing their AudaxHQ to-do board on their laptop"
+                alt="A person reviewing their Verclara to-do board on their laptop"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -229,7 +229,7 @@ export default function AboutPage() {
               Built for service-based businesses like yours.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-navy-600">
-              Audax HQ is designed for service-based businesses that rely on strong client relationships, project
+              Verclara is designed for service-based businesses that rely on strong client relationships, project
               work, and daily operational excellence — whether you’re a solo founder or leading a growing team.
             </p>
           </div>

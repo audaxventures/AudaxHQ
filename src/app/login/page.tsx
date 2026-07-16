@@ -10,7 +10,7 @@ export default async function LoginPage({
   const { next, reset } = await searchParams;
 
   return (
-    <AuthShell icon={Lock} title="Sign in" description="Enter your email and passcode to access your Audax HQ workspace.">
+    <AuthShell icon={Lock} title="Sign in" description="Enter your email and passcode to access your Verclara workspace.">
       {reset === "1" && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-sage-600/40 bg-sage-600/15 px-4 py-3 text-sm text-sage-100">
           <CheckCircle2 size={16} className="shrink-0" />

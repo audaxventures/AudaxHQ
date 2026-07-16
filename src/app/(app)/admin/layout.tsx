@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         tone="navy"
         eyebrow="Platform Admin"
         title="Admin"
-        description="Every workspace on Audax HQ, in one place."
+        description="Every workspace on Verclara, in one place."
       />
       <AdminSubNav />
       {children}

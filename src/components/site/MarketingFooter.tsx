@@ -21,7 +21,7 @@ export function MarketingFooter() {
           <div className="col-span-2 sm:col-span-2">
             <Link href="/" className="flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element -- small static brand mark */}
-              <img src="/hqlogo.png" alt="Audax HQ" className="h-8 w-auto" />
+              <img src="/hqlogo.png" alt="Verclara" className="h-8 w-auto" />
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-navy-300">
               The business operating system for service businesses — clients, pipeline, revenue, and work, in one

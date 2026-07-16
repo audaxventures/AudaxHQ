@@ -73,7 +73,7 @@ export function LoginForm({ next }: { next: string }) {
       )}
       <SubmitButton />
       <p className="text-center text-sm text-navy-300">
-        New to Audax HQ?{" "}
+        New to Verclara?{" "}
         <Link href="/signup" className="font-medium text-burnt-400 hover:text-burnt-300">
           Create a workspace
         </Link>
