@@ -8,6 +8,7 @@ import {
   CheckSquare,
   Clock,
   Code2,
+  Handshake,
   Megaphone,
   NotebookPen,
   Palette,
@@ -22,9 +23,14 @@ import { FAQAccordion } from "@/components/site/FAQAccordion";
 import { ScreenshotGallery } from "@/components/site/ScreenshotGallery";
 import { appPath } from "@/lib/site";
 
+const TITLE = "About — Audax HQ";
+const DESCRIPTION = "Audax HQ was built by operators, for operators — one workspace instead of a stack of disconnected tools.";
+
 export const metadata: Metadata = {
-  title: "About — Audax HQ",
-  description: "Audax HQ was built by operators, for operators — one workspace instead of a stack of disconnected tools.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 const FEATURE_TONE: Record<string, string> = {
@@ -50,6 +56,11 @@ const FEATURES = [
 ];
 
 const AUDIENCE = [
+  {
+    icon: Handshake,
+    title: "Fractional Executives",
+    description: "Run every client engagement from one workspace instead of juggling separate setups per client.",
+  },
   { icon: Briefcase, title: "Consulting Firms", description: "Manage clients, projects, and deliverables in one place." },
   { icon: Megaphone, title: "Marketing Agencies", description: "Streamline campaigns, tasks, and client communication." },
   { icon: Scale, title: "Professional Services", description: "Built for accountants, advisors, coaches, and more." },

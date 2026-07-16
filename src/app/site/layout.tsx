@@ -1,7 +1,57 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { MarketingNav } from "@/components/site/MarketingNav";
 import { MarketingFooter } from "@/components/site/MarketingFooter";
+
+// The public hostname this marketing site is actually reached at (see
+// proxy.ts's MARKETING_HOSTS rewrite) — needed so Next can resolve the
+// og:image/twitter:image file-convention routes and canonical URLs to real
+// absolute URLs instead of guessing from the request.
+const marketingHost = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca").split(",")[0].trim();
+
+export const metadata: Metadata = {
+  metadataBase: new URL(`https://${marketingHost}`),
+  openGraph: {
+    siteName: "Audax HQ",
+    type: "website",
+    locale: "en_CA",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+
+// SEO structured data — one Organization + one SoftwareApplication node,
+// shared across every marketing page since neither varies by route.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `https://${marketingHost}/#organization`,
+      name: "Audax Ventures",
+      url: `https://${marketingHost}`,
+      logo: `https://${marketingHost}/hqlogo.png`,
+      email: "info@audaxventures.ca",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "Audax HQ",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "The business operating system for service businesses — clients, pipeline, revenue tracking, meetings, time, and tasks in one workspace.",
+      url: `https://${marketingHost}`,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        description: "Free during early access",
+      },
+    },
+  ],
+};
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   // /site only exists to be reached via proxy.ts's marketing-host rewrite —
@@ -14,6 +64,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-full flex-col">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <MarketingNav />
       <main className="flex-1">{children}</main>
       <MarketingFooter />

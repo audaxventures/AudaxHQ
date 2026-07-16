@@ -3,9 +3,14 @@ import { Mail } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { ContactForm } from "@/components/site/ContactForm";
 
+const TITLE = "Contact — Audax HQ";
+const DESCRIPTION = "Get in touch with the Audax HQ team.";
+
 export const metadata: Metadata = {
-  title: "Contact — Audax HQ",
-  description: "Get in touch with the Audax HQ team.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export default function ContactPage() {

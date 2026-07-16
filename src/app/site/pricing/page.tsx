@@ -5,9 +5,14 @@ import { Section } from "@/components/site/Section";
 import { cn } from "@/lib/cn";
 import { appPath } from "@/lib/site";
 
+const TITLE = "Pricing — Audax HQ";
+const DESCRIPTION = "Audax HQ is free during early access. Here's the plan structure we're building toward.";
+
 export const metadata: Metadata = {
-  title: "Pricing — Audax HQ",
-  description: "Audax HQ is free during early access. Here's the plan structure we're building toward.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 const TIERS = [

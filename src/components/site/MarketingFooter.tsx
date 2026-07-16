@@ -2,6 +2,10 @@ import Link from "next/link";
 import { appPath } from "@/lib/site";
 
 const PRODUCT_LINKS = [{ href: "/#features", label: "Features" }];
+const PRODUCT_APP_LINKS = [
+  { href: "/signup", label: "Start for free" },
+  { href: "/login", label: "Sign in" },
+];
 
 const COMPANY_LINKS = [
   { href: "/about", label: "About" },
@@ -35,11 +39,13 @@ export function MarketingFooter() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href={appPath("/login")} className="text-sm text-navy-200 transition-colors hover:text-cream-50">
-                  Sign in
-                </Link>
-              </li>
+              {PRODUCT_APP_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={appPath(link.href)} className="text-sm text-navy-200 transition-colors hover:text-cream-50">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

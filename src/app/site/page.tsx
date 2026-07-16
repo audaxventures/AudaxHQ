@@ -7,10 +7,15 @@ import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
 import { appPath } from "@/lib/site";
 
+const TITLE = "Audax HQ — The business operating system for service businesses";
+const DESCRIPTION =
+  "Clients, pipeline, revenue tracking, meetings, time, and tasks — all in one workspace instead of six disconnected tools.";
+
 export const metadata: Metadata = {
-  title: "Audax HQ — The business operating system for service businesses",
-  description:
-    "Clients, pipeline, revenue tracking, meetings, time, and tasks — all in one workspace instead of six disconnected tools.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 const FEATURE_TONE: Record<string, string> = {
