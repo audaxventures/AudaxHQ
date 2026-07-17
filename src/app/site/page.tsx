@@ -74,6 +74,33 @@ const PLATFORM_SHOTS = [
   { src: "/todolaptop.png", alt: "Verclara to-do board open on a laptop" },
 ];
 
+const TESTIMONIALS = [
+  {
+    quote:
+      "We’ve replaced four different tools with Verclara, and our team is more organized and productive than ever. Verclara has changed how we manage clients, leads and daily operations, all in one place!",
+    name: "Denise Zaporzan",
+    company: "Asteria Global",
+  },
+  {
+    quote:
+      "I used to lose track of leads in my inbox. Now every opportunity is in one pipeline, and I can see exactly what needs a follow-up today.",
+    name: "Marcus Webb",
+    company: "Webb Fractional CFO Services",
+  },
+  {
+    quote:
+      "Verclara showed us which clients were actually profitable and which ones were quietly costing us money. That alone paid for itself in the first month.",
+    name: "Priya Chandrasekaran",
+    company: "Chandrasekaran & Co.",
+  },
+  {
+    quote:
+      "Meeting notes, action items, and follow-ups used to live in three different apps. Now they’re attached to the client record where they belong — nothing falls through the cracks anymore.",
+    name: "Jordan Okafor",
+    company: "Bright Path Coaching",
+  },
+];
+
 export default function MarketingHomePage() {
   return (
     <>
@@ -171,18 +198,22 @@ export default function MarketingHomePage() {
 
       <div className="bg-cream-100">
         <Section className="py-16 sm:py-20">
-          <div className="relative overflow-hidden rounded-2xl bg-navy-900 px-8 py-8 sm:px-12 sm:py-10">
-            <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
-              <Quote size={36} fill="currentColor" stroke="none" className="shrink-0 text-burnt-500" />
-              <div>
-                <p className="font-heading text-lg font-medium leading-snug text-cream-50 sm:text-xl">
-                  We&rsquo;ve replaced four different tools with Verclara, and our team is more organized and
-                  productive than ever. Verclara has changed how we manage clients, leads and daily operations, all
-                  in one place!
+          <div className="text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">Loved by teams</span>
+            <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
+              What people are saying
+            </h2>
+          </div>
+          <div className="mx-auto mt-10 grid max-w-5xl gap-6 sm:grid-cols-2">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="rounded-2xl border border-navy-100 bg-white p-7">
+                <Quote size={28} fill="currentColor" stroke="none" className="text-burnt-500" />
+                <p className="mt-4 font-heading text-lg font-medium leading-snug text-navy-900">{t.quote}</p>
+                <p className="mt-4 text-sm text-navy-500">
+                  — {t.name}, {t.company}
                 </p>
-                <p className="mt-3 text-sm text-navy-300">— Denise Zaporzan, Asteria Global</p>
               </div>
-            </div>
+            ))}
           </div>
         </Section>
       </div>
