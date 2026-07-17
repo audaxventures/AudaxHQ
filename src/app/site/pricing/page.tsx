@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Section } from "@/components/site/Section";
-import { cn } from "@/lib/cn";
+import { PricingTiers, type PricingTier } from "@/components/site/PricingTiers";
 import { appPath } from "@/lib/site";
 
 const TITLE = "Pricing — Verclara";
-const DESCRIPTION = "Verclara is free during early access. Here's the plan structure we're building toward.";
+const DESCRIPTION = "Verclara is free during early access. Here's what plans will cost once early access ends.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -15,12 +15,16 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
-const TIERS = [
+const TIERS: PricingTier[] = [
   {
     name: "Starter",
     audience: "For solo operators",
     highlight: false,
+    monthly: 29,
+    annualMonthly: 24,
+    annualTotal: 290,
     features: [
+      "1 user",
       "Unlimited clients & leads",
       "Pipeline & revenue tracking",
       "Meeting notes, time tracking & tasks",
@@ -31,9 +35,12 @@ const TIERS = [
     name: "Growth",
     audience: "For small teams",
     highlight: true,
+    monthly: 59,
+    annualMonthly: 49,
+    annualTotal: 590,
     features: [
       "Everything in Starter",
-      "Add team members",
+      "Up to 5 team members",
       "Per-client access control",
       "Assign and hand off tasks across your team",
     ],
@@ -42,7 +49,10 @@ const TIERS = [
     name: "Scale",
     audience: "For growing agencies",
     highlight: false,
-    features: ["Everything in Growth", "Priority support", "Early access to new features"],
+    monthly: 99,
+    annualMonthly: 83,
+    annualTotal: 990,
+    features: ["Everything in Growth", "Unlimited team members", "Priority support", "Early access to new features"],
   },
 ];
 
@@ -59,7 +69,8 @@ export default function PricingPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-navy-300">
             Every workspace is free and unrestricted while we’re onboarding early customers — no credit card,
-            nothing to unlock. Below is the plan structure we’re building toward for when paid plans launch.
+            nothing to unlock. The plans below are what we’ll move to once early access ends; existing workspaces
+            will get advance notice before anything changes.
           </p>
           <Link
             href={appPath("/signup")}
@@ -72,45 +83,11 @@ export default function PricingPage() {
 
       <div className="bg-cream-50">
         <Section>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {TIERS.map((tier) => (
-              <div
-                key={tier.name}
-                className={cn(
-                  "rounded-2xl border p-7",
-                  tier.highlight ? "border-burnt-300 bg-white shadow-lg ring-1 ring-burnt-200" : "border-navy-100 bg-white"
-                )}
-              >
-                {tier.highlight && (
-                  <span className="inline-flex items-center rounded-full bg-burnt-100 px-2.5 py-0.5 text-[11px] font-semibold text-burnt-600">
-                    Most popular
-                  </span>
-                )}
-                <h2 className="mt-3 font-heading text-xl font-semibold text-navy-900">{tier.name}</h2>
-                <p className="mt-1 text-sm text-navy-400">{tier.audience}</p>
-                <p className="mt-5 font-heading text-2xl font-semibold text-navy-900">Coming soon</p>
-                <ul className="mt-6 space-y-3">
-                  {tier.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-navy-600">
-                      <Check size={16} className="mt-0.5 shrink-0 text-sage-600" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/contact"
-                  className={cn(
-                    "mt-7 flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
-                    tier.highlight
-                      ? "bg-navy-900 text-cream-50 hover:bg-navy-800"
-                      : "border border-navy-200 text-navy-800 hover:border-navy-400 hover:bg-navy-100/50"
-                  )}
-                >
-                  Contact us
-                </Link>
-              </div>
-            ))}
+          <div className="mx-auto mb-10 max-w-xl rounded-xl border border-sage-200 bg-sage-50 px-5 py-3 text-center text-sm text-sage-800">
+            You&rsquo;re currently on <span className="font-semibold">early access</span> — every workspace is free
+            and unrestricted. Prices below are what plans will cost once early access ends.
           </div>
+          <PricingTiers tiers={TIERS} />
           <p className="mt-8 text-center text-sm text-navy-400">
             Questions about pricing or what’s included?{" "}
             <Link href="/about#faq" className="font-medium text-burnt-600 hover:underline">
