@@ -95,4 +95,12 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-07-08",
     readingMinutes: 6,
   },
+  {
+    slug: "how-to-invoice-clients-as-a-consultant",
+    title: "How to Invoice Clients as a Consultant Without Chasing Payments",
+    description: "A practical invoicing system for consultants and fractional executives so payment stops depending on how hard you chase it.",
+    category: "Invoicing",
+    publishedAt: "2026-07-16",
+    readingMinutes: 5,
+  },
 ];
