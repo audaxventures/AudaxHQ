@@ -118,9 +118,9 @@ export default function MarketingHomePage() {
           <div className="absolute -bottom-32 -left-16 h-[420px] w-[420px] rounded-full bg-blue-600/15 blur-[120px]" />
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-navy-600 to-transparent" />
         </div>
-        <Section className="relative grid items-center gap-16 py-20 lg:grid-cols-2 lg:py-28">
+        <Section className="relative grid items-center gap-16 py-12 sm:py-16 lg:grid-cols-2 lg:py-28">
           <div>
-            <span className="inline-flex items-center rounded-full border border-burnt-400/40 bg-burnt-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-burnt-300">
+            <span className="inline-flex items-center justify-center rounded-full border border-burnt-400/40 bg-burnt-500/10 px-3.5 py-1.5 text-center text-xs font-semibold uppercase tracking-wider text-burnt-300">
               Built for Fractional Executives &amp; Service Based Business Owners
             </span>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.08] text-cream-50 sm:text-5xl lg:text-[3.25rem]">
