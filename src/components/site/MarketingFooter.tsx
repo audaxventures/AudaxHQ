@@ -4,6 +4,7 @@ import { appPath } from "@/lib/site";
 const PRODUCT_LINKS = [
   { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/resources", label: "Resources" },
 ];
 const PRODUCT_APP_LINKS = [
   { href: "/signup", label: "Start for free" },
