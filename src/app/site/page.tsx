@@ -16,9 +16,9 @@ import { appPath } from "@/lib/site";
 const DashboardHeroMock = dynamic(() => import("@/components/site/DashboardHeroMock").then((m) => m.DashboardHeroMock));
 const WhyVerclaraWordmark = dynamic(() => import("@/components/site/WhyVerclaraWordmark").then((m) => m.WhyVerclaraWordmark));
 
-const TITLE = "Verclara — The business operating system for service businesses";
+const TITLE = "Verclara — CRM & Business OS for Service Businesses";
 const DESCRIPTION =
-  "Clients, pipeline, revenue tracking, meetings, time, and tasks — all in one workspace instead of six disconnected tools.";
+  "The CRM and business operating system for consultants, agencies, and fractional executives — clients, pipeline, revenue, meetings, and time in one place.";
 
 export const metadata: Metadata = {
   title: TITLE,
