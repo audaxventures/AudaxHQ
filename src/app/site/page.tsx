@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Target, Users } from "lucide-react";
 import { Section } from "@/components/site/Section";
-import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
-import { WhyVerclaraWordmark } from "@/components/site/WhyVerclaraWordmark";
 import { appPath } from "@/lib/site";
+
+// Both are framer-motion consumers — split into their own chunks so the
+// animation library's JS isn't parsed/executed as part of the main bundle
+// that blocks the hero H1's initial paint (it was showing up as ~50KB of
+// "unused JavaScript" on the critical path in Lighthouse). SSR stays on by
+// default, so there's no layout shift or content flash — only the
+// hydration JS for the animations themselves loads out-of-band.
+const DashboardHeroMock = dynamic(() => import("@/components/site/DashboardHeroMock").then((m) => m.DashboardHeroMock));
+const WhyVerclaraWordmark = dynamic(() => import("@/components/site/WhyVerclaraWordmark").then((m) => m.WhyVerclaraWordmark));
 
 const TITLE = "Verclara — The business operating system for service businesses";
 const DESCRIPTION =
