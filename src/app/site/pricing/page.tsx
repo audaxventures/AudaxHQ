@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { PricingTiers, type PricingTier } from "@/components/site/PricingTiers";
 import { appPath } from "@/lib/site";
@@ -89,9 +89,17 @@ export default function PricingPage() {
 
       <div className="bg-cream-50">
         <Section>
-          <div className="mx-auto mb-10 max-w-xl rounded-xl border border-sage-200 bg-sage-50 px-5 py-3 text-center text-sm text-sage-800">
-            You&rsquo;re currently on <span className="font-semibold">early access</span> — every workspace is free
-            and unrestricted. Prices below are what plans will cost once early access ends.
+          <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center gap-4 rounded-2xl border-2 border-sage-300 bg-sage-50 px-8 py-8 text-center sm:flex-row sm:gap-6 sm:px-10 sm:py-10 sm:text-left">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700">
+              <Sparkles size={30} />
+            </span>
+            <div>
+              <p className="font-heading text-2xl font-semibold text-sage-900 sm:text-3xl">You&rsquo;re on Early Access</p>
+              <p className="mt-2 text-base leading-relaxed text-sage-800 sm:text-lg">
+                Every workspace is free and unrestricted right now — no credit card, nothing to unlock. Prices below
+                are what plans will cost once early access ends.
+              </p>
+            </div>
           </div>
           <PricingTiers tiers={TIERS} />
           <p className="mt-8 text-center text-sm text-navy-400">
