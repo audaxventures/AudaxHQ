@@ -5,6 +5,7 @@ import { Section } from "@/components/site/Section";
 import { DashboardHeroMock } from "@/components/site/DashboardHeroMock";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
+import { WhyVerclaraWordmark } from "@/components/site/WhyVerclaraWordmark";
 import { appPath } from "@/lib/site";
 
 const TITLE = "Verclara — The business operating system for service businesses";
@@ -145,6 +146,26 @@ export default function MarketingHomePage() {
       <div className="bg-cream-50">
         <Section className="py-0 pb-16 sm:pb-20">
           <PlatformShotsGallery shots={PLATFORM_SHOTS} />
+        </Section>
+      </div>
+
+      <div className="relative overflow-hidden bg-navy-900">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-0 h-[420px] w-[640px] -translate-x-1/2 rounded-full bg-burnt-500/15 blur-[130px]" />
+        </div>
+        <Section className="relative flex flex-col items-center py-20 text-center sm:py-24">
+          <span className="inline-flex items-center rounded-full border border-burnt-400/40 bg-burnt-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-burnt-300">
+            The name
+          </span>
+          <h2 className="mt-5 font-heading text-3xl font-semibold text-cream-50 sm:text-4xl">Why Verclara?</h2>
+          <div className="mt-10">
+            <WhyVerclaraWordmark />
+          </div>
+          <span className="mt-10 block h-1 w-10 rounded-full bg-burnt-500" />
+          <p className="mx-auto mt-6 max-w-2xl font-heading text-xl font-medium italic leading-relaxed text-cream-100 sm:text-2xl">
+            &ldquo;Verclara gives service businesses one clear, trustworthy view of every client, lead, and dollar —
+            so nothing gets lost in the noise.&rdquo;
+          </p>
         </Section>
       </div>
 
