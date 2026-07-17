@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 // crawlable (including by AI/LLM crawlers); the gated app itself has nothing
 // worth indexing (just a login screen and private workspace data), so it
 // stays closed to crawlers on every other host.
-const MARKETING_HOSTS = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca")
+const MARKETING_HOSTS = (process.env.MARKETING_HOSTS ?? "www.verclara.io,verclara.io")
   .split(",")
   .map((h) => h.trim())
   .filter(Boolean);
@@ -41,6 +41,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         allow: "/",
       },
     ],
-    sitemap: "https://audaxhq.ca/sitemap.xml",
+    sitemap: "https://www.verclara.io/sitemap.xml",
   };
 }

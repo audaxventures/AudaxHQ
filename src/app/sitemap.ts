@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://audaxhq.ca";
+const BASE_URL = "https://www.verclara.io";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

@@ -8,7 +8,7 @@ import { MarketingFooter } from "@/components/site/MarketingFooter";
 // proxy.ts's MARKETING_HOSTS rewrite) — needed so Next can resolve the
 // og:image/twitter:image file-convention routes and canonical URLs to real
 // absolute URLs instead of guessing from the request.
-const marketingHost = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca").split(",")[0].trim();
+const marketingHost = (process.env.MARKETING_HOSTS ?? "www.verclara.io,verclara.io").split(",")[0].trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL(`https://${marketingHost}`),

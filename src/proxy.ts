@@ -12,7 +12,7 @@ const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/expo
 // the app. Requests here are rewritten to /site/* and never reach the
 // passcode gate below — the marketing site has no session-gated content.
 // Unset in local dev, so localhost always serves the app exactly as before.
-const MARKETING_HOSTS = (process.env.MARKETING_HOSTS ?? "audaxhq.ca,www.audaxhq.ca")
+const MARKETING_HOSTS = (process.env.MARKETING_HOSTS ?? "www.verclara.io,verclara.io")
   .split(",")
   .map((h) => h.trim())
   .filter(Boolean);

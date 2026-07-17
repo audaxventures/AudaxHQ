@@ -75,7 +75,7 @@ export function buildIcsContent(input: CalendarLinkInput): string {
     "VERSION:2.0",
     "PRODID:-//Verclara//Meeting//EN",
     "BEGIN:VEVENT",
-    `UID:${crypto.randomUUID()}@audaxhq.ca`,
+    `UID:${crypto.randomUUID()}@verclara.io`,
     `DTSTAMP:${toUtcStamp(new Date())}`,
   ];
   if (start) {

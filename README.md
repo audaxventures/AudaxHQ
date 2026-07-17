@@ -133,8 +133,8 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `RESEND_API_KEY` | (optional) Your Resend API key, enables "Forgot passcode?" emails |
 | `RESEND_FROM_EMAIL` | (optional) Verified sender address once you have one, e.g. `Verclara <noreply@yourdomain.com>` |
 | `PLATFORM_ADMIN_EMAILS` | (optional) Comma-separated business-owner emails allowed onto the platform admin portal at `/admin` — sign in normally, no separate credential |
-| `MARKETING_HOSTS` | (optional) Comma-separated hostnames that should serve the public marketing site instead of the app, e.g. `audaxhq.ca,www.audaxhq.ca`. Defaults to those two hosts if unset |
-| `NEXT_PUBLIC_APP_URL` | (optional) Origin the marketing site's "Sign in" / "Start for free" links point to, e.g. `https://app.audaxhq.ca`. Defaults to same-origin (empty string) for local dev |
+| `MARKETING_HOSTS` | (optional) Comma-separated hostnames that should serve the public marketing site instead of the app, e.g. `www.verclara.io,verclara.io`. Defaults to those two hosts if unset |
+| `NEXT_PUBLIC_APP_URL` | (optional) Origin the marketing site's "Sign in" / "Start for free" links point to, e.g. `https://app.verclara.io`. Defaults to same-origin (empty string) for local dev |
 
 ### 5. Deploy
 
@@ -152,7 +152,7 @@ There are no user accounts. `src/proxy.ts` checks every request (except `/login*
 
 ## Marketing site
 
-The public marketing site (homepage, About, Pricing, FAQ, Contact) lives under `src/app/site/` and is served from the same Next.js deployment as the app, routed by hostname: `src/proxy.ts` rewrites any request whose `Host` header matches `MARKETING_HOSTS` (default `audaxhq.ca,www.audaxhq.ca`) into `/site/*`, guarded so `/site` can't be reached directly on a non-marketing host. Every other hostname (including `localhost` and the app's own subdomain) continues to serve the app unchanged. The marketing site's "Sign in" / "Start for free" links point at `NEXT_PUBLIC_APP_URL`.
+The public marketing site (homepage, About, Pricing, FAQ, Contact) lives under `src/app/site/` and is served from the same Next.js deployment as the app, routed by hostname: `src/proxy.ts` rewrites any request whose `Host` header matches `MARKETING_HOSTS` (default `www.verclara.io,verclara.io`) into `/site/*`, guarded so `/site` can't be reached directly on a non-marketing host. Every other hostname (including `localhost` and the app's own subdomain) continues to serve the app unchanged. The marketing site's "Sign in" / "Start for free" links point at `NEXT_PUBLIC_APP_URL`.
 
 ## Project structure
 

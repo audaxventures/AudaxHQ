@@ -5,7 +5,7 @@
  * "Sign in" / "Start for free" links point here. Defaults to a relative
  * same-origin path, which is exactly right for local dev (one Next.js
  * server, no domain split yet). Set NEXT_PUBLIC_APP_URL once the app
- * actually moves to its own subdomain in production (e.g. app.audaxhq.ca).
+ * actually moves to its own subdomain in production (e.g. app.verclara.io).
  */
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
