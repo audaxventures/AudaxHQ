@@ -17,31 +17,31 @@ export function MarketingNav() {
 
   return (
     <header className="sticky top-0 z-50 bg-navy-900">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
         <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element -- small static brand mark */}
-          <img src="/hqlogo.png" alt="Verclara" className="h-9 w-auto" />
+          <img src="/hqlogo.png" alt="Verclara" className="h-12 w-auto sm:h-14" />
         </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-10 lg:flex">
           {LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-navy-200 transition-colors hover:text-cream-50"
+              className="text-base font-medium text-navy-200 transition-colors hover:text-cream-50"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <Link href={appPath("/login")} className="text-sm font-medium text-navy-200 transition-colors hover:text-cream-50">
+        <div className="hidden items-center gap-5 lg:flex">
+          <Link href={appPath("/login")} className="text-base font-medium text-navy-200 transition-colors hover:text-cream-50">
             Sign in
           </Link>
           <Link
             href={appPath("/signup")}
-            className="rounded-xl bg-burnt-500 px-4 py-2.5 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
+            className="rounded-xl bg-burnt-500 px-6 py-3 text-base font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
           >
             Start for free
           </Link>
@@ -54,14 +54,14 @@ export function MarketingNav() {
           aria-expanded={open}
           className="cursor-pointer text-cream-50 lg:hidden"
         >
-          {open ? <X size={24} /> : <Menu size={24} />}
+          {open ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
       <div
         className={cn(
           "overflow-hidden border-t border-navy-700 bg-navy-900 transition-[max-height] duration-300 lg:hidden",
-          open ? "max-h-96" : "max-h-0 border-t-0"
+          open ? "max-h-[28rem]" : "max-h-0 border-t-0"
         )}
       >
         <nav className="flex flex-col gap-1 px-5 py-4">
@@ -70,7 +70,7 @@ export function MarketingNav() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-navy-200 transition-colors hover:bg-navy-800 hover:text-cream-50"
+              className="rounded-lg px-3 py-3 text-base font-medium text-navy-200 transition-colors hover:bg-navy-800 hover:text-cream-50"
             >
               {link.label}
             </Link>
@@ -78,13 +78,13 @@ export function MarketingNav() {
           <div className="mt-2 flex flex-col gap-2 border-t border-navy-700 pt-4">
             <Link
               href={appPath("/login")}
-              className="rounded-lg px-3 py-2.5 text-center text-sm font-medium text-navy-200 hover:bg-navy-800 hover:text-cream-50"
+              className="rounded-lg px-3 py-3 text-center text-base font-medium text-navy-200 hover:bg-navy-800 hover:text-cream-50"
             >
               Sign in
             </Link>
             <Link
               href={appPath("/signup")}
-              className="rounded-xl bg-burnt-500 px-3 py-2.5 text-center text-sm font-semibold text-cream-50 hover:bg-burnt-400"
+              className="rounded-xl bg-burnt-500 px-3 py-3 text-center text-base font-semibold text-cream-50 hover:bg-burnt-400"
             >
               Start for free
             </Link>
