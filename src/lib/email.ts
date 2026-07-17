@@ -271,6 +271,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
               <tr>
                 <td style="padding: 28px 32px; vertical-align: middle;">
                   <img src="${origin}/hqlogo.png" width="200" height="66" alt="Verclara" style="display: block;" />
+                  <p style="margin: 8px 0 0; font-size: 13px; color: #b7c2d9; letter-spacing: 0.01em;">Your business command centre</p>
                 </td>
                 <td style="padding: 16px 20px 0 0; text-align: right;">
                   <img src="${previewImageUrl}" width="230" alt="" style="display: inline-block; max-width: 230px; height: auto; border-radius: 10px; box-shadow: 0 8px 24px -8px rgba(16,29,51,0.35);" />
@@ -282,8 +283,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
         <tr>
           <td style="background: #ffffff; padding: 32px;">
             <h1 style="margin: 0 0 8px; font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 600; color: #101d33;">Welcome, ${firstName}</h1>
-            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4c5f82;">${businessName} is ready to go.</p>
-            <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">Here's a quick map to get you moving fast.</p>
+            <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">${businessName} is ready to go — here's a quick map to get you moving fast.</p>
 
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 8px;">
               <tr>
