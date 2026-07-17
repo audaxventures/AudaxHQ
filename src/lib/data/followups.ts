@@ -161,6 +161,17 @@ export async function setFollowUpStatus(id: string, businessId: string, status: 
   await sql`update follow_ups set status = ${status}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
+/** Read-only lookup used by the action layer to diff "did the assignee actually change" (and build the notification message) before firing an assignment notification — not used by any UI. */
+export async function getFollowUpForNotification(
+  id: string,
+  businessId: string
+): Promise<{ label: string; assignedToTeamMemberId: string | null } | null> {
+  const rows = await sql`select label, assigned_to_team_member_id from follow_ups where id = ${id} and business_id = ${businessId}`;
+  const row = rows[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return { label: row.label as string, assignedToTeamMemberId: row.assigned_to_team_member_id as string | null };
+}
+
 export async function setFollowUpAssignee(id: string, businessId: string, assignedToTeamMemberId: string | null): Promise<void> {
   await sql`update follow_ups set assigned_to_team_member_id = ${assignedToTeamMemberId}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }

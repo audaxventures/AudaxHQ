@@ -5,6 +5,11 @@ export function selfId(user: CurrentUser): string | null {
   return user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
 }
 
+/** The viewer's display name, for "assigned to you by ___" notification messages. */
+export function actorDisplayName(user: CurrentUser): string {
+  return user.role === "TEAM_MEMBER" ? user.teamMember.name : user.business.ownerName;
+}
+
 /**
  * "Me" always comes first (value "" means "assign to whoever is currently
  * viewing this dropdown"); everyone else you can hand something to follows.

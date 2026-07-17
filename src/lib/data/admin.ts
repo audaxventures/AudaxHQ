@@ -6,7 +6,7 @@
 // to a normal OWNER/TEAM_MEMBER request path.
 
 import { sql } from "@/lib/db";
-import type { Feedback, FeedbackStatus, SessionRole } from "@/lib/types";
+import type { BusinessTier, Feedback, FeedbackStatus, SessionRole } from "@/lib/types";
 
 export interface PlatformStats {
   totalWorkspaces: number;
@@ -146,6 +146,7 @@ export interface AdminWorkspaceSummary {
   ownerEmail: string;
   createdAt: string;
   suspendedAt: string | null;
+  tier: BusinessTier;
   teamMemberCount: number;
   clientCount: number;
 }
@@ -158,6 +159,7 @@ function mapWorkspaceSummary(row: Record<string, unknown>): AdminWorkspaceSummar
     ownerEmail: row.owner_email as string,
     createdAt: row.created_at as string,
     suspendedAt: row.suspended_at as string | null,
+    tier: row.tier as BusinessTier,
     teamMemberCount: Number(row.team_member_count),
     clientCount: Number(row.client_count),
   };
@@ -167,7 +169,7 @@ function mapWorkspaceSummary(row: Record<string, unknown>): AdminWorkspaceSummar
 export async function listWorkspaces(): Promise<AdminWorkspaceSummary[]> {
   const rows = await sql`
     select
-      b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at,
+      b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at, b.tier,
       coalesce(tm.team_member_count, 0) as team_member_count,
       coalesce(c.client_count, 0) as client_count
     from businesses b
@@ -193,7 +195,7 @@ export interface AdminWorkspaceDetail extends AdminWorkspaceSummary {
 export async function getWorkspaceDetail(businessId: string): Promise<AdminWorkspaceDetail | null> {
   const rows = await sql`
     select
-      b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at,
+      b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at, b.tier,
       coalesce(tm.n, 0) as team_member_count,
       coalesce(c.n, 0) as client_count,
       coalesce(l.n, 0) as lead_count,
@@ -263,6 +265,11 @@ export async function suspendBusiness(businessId: string): Promise<void> {
 
 export async function reactivateBusiness(businessId: string): Promise<void> {
   await sql`update businesses set suspended_at = null, updated_at = now() where id = ${businessId}`;
+}
+
+/** Manual override until real billing exists — see src/lib/entitlements.ts. */
+export async function setBusinessTier(businessId: string, tier: BusinessTier): Promise<void> {
+  await sql`update businesses set tier = ${tier}, updated_at = now() where id = ${businessId}`;
 }
 
 /**

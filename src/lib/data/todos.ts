@@ -184,6 +184,12 @@ export interface TaskInput {
   assignedToTeamMemberId?: string | null;
 }
 
+/** Read-only lookup used by the action layer to diff "did the assignee actually change" before firing an assignment notification — not used by any UI. */
+export async function getTaskAssignee(id: string, businessId: string): Promise<string | null> {
+  const rows = await sql`select assigned_to_team_member_id from todos where id = ${id} and business_id = ${businessId}`;
+  return ((rows[0] as Record<string, unknown>)?.assigned_to_team_member_id as string | null) ?? null;
+}
+
 export async function createTask(businessId: string, input: TaskInput, createdByTeamMemberId: string | null): Promise<string> {
   const rows = await sql`
     insert into todos (business_id, title, description, due_date, type, todo_type_id, client_id, lead_id, status, priority, assigned_to_team_member_id, created_by_team_member_id)

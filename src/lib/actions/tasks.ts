@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import * as tasks from "@/lib/data/todos";
+import * as notifications from "@/lib/data/notifications";
 import { requireCurrentUser, requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
+import { actorDisplayName } from "@/lib/assign";
 import type { CurrentUser, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 const taskSchema = z.object({
@@ -76,6 +78,25 @@ function parseTaskForm(formData: FormData) {
   };
 }
 
+/** Fires an in-app notification when a task is handed to someone else — never for self-assignment, and only when the assignee actually changed (callers pass the pre-write assignee for updates, undefined for a brand-new task). */
+async function notifyTaskAssignee(
+  user: CurrentUser,
+  businessId: string,
+  assignedToTeamMemberId: string | null,
+  previousAssignee: string | null | undefined,
+  title: string
+) {
+  const self = selfId(user);
+  if (assignedToTeamMemberId === self || assignedToTeamMemberId === previousAssignee) return;
+  await notifications.createNotification(
+    businessId,
+    assignedToTeamMemberId,
+    "TASK_ASSIGNED",
+    `${actorDisplayName(user)} assigned you a task: "${title}"`,
+    "/todos"
+  );
+}
+
 function revalidateForTask(clientId?: string | null, leadId?: string | null) {
   revalidatePath("/todos");
   revalidatePath("/");
@@ -91,6 +112,7 @@ export async function createTask(formData: FormData) {
   await assertOwnerAccess(clientId, leadId);
   const assignedToTeamMemberId = resolveAssignee(formData, user);
   await tasks.createTask(user.businessId, { ...input, clientId, leadId, assignedToTeamMemberId }, selfId(user));
+  await notifyTaskAssignee(user, user.businessId, assignedToTeamMemberId, undefined, input.title);
   revalidateForTask(clientId, leadId);
 }
 
@@ -139,12 +161,14 @@ export async function updateTask(
   const leadId = (formData.get("leadId") as string) || undefined;
   await assertOwnerAccess(clientId, leadId);
   const assignedToTeamMemberId = resolveAssignee(formData, user);
+  const previousAssignee = await tasks.getTaskAssignee(id, user.businessId);
   await tasks.updateTask(
     id,
     user.businessId,
     { ...input, clientId: clientId ?? null, leadId: leadId ?? null, assignedToTeamMemberId },
     selfId(user)
   );
+  await notifyTaskAssignee(user, user.businessId, assignedToTeamMemberId, previousAssignee, input.title);
   // Revalidate both the previous and (possibly changed) new owner's page, so
   // reassigning a task's client/lead doesn't leave stale data on either.
   revalidateForTask(previousClientId, previousLeadId);

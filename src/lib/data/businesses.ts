@@ -18,6 +18,7 @@ function mapBusiness(row: Record<string, unknown>): Business {
     invoiceAgingOverDays: Number(row.invoice_aging_over_days),
     suspendedAt: row.suspended_at as string | null,
     onboardingDismissedAt: row.onboarding_dismissed_at as string | null,
+    tier: row.tier as Business["tier"],
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

@@ -79,6 +79,27 @@ export interface FollowUp {
   assignedToTeamMemberId: string | null;
 }
 
+export type NotificationType = "TASK_ASSIGNED" | "FOLLOW_UP_ASSIGNED";
+
+/** A persisted "someone assigned you something" event — see migration 032. Time-based nudges (overdue/due-today) are computed live instead; see getNotificationSnapshot in src/lib/data/notifications.ts. */
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  link: string | null;
+  createdAt: string;
+  readAt: string | null;
+}
+
+/** A live-computed (never persisted) "this needs attention right now" item for the notification bell's second section. */
+export interface RightNowItem {
+  id: string;
+  label: string;
+  link: string;
+  kind: "task" | "follow-up";
+  isOverdue: boolean;
+}
+
 export interface MeetingNote {
   id: string;
   /** Falls back to the client/lead name in the UI when not set (legacy notes created before titles existed). */
@@ -316,6 +337,9 @@ export interface TodoType {
 }
 
 /** A tenant workspace. Safe to pass to client components — never includes the owner passcode hash/salt or reset token. */
+/** See migration 031 + src/lib/entitlements.ts. Every business defaults to 'scale' during early access — nothing is gated on this yet. */
+export type BusinessTier = "starter" | "growth" | "scale";
+
 export interface Business {
   id: string;
   /** Workspace/company display name — set at signup, distinct from the owner's personal name. */
@@ -333,6 +357,7 @@ export interface Business {
   suspendedAt: string | null;
   /** Set once the owner dismisses the first-login welcome popup — null means it hasn't been shown/dismissed yet. */
   onboardingDismissedAt: string | null;
+  tier: BusinessTier;
   createdAt: string;
   updatedAt: string;
 }

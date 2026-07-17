@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as admin from "@/lib/data/admin";
 import { requirePlatformAdmin } from "@/lib/currentUser";
 import { deleteAllBusinessFiles } from "@/lib/storage";
-import type { FeedbackStatus } from "@/lib/types";
+import type { BusinessTier, FeedbackStatus } from "@/lib/types";
 
 export async function suspendWorkspace(businessId: string) {
   await requirePlatformAdmin();
@@ -16,6 +16,12 @@ export async function reactivateWorkspace(businessId: string) {
   await requirePlatformAdmin();
   await admin.reactivateBusiness(businessId);
   revalidatePath("/admin");
+}
+
+export async function updateWorkspaceTier(businessId: string, tier: BusinessTier) {
+  await requirePlatformAdmin();
+  await admin.setBusinessTier(businessId, tier);
+  revalidatePath(`/admin/workspace/${businessId}`);
 }
 
 /**

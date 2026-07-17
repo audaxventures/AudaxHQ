@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackStatusBadge } from "@/components/ui/Badge";
+import { WorkspaceTierSelect } from "@/components/admin/WorkspaceTierSelect";
 import { getWorkspaceDetail } from "@/lib/data/admin";
 import { listFeedbackForBusiness } from "@/lib/data/feedback";
 import { formatDate } from "@/lib/format";
@@ -43,7 +44,10 @@ export default async function AdminWorkspaceDetailPage({ params }: { params: Pro
             </p>
             <p className="mt-1 text-xs text-navy-400">Created {formatDate(workspace.createdAt)}</p>
           </div>
-          <Badge tone={isSuspended ? "brick" : "sage"}>{isSuspended ? "Suspended" : "Active"}</Badge>
+          <div className="flex items-center gap-2">
+            <WorkspaceTierSelect businessId={workspace.id} tier={workspace.tier} />
+            <Badge tone={isSuspended ? "brick" : "sage"}>{isSuspended ? "Suspended" : "Active"}</Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

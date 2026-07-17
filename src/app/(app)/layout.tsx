@@ -2,10 +2,15 @@ import Link from "next/link";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
+import { NotificationBell } from "@/components/nav/NotificationBell";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/ui/Footer";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import { getCurrentUser, isPlatformAdmin } from "@/lib/currentUser";
+import { getNotificationSnapshot } from "@/lib/data/notifications";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getBusinessToday } from "@/lib/data/businesses";
+import { selfId } from "@/lib/assign";
 
 // This app is a live daily-use tool backed by Postgres — every page here
 // needs fresh data on every request, so opt the whole section out of static
@@ -24,6 +29,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const showWelcome = currentUser?.role === "OWNER" && !currentUser.business.onboardingDismissedAt;
 
+  const notificationSnapshot = currentUser
+    ? await (async () => {
+        const [today, accessibleClientIds] = await Promise.all([
+          getBusinessToday(currentUser.businessId),
+          accessibleClientIdsFor(currentUser),
+        ]);
+        return getNotificationSnapshot(currentUser.businessId, selfId(currentUser), today, accessibleClientIds);
+      })()
+    : null;
+
   return (
     <div className="flex min-h-dvh w-full">
       {showWelcome && (
@@ -33,7 +48,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col min-w-0">
         <MobileTopBar role={role} isAdmin={isAdmin} businessName={businessName} />
         <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
-          <div className="mb-4 flex justify-start md:justify-end">
+          <div className="mb-4 flex items-center justify-between">
+            {notificationSnapshot ? (
+              <NotificationBell
+                initialUnread={notificationSnapshot.unread}
+                initialUnreadCount={notificationSnapshot.unreadCount}
+                rightNow={notificationSnapshot.rightNow}
+              />
+            ) : (
+              <span />
+            )}
             <Link href="/" className="transition-opacity hover:opacity-80">
               {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded or default logo, dimensions unknown */}
               <img src={logoUrl ?? "/logo.png"} alt="Audax Ventures" className="h-10 w-auto sm:h-16" />

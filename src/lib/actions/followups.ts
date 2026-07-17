@@ -2,9 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import * as followups from "@/lib/data/followups";
+import * as notifications from "@/lib/data/notifications";
 import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
-import { resolveAssignedTeamMemberId } from "@/lib/assign";
+import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
 import type { CurrentUser, FollowUpStatus } from "@/lib/types";
+
+/** Fires an in-app notification when a follow-up is handed to someone else — mirrors notifyTaskAssignee in actions/tasks.ts. */
+async function notifyFollowUpAssignee(
+  user: CurrentUser,
+  businessId: string,
+  assignedToTeamMemberId: string | null,
+  previousAssignee: string | null | undefined,
+  label: string,
+  owner: { clientId?: string; leadId?: string }
+) {
+  const self = selfId(user);
+  if (assignedToTeamMemberId === self || assignedToTeamMemberId === previousAssignee) return;
+  await notifications.createNotification(
+    businessId,
+    assignedToTeamMemberId,
+    "FOLLOW_UP_ASSIGNED",
+    `${actorDisplayName(user)} assigned you a follow-up: "${label}"`,
+    owner.clientId ? `/clients/${owner.clientId}` : `/leads/${owner.leadId}`
+  );
+}
 
 function revalidateOwner(clientId?: string, leadId?: string) {
   if (clientId) revalidatePath(`/clients/${clientId}`);
@@ -30,7 +51,9 @@ export async function addFollowUp(
   const raw = formData.get("assignedTo");
   const assignedToTeamMemberId = resolveAssignedTeamMemberId(raw === null ? null : String(raw), user);
   await followups.addFollowUp(owner, user.businessId, { label, date, assignedToTeamMemberId });
-  revalidateOwner("clientId" in owner ? owner.clientId : undefined, "leadId" in owner ? owner.leadId : undefined);
+  const ownerIds = { clientId: "clientId" in owner ? owner.clientId : undefined, leadId: "leadId" in owner ? owner.leadId : undefined };
+  await notifyFollowUpAssignee(user, user.businessId, assignedToTeamMemberId, undefined, label, ownerIds);
+  revalidateOwner(ownerIds.clientId, ownerIds.leadId);
 }
 
 export async function setFollowUpStatus(
@@ -50,7 +73,11 @@ export async function setFollowUpAssignee(
 ) {
   const user = await resolveOwnerAccess(owner);
   const assignedToTeamMemberId = resolveAssignedTeamMemberId(rawAssignedTo, user);
+  const existing = await followups.getFollowUpForNotification(id, user.businessId);
   await followups.setFollowUpAssignee(id, user.businessId, assignedToTeamMemberId);
+  if (existing) {
+    await notifyFollowUpAssignee(user, user.businessId, assignedToTeamMemberId, existing.assignedToTeamMemberId, existing.label, owner);
+  }
   revalidateOwner(owner.clientId, owner.leadId);
 }
 
