@@ -59,25 +59,31 @@ const TIERS: PricingTier[] = [
 export default function PricingPage() {
   return (
     <>
-      <div className="bg-navy-900">
-        <Section className="py-20 text-center lg:py-24">
-          <span className="inline-flex items-center rounded-full border border-navy-700 bg-navy-800 px-3.5 py-1.5 text-xs font-medium text-navy-200">
-            Pricing
-          </span>
-          <h1 className="mx-auto mt-5 max-w-2xl font-heading text-4xl font-semibold leading-[1.1] text-cream-50 sm:text-5xl">
-            Free during early access.
-          </h1>
-          <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-navy-300">
-            Every workspace is free and unrestricted while we’re onboarding early customers — no credit card,
-            nothing to unlock. The plans below are what we’ll move to once early access ends; existing workspaces
-            will get advance notice before anything changes.
-          </p>
-          <Link
-            href={appPath("/signup")}
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
-          >
-            Start for free <ArrowRight size={16} />
-          </Link>
+      <div className="relative min-h-[420px] overflow-hidden bg-cream-50 sm:min-h-[480px]">
+        {/* eslint-disable-next-line @next/next/no-img-element -- real product photo, not a candidate for next/image in this hero band */}
+        <img src="/pricingbackground.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-cream-50/90 sm:hidden" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-cream-50 from-0% via-cream-50/70 via-30% to-transparent to-55% sm:block" />
+        <Section className="relative flex min-h-[420px] flex-col justify-center py-16 sm:min-h-[480px] lg:py-20">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center rounded-full border border-burnt-300 bg-burnt-100 px-3.5 py-1.5 text-xs font-medium text-burnt-700">
+              Pricing
+            </span>
+            <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.1] text-navy-900 sm:text-5xl">
+              Free during early access.
+            </h1>
+            <p className="mt-5 text-base leading-relaxed text-navy-700">
+              Every workspace is free and unrestricted while we’re onboarding early customers — no credit card,
+              nothing to unlock. The plans below are what we’ll move to once early access ends; existing workspaces
+              will get advance notice before anything changes.
+            </p>
+            <Link
+              href={appPath("/signup")}
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
+            >
+              Start for free <ArrowRight size={16} />
+            </Link>
+          </div>
         </Section>
       </div>
 
