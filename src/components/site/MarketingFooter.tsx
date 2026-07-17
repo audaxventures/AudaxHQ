@@ -74,7 +74,18 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col gap-2 border-t border-navy-800 pt-6 text-xs text-navy-400 sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} Audax Ventures Inc. All rights reserved.</p>
-          <p>Built by Audax Ventures.</p>
+          <p>
+            Built by{" "}
+            <a
+              href="https://www.audaxventures.ca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-navy-300 underline underline-offset-2 transition-colors hover:text-cream-50"
+            >
+              Audax Ventures
+            </a>
+            .
+          </p>
         </div>
       </div>
     </footer>
