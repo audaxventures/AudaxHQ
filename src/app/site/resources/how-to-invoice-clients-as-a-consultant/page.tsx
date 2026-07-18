@@ -122,12 +122,13 @@ export default function Page() {
         start of the week, instead of a quarterly reckoning when cash flow suddenly feels tight.
       </ArticleP>
       <ArticleP>
-        Invoicing shouldn&rsquo;t be the part of running a service business that depends on willpower. When it&rsquo;s
-        tied to the same system that tracks your clients, your time, and your projects, sending an invoice becomes a
-        byproduct of work you&rsquo;re already doing — not a separate job you have to remember to do on top of it.
-        That&rsquo;s the specific problem Verclara&rsquo;s client records, Hour &amp; Cost Tracker, and Invoice Aging
-        view are built to solve — so billing stops being the thing you have to remember and starts being a byproduct
-        of the work itself, and feeds directly into knowing which clients are actually{" "}
+        Invoicing shouldn&rsquo;t be the part of running a service business that depends on willpower. When billing
+        status is tied to the same system that tracks your clients, your time, and your projects, knowing what&rsquo;s
+        owed and what&rsquo;s overdue becomes a byproduct of work you&rsquo;re already doing — not a separate thing
+        you have to remember to check. That&rsquo;s the specific problem Verclara&rsquo;s client records, Hour &amp;
+        Cost Tracker, and Invoice Aging view are built to solve — Verclara tracks billing status and revenue per
+        client, it doesn&rsquo;t generate or send the invoice itself, so it sits alongside your accounting software
+        rather than replacing it, and feeds directly into knowing which clients are actually{" "}
         <Link href="/resources/track-client-profitability" className="text-burnt-600 underline hover:text-burnt-700">
           profitable
         </Link>

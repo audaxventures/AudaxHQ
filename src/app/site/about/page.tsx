@@ -134,9 +134,14 @@ const FAQ_ITEMS = [
       "For most of what a spreadsheet does in a service business — client tracking, pipeline, revenue, time — yes. The difference is everything stays connected to the same client record automatically, instead of living in separate tabs you have to keep in sync by hand.",
   },
   {
-    question: "Can I track time and invoice clients in Verclara?",
+    question: "Can I track billing and revenue in Verclara?",
     answer:
-      "Yes. Time and fixed costs are logged against each client, and invoices — hourly or fixed-fee — are generated from that same record, so your profitability numbers and your billing are never out of sync.",
+      "Yes. Time and fixed costs are logged against each client, and each invoice is tracked through its billing status — not invoiced, invoiced, or paid — so you always know what's outstanding and how it affects profitability. Verclara tracks that status; it doesn't generate or send the invoice itself, so it's not a replacement for your accounting or bookkeeping software.",
+  },
+  {
+    question: "Does Verclara replace accounting or bookkeeping software?",
+    answer:
+      "No. Verclara tracks revenue, costs, and billing status per client so you can see profitability at a glance, but it isn't accounting software. You'll still use QuickBooks, Xero, or your bookkeeper for actual invoicing, taxes, and financial statements.",
   },
   {
     question: "Is Verclara built for fractional executives and consultants?",
