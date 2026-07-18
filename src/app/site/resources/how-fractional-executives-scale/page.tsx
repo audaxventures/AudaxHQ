@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "how-fractional-executives-scale";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["team-management-for-small-agencies", "best-crm-for-fractional-executives", "business-operating-system-vs-spreadsheets"]}
     >
       <ArticleP>
         Most fractional executives hit a ceiling not because demand runs out, but because the operational overhead
@@ -67,7 +69,11 @@ export default function Page() {
       <ArticleH2>What removes the ceiling</ArticleH2>
       <ArticleP>
         The fractional executives who scale past four or five clients tend to share one habit: every client lives in
-        the same structure. Same place for notes, same follow-up cadence, same way of tracking deliverables — so
+        the same structure. Same place for notes, same{" "}
+        <Link href="/resources/lead-follow-up-strategies" className="text-burnt-600 underline hover:text-burnt-700">
+          follow-up
+        </Link>{" "}
+        cadence, same way of tracking deliverables — so
         adding a new client means slotting into an existing system rather than inventing a new one. That
         standardization is what makes the tenth client cost roughly the same overhead per week as the fourth did,
         instead of scaling linearly with headcount.

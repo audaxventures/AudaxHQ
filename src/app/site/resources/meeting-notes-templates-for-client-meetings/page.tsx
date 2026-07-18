@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "meeting-notes-templates-for-client-meetings";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["client-onboarding-checklist", "team-management-for-small-agencies", "lead-follow-up-strategies"]}
     >
       <ArticleP>
         Good meeting notes aren&rsquo;t a transcript — they&rsquo;re a decision record. The point isn&rsquo;t to
@@ -65,7 +67,11 @@ export default function Page() {
         The best meeting notes system is one where writing the note and creating the follow-up are the same motion,
         not two separate steps you have to remember to do. Verclara&rsquo;s meeting notes live directly on the
         client record, with agenda and action items as dedicated fields — so a decision made in a Tuesday call turns
-        into a tracked follow-up without a second trip to a different tool.
+        into a tracked{" "}
+        <Link href="/resources/lead-follow-up-strategies" className="text-burnt-600 underline hover:text-burnt-700">
+          follow-up
+        </Link>{" "}
+        without a second trip to a different tool.
       </ArticleP>
     </ArticleLayout>
   );

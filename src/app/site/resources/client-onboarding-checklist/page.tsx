@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "client-onboarding-checklist";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["meeting-notes-templates-for-client-meetings", "sales-pipeline-for-consulting-business", "team-management-for-small-agencies"]}
     >
       <ArticleP>
         The first two weeks of a client relationship set the tone for everything after it. A smooth onboarding tells
@@ -58,7 +60,13 @@ export default function Page() {
       <ArticleUL>
         <li>Deliver one small, visible win early — momentum matters more than completeness at this stage.</li>
         <li>Set a recurring follow-up cadence so check-ins happen by default, not by memory.</li>
-        <li>Confirm invoicing details are correct before the first invoice goes out.</li>
+        <li>
+          Confirm{" "}
+          <Link href="/resources/how-to-invoice-clients-as-a-consultant" className="text-burnt-600 underline hover:text-burnt-700">
+            invoicing
+          </Link>{" "}
+          details are correct before the first invoice goes out.
+        </li>
         <li>Do a short internal review: is anything about this engagement different from what was scoped?</li>
       </ArticleUL>
 
@@ -71,7 +79,11 @@ export default function Page() {
       </ArticleP>
       <ArticleP>
         A repeatable onboarding process works best when it&rsquo;s attached to the same place you&rsquo;ll manage the
-        rest of the relationship — meeting notes, follow-ups, and tasks all on the client&rsquo;s own record, so the
+        rest of the relationship —{" "}
+        <Link href="/resources/meeting-notes-templates-for-client-meetings" className="text-burnt-600 underline hover:text-burnt-700">
+          meeting notes
+        </Link>
+        , follow-ups, and tasks all on the client&rsquo;s own record, so the
         next step is always visible instead of remembered. That&rsquo;s the model Verclara is built around: every new
         client starts as one workspace where onboarding tasks, meeting notes, and follow-ups don&rsquo;t need a
         separate checklist app to stay on track.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "track-client-profitability";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["time-tracking-for-client-projects", "how-to-invoice-clients-as-a-consultant", "best-crm-for-fractional-executives"]}
     >
       <ArticleP>
         Revenue and profitability are not the same number, and for service businesses that gap can be dangerously
@@ -46,8 +48,13 @@ export default function Page() {
       <ArticleH2>The minimum you need to track</ArticleH2>
       <ArticleUL>
         <li>
-          <strong>Time spent per client,</strong> logged consistently enough to be trustworthy — even a rough weekly
-          estimate beats no tracking at all.
+          <strong>
+            <Link href="/resources/time-tracking-for-client-projects" className="text-burnt-600 underline hover:text-burnt-700">
+              Time spent per client
+            </Link>
+            ,
+          </strong>{" "}
+          logged consistently enough to be trustworthy — even a rough weekly estimate beats no tracking at all.
         </li>
         <li>
           <strong>Fixed and variable costs tied to each client,</strong> like contractor hours, software seats, or
@@ -73,7 +80,11 @@ export default function Page() {
 
       <ArticleH2>Why spreadsheets make this harder than it needs to be</ArticleH2>
       <ArticleP>
-        In theory, a spreadsheet can track all of this. In practice, it rarely gets kept up to date, because logging
+        In theory, a{" "}
+        <Link href="/resources/business-operating-system-vs-spreadsheets" className="text-burnt-600 underline hover:text-burnt-700">
+          spreadsheet
+        </Link>{" "}
+        can track all of this. In practice, it rarely gets kept up to date, because logging
         time in one place and costs in another and revenue in a third means the profitability picture is always a
         week behind — and reconstructing it takes an afternoon nobody has. The businesses that actually track
         profitability well are the ones where time, costs, and revenue live against the same client record

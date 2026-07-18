@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "lead-follow-up-strategies";
@@ -25,6 +26,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["sales-pipeline-for-consulting-business", "best-crm-for-fractional-executives", "client-onboarding-checklist"]}
     >
       <ArticleP>
         Ask most consultants why a lead didn&rsquo;t become a client, and the honest answer is rarely &ldquo;they said
@@ -60,8 +62,11 @@ export default function Page() {
       <ArticleH2>Stalled leads need a decision, not just a reminder</ArticleH2>
       <ArticleP>
         Not every lead is worth chasing indefinitely. Part of a good follow-up system is a regular review — weekly
-        or biweekly — where stalled leads get a deliberate decision: keep pursuing, deprioritize, or close it out.
-        A pipeline full of leads nobody has looked at in two months isn&rsquo;t a pipeline, it&rsquo;s a graveyard.
+        or biweekly — where stalled leads get a deliberate decision: keep pursuing, deprioritize, or close it out. A{" "}
+        <Link href="/resources/sales-pipeline-for-consulting-business" className="text-burnt-600 underline hover:text-burnt-700">
+          pipeline
+        </Link>{" "}
+        full of leads nobody has looked at in two months isn&rsquo;t a pipeline, it&rsquo;s a graveyard.
       </ArticleP>
       <ArticleP>
         This is precisely what Verclara&rsquo;s follow-up tracking is built to prevent — every lead and client can

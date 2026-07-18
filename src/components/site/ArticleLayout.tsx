@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { appPath } from "@/lib/site";
+import { RESOURCE_POSTS } from "@/lib/resources";
 
 // Mirrors src/app/site/layout.tsx's marketingHost derivation — needed here
 // too since each article's JSON-LD needs an absolute canonical URL.
@@ -18,6 +19,7 @@ export function ArticleLayout({
   category,
   publishedAt,
   readingMinutes,
+  relatedSlugs,
   children,
 }: {
   slug: string;
@@ -26,8 +28,13 @@ export function ArticleLayout({
   category: string;
   publishedAt: string;
   readingMinutes: number;
+  /** Slugs of other Resources posts to link at the bottom of the article — chosen per-article for topical relevance, not auto-generated. */
+  relatedSlugs?: string[];
   children: React.ReactNode;
 }) {
+  const relatedPosts = (relatedSlugs ?? [])
+    .map((s) => RESOURCE_POSTS.find((p) => p.slug === s))
+    .filter((p): p is (typeof RESOURCE_POSTS)[number] => p !== undefined);
   const url = `https://${marketingHost}/resources/${slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -74,6 +81,26 @@ export function ArticleLayout({
         <Section className="pb-20 pt-10 sm:pb-24">
           <div className="mx-auto max-w-3xl">
             {children}
+
+            {relatedPosts.length > 0 && (
+              <div className="mt-14 border-t border-navy-100 pt-10">
+                <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">Related reading</p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {relatedPosts.map((post) => (
+                    <Link
+                      key={post.slug}
+                      href={`/resources/${post.slug}`}
+                      className="group rounded-xl border border-navy-100 p-4 transition-colors hover:border-burnt-300"
+                    >
+                      <p className="font-heading text-base font-semibold leading-snug text-navy-900 group-hover:text-burnt-600">
+                        {post.title}
+                      </p>
+                      <p className="mt-1.5 text-sm leading-relaxed text-navy-500">{post.description}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-14 rounded-2xl border border-navy-100 bg-white p-8 text-center sm:p-10">
               <h2 className="font-heading text-2xl font-semibold text-navy-900">Run this from one workspace.</h2>

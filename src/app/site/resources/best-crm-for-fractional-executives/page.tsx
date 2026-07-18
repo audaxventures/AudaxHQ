@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "best-crm-for-fractional-executives";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["sales-pipeline-for-consulting-business", "track-client-profitability", "how-fractional-executives-scale"]}
     >
       <ArticleP>
         Search &ldquo;best CRM for fractional executives&rdquo; and you&rsquo;ll mostly find sales tools with a lot of
@@ -51,16 +53,25 @@ export default function Page() {
           engagement, you need to find what was decided in March without searching your inbox.
         </li>
         <li>
-          <strong>A simple pipeline for new business,</strong> without the deal-stage complexity built for teams
-          selling dozens of deals a month.
+          <strong>
+            A <Link href="/resources/sales-pipeline-for-consulting-business" className="text-burnt-600 underline hover:text-burnt-700">
+              simple pipeline for new business
+            </Link>,
+          </strong>{" "}
+          without the deal-stage complexity built for teams selling dozens of deals a month.
         </li>
         <li>
           <strong>Follow-up reminders that don&rsquo;t depend on your memory.</strong> When you&rsquo;re juggling five
           client relationships, &ldquo;I&rsquo;ll remember to check in&rdquo; stops working around client number three.
         </li>
         <li>
-          <strong>Revenue visibility across every engagement,</strong> so you know at a glance what&rsquo;s billed,
-          what&rsquo;s outstanding, and what&rsquo;s recurring.
+          <strong>
+            <Link href="/resources/track-client-profitability" className="text-burnt-600 underline hover:text-burnt-700">
+              Revenue visibility across every engagement
+            </Link>
+            ,
+          </strong>{" "}
+          so you know at a glance what&rsquo;s billed, what&rsquo;s outstanding, and what&rsquo;s recurring.
         </li>
       </ArticleUL>
 

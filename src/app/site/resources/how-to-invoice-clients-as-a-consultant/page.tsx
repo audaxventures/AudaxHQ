@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP } from "@/components/site/ArticleLayout";
 
 const SLUG = "how-to-invoice-clients-as-a-consultant";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["track-client-profitability", "time-tracking-for-client-projects", "business-operating-system-vs-spreadsheets"]}
     >
       <ArticleP>
         Most consultants don&rsquo;t have a collections problem. They have an invoicing system problem. Invoices go
@@ -56,8 +58,11 @@ export default function Page() {
       <ArticleP>
         For retainer clients, that trigger is the billing date itself — invoice generation should be the very next
         step after the period closes, not a task queued for &ldquo;when I get to it.&rdquo; For project-based or
-        hourly work, the trigger should be the logged time or completed milestone. If your time tracking and your
-        invoicing live in the same system, this is close to automatic. If they live in two different tools,
+        hourly work, the trigger should be the logged time or completed milestone. If your{" "}
+        <Link href="/resources/time-tracking-for-client-projects" className="text-burnt-600 underline hover:text-burnt-700">
+          time tracking
+        </Link>{" "}
+        and your invoicing live in the same system, this is close to automatic. If they live in two different tools,
         it&rsquo;s an extra manual transfer step every single time — and that&rsquo;s usually where delays creep in.
       </ArticleP>
       <ArticleP>
@@ -122,7 +127,11 @@ export default function Page() {
         byproduct of work you&rsquo;re already doing — not a separate job you have to remember to do on top of it.
         That&rsquo;s the specific problem Verclara&rsquo;s client records, Hour &amp; Cost Tracker, and Invoice Aging
         view are built to solve — so billing stops being the thing you have to remember and starts being a byproduct
-        of the work itself.
+        of the work itself, and feeds directly into knowing which clients are actually{" "}
+        <Link href="/resources/track-client-profitability" className="text-burnt-600 underline hover:text-burnt-700">
+          profitable
+        </Link>
+        .
       </ArticleP>
     </ArticleLayout>
   );

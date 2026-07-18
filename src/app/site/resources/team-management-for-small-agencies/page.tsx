@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "team-management-for-small-agencies";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["how-fractional-executives-scale", "business-operating-system-vs-spreadsheets", "meeting-notes-templates-for-client-meetings"]}
     >
       <ArticleP>
         A five-person agency and a five-hundred-person enterprise are not the same shape of organization, but they&rsquo;re
@@ -67,7 +69,11 @@ export default function Page() {
       <ArticleH2>Why over-tooling backfires</ArticleH2>
       <ArticleP>
         The instinct when a team starts to feel disorganized is often to add more software — a project management
-        tool here, a shared drive structure there, a separate CRM for leads. Each addition solves a narrow problem
+        tool here, a shared drive structure there, a{" "}
+        <Link href="/resources/best-crm-for-fractional-executives" className="text-burnt-600 underline hover:text-burnt-700">
+          separate CRM for leads
+        </Link>
+        . Each addition solves a narrow problem
         and creates a new one: another login, another place information can go stale, another tool that only half
         the team actually opens. Small teams are usually better served by fewer, more connected tools than by more,
         more specialized ones.

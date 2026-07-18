@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "business-operating-system-vs-spreadsheets";
@@ -25,6 +26,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["how-fractional-executives-scale", "track-client-profitability", "best-crm-for-fractional-executives"]}
     >
       <ArticleP>
         Ask a consultant or small agency owner how they run their business, and the answer is often a small
@@ -35,10 +37,20 @@ export default function Page() {
 
       <ArticleH2>The hidden cost isn&rsquo;t the tools — it&rsquo;s the gaps</ArticleH2>
       <ArticleP>
-        No single spreadsheet or app is the problem. The problem is that none of them know about each other. A
-        follow-up noted in a spreadsheet doesn&rsquo;t trigger a reminder anywhere. A decision made in a meeting note
-        doesn&rsquo;t update the pipeline. Revenue tracked in an invoicing tool doesn&rsquo;t reconcile with the
-        hours logged somewhere else. Each gap is small. Together, they&rsquo;re where client relationships quietly
+        No single spreadsheet or app is the problem. The problem is that none of them know about each other. A{" "}
+        <Link href="/resources/lead-follow-up-strategies" className="text-burnt-600 underline hover:text-burnt-700">
+          follow-up
+        </Link>{" "}
+        noted in a spreadsheet doesn&rsquo;t trigger a reminder anywhere. A decision made in a meeting note
+        doesn&rsquo;t update the pipeline. Revenue tracked in an{" "}
+        <Link href="/resources/how-to-invoice-clients-as-a-consultant" className="text-burnt-600 underline hover:text-burnt-700">
+          invoicing tool
+        </Link>{" "}
+        doesn&rsquo;t reconcile with the{" "}
+        <Link href="/resources/time-tracking-for-client-projects" className="text-burnt-600 underline hover:text-burnt-700">
+          hours logged
+        </Link>{" "}
+        somewhere else. Each gap is small. Together, they&rsquo;re where client relationships quietly
         degrade — not from any one mistake, but from information that exists somewhere, just not where you&rsquo;re
         looking at the moment you need it.
       </ArticleP>

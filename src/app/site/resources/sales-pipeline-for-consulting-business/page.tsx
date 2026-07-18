@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "sales-pipeline-for-consulting-business";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["lead-follow-up-strategies", "client-onboarding-checklist", "best-crm-for-fractional-executives"]}
     >
       <ArticleP>
         Most pipeline advice is written for sales teams closing dozens of deals a month. A consulting or agency
@@ -53,7 +55,15 @@ export default function Page() {
       <ArticleP>
         A lot of pipeline tools treat &ldquo;won&rdquo; as the finish line — the deal closes, and the CRM&rsquo;s job
         is basically done. For a service business, that&rsquo;s backwards. The close is the start of the actual
-        relationship: onboarding, meeting notes, recurring revenue, follow-ups. If your pipeline and your client
+        relationship:{" "}
+        <Link href="/resources/client-onboarding-checklist" className="text-burnt-600 underline hover:text-burnt-700">
+          onboarding
+        </Link>
+        , meeting notes, recurring revenue,{" "}
+        <Link href="/resources/lead-follow-up-strategies" className="text-burnt-600 underline hover:text-burnt-700">
+          follow-ups
+        </Link>
+        . If your pipeline and your client
         management live in separate tools, that handoff is where information gets lost — the context from
         discovery calls doesn&rsquo;t make it into the client record, and you&rsquo;re starting the relationship
         with amnesia about how it began.

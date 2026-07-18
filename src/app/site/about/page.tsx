@@ -123,14 +123,50 @@ const FAQ_ITEMS = [
     question: "What if I want to close my account?",
     answer: "Email us at info@audaxventures.ca and we'll take care of it for you.",
   },
+  {
+    question: "Is Verclara a CRM?",
+    answer:
+      "Yes — client and lead management is the core of Verclara, alongside pipeline tracking, revenue, meetings, time, and tasks. Most CRMs stop at contacts and deals; Verclara connects the CRM to the rest of how you actually run client work.",
+  },
+  {
+    question: "Does Verclara replace spreadsheets?",
+    answer:
+      "For most of what a spreadsheet does in a service business — client tracking, pipeline, revenue, time — yes. The difference is everything stays connected to the same client record automatically, instead of living in separate tabs you have to keep in sync by hand.",
+  },
+  {
+    question: "Can I track time and invoice clients in Verclara?",
+    answer:
+      "Yes. Time and fixed costs are logged against each client, and invoices — hourly or fixed-fee — are generated from that same record, so your profitability numbers and your billing are never out of sync.",
+  },
+  {
+    question: "Is Verclara built for fractional executives and consultants?",
+    answer:
+      "Yes — Verclara was designed specifically for people running client-based service work: fractional executives, consultants, and small agency teams managing multiple client relationships at once.",
+  },
+  {
+    question: "How is Verclara different from project management tools like Asana or Trello?",
+    answer:
+      "Project management tools track tasks. Verclara tracks the whole client relationship — the CRM record, the pipeline, the revenue, the meeting notes, and the tasks — so nothing about a client lives in a separate app from everything else about them.",
+  },
 ];
 
-const FAQ_LEFT = FAQ_ITEMS.slice(0, 4);
-const FAQ_RIGHT = FAQ_ITEMS.slice(4);
+const FAQ_LEFT = FAQ_ITEMS.slice(0, Math.ceil(FAQ_ITEMS.length / 2));
+const FAQ_RIGHT = FAQ_ITEMS.slice(Math.ceil(FAQ_ITEMS.length / 2));
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
 
 export default function AboutPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="relative min-h-[420px] overflow-hidden bg-cream-50 sm:min-h-[480px]">
         {/* eslint-disable-next-line @next/next/no-img-element -- real lifestyle photo, not a candidate for next/image in this hero band */}
         <img src="/aboutherobackground.png" alt="" className="absolute inset-0 h-full w-full object-cover" />

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArticleLayout, ArticleH2, ArticleP, ArticleUL } from "@/components/site/ArticleLayout";
 
 const SLUG = "time-tracking-for-client-projects";
@@ -26,6 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
+      relatedSlugs={["track-client-profitability", "how-to-invoice-clients-as-a-consultant", "business-operating-system-vs-spreadsheets"]}
     >
       <ArticleP>
         Most service businesses lose billable hours not through big mistakes, but through a hundred small ones —
@@ -76,8 +78,11 @@ export default function Page() {
       <ArticleP>
         Time tracking is most useful when it connects directly to cost and revenue — otherwise it&rsquo;s just a log
         nobody revisits. Verclara&rsquo;s Hour &amp; Cost Tracker logs time against the same client record you&rsquo;re
-        already working from, and rolls it straight into profitability, so tracking time and understanding what
-        it&rsquo;s actually costing you happen in the same place.
+        already working from, and rolls it straight into{" "}
+        <Link href="/resources/track-client-profitability" className="text-burnt-600 underline hover:text-burnt-700">
+          profitability
+        </Link>
+        , so tracking time and understanding what it&rsquo;s actually costing you happen in the same place.
       </ArticleP>
     </ArticleLayout>
   );
