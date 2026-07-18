@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Script from "next/script";
 import { MarketingNav } from "@/components/site/MarketingNav";
 import { MarketingFooter } from "@/components/site/MarketingFooter";
+
+// Google Analytics (gtag.js) — marketing site only, never the authenticated
+// app. Measurement ID G-3Z1G5RHLKN, provided directly by the business owner.
+const GA_MEASUREMENT_ID = "G-3Z1G5RHLKN";
 
 // The public hostname this marketing site is actually reached at (see
 // proxy.ts's MARKETING_HOSTS rewrite) — needed so Next can resolve the
@@ -64,6 +69,15 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-full flex-col">
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_MEASUREMENT_ID}');
+        `}
+      </Script>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <MarketingNav />
       <main className="flex-1">{children}</main>
