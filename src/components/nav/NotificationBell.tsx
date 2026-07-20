@@ -75,7 +75,7 @@ export function NotificationBell({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-80 rounded-2xl border border-navy-100 bg-white shadow-[0_20px_40px_-24px_rgba(16,29,51,0.45)]">
+        <div className="absolute left-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-navy-100 bg-white shadow-[0_20px_40px_-24px_rgba(16,29,51,0.45)]">
           <div className="max-h-[28rem] overflow-y-auto p-2">
             {hasNothing && (
               <p className="px-3 py-6 text-center text-sm text-navy-400">You&rsquo;re all caught up.</p>
