@@ -103,4 +103,12 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-07-16",
     readingMinutes: 5,
   },
+  {
+    slug: "consulting-proposal-template",
+    title: "Consulting Proposal Templates That Actually Win Client Work",
+    description: "A practical consulting proposal template and framework that helps you write faster, sound clearer, and close more client work.",
+    category: "Proposals",
+    publishedAt: "2026-07-20",
+    readingMinutes: 6,
+  },
 ];

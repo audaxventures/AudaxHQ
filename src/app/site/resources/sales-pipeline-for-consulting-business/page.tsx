@@ -27,7 +27,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
-      relatedSlugs={["lead-follow-up-strategies", "client-onboarding-checklist", "best-crm-for-fractional-executives"]}
+      relatedSlugs={["consulting-proposal-template", "lead-follow-up-strategies", "client-onboarding-checklist"]}
     >
       <ArticleP>
         Most pipeline advice is written for sales teams closing dozens of deals a month. A consulting or agency
@@ -46,7 +46,14 @@ export default function Page() {
       <ArticleUL>
         <li><strong>New lead</strong> — a name and a reason to believe there&rsquo;s a fit, nothing committed yet.</li>
         <li><strong>Discovery call scheduled or completed</strong> — you understand their problem and they understand your approach.</li>
-        <li><strong>Proposal sent</strong> — scope, price, and timeline are in front of them.</li>
+        <li>
+          <strong>
+            <Link href="/resources/consulting-proposal-template" className="text-burnt-600 underline hover:text-burnt-700">
+              Proposal sent
+            </Link>
+          </strong>{" "}
+          — scope, price, and timeline are in front of them.
+        </li>
         <li><strong>Verbal or contract pending</strong> — the decision has effectively been made, paperwork is catching up.</li>
         <li><strong>Won (converted to client)</strong> — the point where pipeline hands off to active client work.</li>
       </ArticleUL>

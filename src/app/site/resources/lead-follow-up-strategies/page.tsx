@@ -26,7 +26,7 @@ export default function Page() {
       category={CATEGORY}
       publishedAt={PUBLISHED_AT}
       readingMinutes={READING_MINUTES}
-      relatedSlugs={["sales-pipeline-for-consulting-business", "best-crm-for-fractional-executives", "client-onboarding-checklist"]}
+      relatedSlugs={["sales-pipeline-for-consulting-business", "consulting-proposal-template", "client-onboarding-checklist"]}
     >
       <ArticleP>
         Ask most consultants why a lead didn&rsquo;t become a client, and the honest answer is rarely &ldquo;they said
@@ -45,7 +45,13 @@ export default function Page() {
 
       <ArticleH2>A follow-up cadence that works for service businesses</ArticleH2>
       <ArticleUL>
-        <li><strong>Day 2 after a proposal:</strong> a short note confirming it arrived and asking if anything needs clarifying.</li>
+        <li>
+          <strong>Day 2 after a{" "}
+          <Link href="/resources/consulting-proposal-template" className="text-burnt-600 underline hover:text-burnt-700">
+            proposal
+          </Link>
+          :</strong> a short note confirming it arrived and asking if anything needs clarifying.
+        </li>
         <li><strong>Day 7:</strong> a specific, useful check-in — a relevant insight, a related case, or a direct question about timeline.</li>
         <li><strong>Day 14:</strong> a lower-pressure touchpoint — checking whether priorities have shifted, and if now still isn&rsquo;t the right time, when might be.</li>
         <li><strong>Day 30:</strong> move to a longer-term nurture rather than active pursuit — but don&rsquo;t delete the lead.</li>
