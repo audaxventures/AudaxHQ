@@ -25,3 +25,9 @@ export function isRichTextEmpty(html: string | null | undefined): boolean {
   if (!html) return true;
   return html.replace(/<[^>]*>/g, "").trim().length === 0;
 }
+
+/** Strips tags down to plain visible text — for search matching, not display. */
+export function toPlainText(html: string | null | undefined): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, " ");
+}

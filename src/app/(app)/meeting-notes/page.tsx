@@ -1,28 +1,54 @@
-import Link from "next/link";
 import { NotebookPen, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { MeetingNotesFilters } from "@/components/meetingnotes/MeetingNotesFilters";
 import { MeetingNotesList } from "@/components/meetingnotes/MeetingNotesList";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
+import { listClients } from "@/lib/data/clients";
+import { listLeads } from "@/lib/data/leads";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { requireCurrentUser } from "@/lib/currentUser";
-import { cn } from "@/lib/cn";
+import { toPlainText } from "@/lib/richtext";
 
 export default async function MeetingNotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ owner?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const { owner } = await searchParams;
+  const sp = await searchParams;
   const user = await requireCurrentUser();
   const accessibleClientIds = await accessibleClientIdsFor(user);
-  const allNotes = await listMeetingNotes(user.businessId, { accessibleClientIds });
-  const notes = allNotes.filter((n) => {
-    if (owner === "client") return Boolean(n.clientId);
-    if (owner === "lead") return Boolean(n.leadId);
-    return true;
-  });
+
+  const filters = {
+    clientId: sp.clientId || undefined,
+    leadId: sp.leadId || undefined,
+  };
+  const search = (sp.q ?? "").trim().toLowerCase();
+
+  const [allNotes, clients, leads] = await Promise.all([
+    listMeetingNotes(user.businessId, { ...filters, accessibleClientIds }),
+    listClients(user.businessId, { accessibleClientIds }),
+    listLeads(user.businessId, { converted: "include" }),
+  ]);
+
+  let notes = allNotes;
+  if (search) {
+    notes = notes.filter((n) => {
+      const haystack = [n.title, n.attendees, n.ownerName, toPlainText(n.notes), toPlainText(n.agenda)]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(search);
+    });
+  }
+
+  const filterParams: Record<string, string | undefined> = {
+    clientId: filters.clientId,
+    leadId: filters.leadId,
+    q: sp.q,
+  };
 
   return (
     <div>
@@ -38,32 +64,19 @@ export default async function MeetingNotesPage({
           </LinkButton>
         }
       />
-      <div className="flex flex-wrap gap-2 mb-6">
-        {[
-          { key: undefined, label: "All" },
-          { key: "client", label: "Clients" },
-          { key: "lead", label: "Leads" },
-        ].map((f) => (
-          <Link
-            key={f.label}
-            href={f.key ? `/meeting-notes?owner=${f.key}` : "/meeting-notes"}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium transition-colors border",
-              owner === f.key
-                ? "bg-navy-900 text-cream-50 border-navy-900"
-                : "bg-transparent text-navy-600 border-navy-200 hover:border-navy-400"
-            )}
-          >
-            {f.label}
-          </Link>
-        ))}
-      </div>
-      {notes.length === 0 ? (
+
+      <Card className="mb-6 p-6">
+        <MeetingNotesFilters clients={clients} leads={leads} filters={filterParams} />
+      </Card>
+
+      {allNotes.length === 0 ? (
         <EmptyState
           title="No meeting notes yet"
           description="Log your first meeting note against a client or lead."
           action={<LinkButton href="/meeting-notes/new">Add a meeting note</LinkButton>}
         />
+      ) : notes.length === 0 ? (
+        <EmptyState title="No matching meeting notes" description="Try a different search or clear the filters." />
       ) : (
         <MeetingNotesList notes={notes} />
       )}
