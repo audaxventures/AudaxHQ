@@ -10,6 +10,7 @@ import { mentionOptions } from "@/lib/mentions";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { BackLink } from "@/components/ui/BackLink";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
@@ -166,8 +167,13 @@ export default async function LeadDetailPage({
             />
           )}
 
-          <Card className="p-6">
-            <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
+          <CollapsibleSection
+            sectionKey="follow-ups"
+            icon={<CalendarClock size={14} />}
+            tone="slate"
+            title="Follow-ups"
+            isEmpty={lead.followUps.length === 0}
+          >
             <FollowUpsList
               owner={{ leadId: id }}
               followUps={lead.followUps}
@@ -175,22 +181,37 @@ export default async function LeadDetailPage({
               assignOptions={assignOptions}
               currentAssigneeId={currentAssigneeId}
             />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={NotebookPen} tone="slate" title="Meetings & notes" />
+          <CollapsibleSection
+            sectionKey="meetings-notes"
+            icon={<NotebookPen size={14} />}
+            tone="slate"
+            title="Meetings & notes"
+            isEmpty={lead.meetingNotes.length === 0}
+          >
             <MeetingNotesSection owner={owner} notes={lead.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={FileText} tone="slate" title="Documents" />
+          <CollapsibleSection
+            sectionKey="documents"
+            icon={<FileText size={14} />}
+            tone="slate"
+            title="Documents"
+            isEmpty={lead.documents.length === 0}
+          >
             <DocumentsSection owner={{ leadId: id }} documents={lead.documents} />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={StickyNote} tone="slate" title="Discussion & Notes" />
+          <CollapsibleSection
+            sectionKey="discussion-notes"
+            icon={<StickyNote size={14} />}
+            tone="slate"
+            title="Discussion & Notes"
+            isEmpty={lead.notes.length === 0}
+          >
             <NotesLog notes={lead.notes} kind="lead" entityId={id} mentionables={noteMentionOptions} />
-          </Card>
+          </CollapsibleSection>
         </div>
 
         <div className="space-y-6">

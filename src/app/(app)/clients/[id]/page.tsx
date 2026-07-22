@@ -21,6 +21,7 @@ import { mentionOptions } from "@/lib/mentions";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { BackLink } from "@/components/ui/BackLink";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
@@ -144,15 +145,20 @@ export default async function ClientDetailPage({
 
           {isOwner && (
             <>
-              <Card className="p-6">
-                <PanelHeading icon={Receipt} tone="slate" title="Invoices" />
+              <CollapsibleSection
+                sectionKey="invoices"
+                icon={<Receipt size={14} />}
+                tone="slate"
+                title="Invoices"
+                isEmpty={client.invoices.length === 0}
+              >
                 <p className="text-sm text-navy-500 mb-4">
                   {client.type === "RECURRING"
                     ? "One entry per month, created automatically — add one-off invoices any time."
                     : "Split the project total across deposits, milestones, or however you invoice this client."}
                 </p>
                 <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
-              </Card>
+              </CollapsibleSection>
 
               <CostSummarySection
                 entries={costEntries}
@@ -178,8 +184,13 @@ export default async function ClientDetailPage({
             </>
           )}
 
-          <Card className="p-6">
-            <PanelHeading icon={CalendarClock} tone="slate" title="Follow-ups" />
+          <CollapsibleSection
+            sectionKey="follow-ups"
+            icon={<CalendarClock size={14} />}
+            tone="slate"
+            title="Follow-ups"
+            isEmpty={client.followUps.length === 0}
+          >
             <FollowUpsList
               owner={{ clientId: id }}
               followUps={client.followUps}
@@ -187,22 +198,37 @@ export default async function ClientDetailPage({
               assignOptions={assignOptions}
               currentAssigneeId={currentAssigneeId}
             />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={NotebookPen} tone="slate" title="Meetings & notes" />
+          <CollapsibleSection
+            sectionKey="meetings-notes"
+            icon={<NotebookPen size={14} />}
+            tone="slate"
+            title="Meetings & notes"
+            isEmpty={client.meetingNotes.length === 0}
+          >
             <MeetingNotesSection owner={owner} notes={client.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={FileText} tone="slate" title="Documents" />
+          <CollapsibleSection
+            sectionKey="documents"
+            icon={<FileText size={14} />}
+            tone="slate"
+            title="Documents"
+            isEmpty={client.documents.length === 0}
+          >
             <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
-          </Card>
+          </CollapsibleSection>
 
-          <Card className="p-6">
-            <PanelHeading icon={StickyNote} tone="slate" title="Discussion & Notes" />
+          <CollapsibleSection
+            sectionKey="discussion-notes"
+            icon={<StickyNote size={14} />}
+            tone="slate"
+            title="Discussion & Notes"
+            isEmpty={client.notes.length === 0}
+          >
             <NotesLog notes={client.notes} kind="client" entityId={id} mentionables={noteMentionOptions} />
-          </Card>
+          </CollapsibleSection>
         </div>
 
         <div className="space-y-6">

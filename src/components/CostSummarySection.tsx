@@ -1,6 +1,5 @@
 import { AlertTriangle, PieChart, Plus } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { PanelHeading } from "@/components/ui/PanelHeading";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { CostDateRangeFilter } from "@/components/CostDateRangeFilter";
 import { cn } from "@/lib/cn";
@@ -58,23 +57,23 @@ export function CostSummarySection({
   const summary = buildCostSummary(entries, totalInvoiced, budgetedHours);
 
   return (
-    <Card className="p-6">
-      <PanelHeading
-        icon={PieChart}
-        tone="slate"
-        title="Cost & profitability"
-        action={
-          <div className="flex items-center gap-4">
-            <a href={logHref} className="inline-flex items-center gap-1 text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-              <Plus size={14} /> Log time / cost
-            </a>
-            <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-              Download report
-            </a>
-          </div>
-        }
-      />
-
+    <CollapsibleSection
+      sectionKey="cost-profitability"
+      icon={<PieChart size={14} />}
+      tone="slate"
+      title="Cost & profitability"
+      isEmpty={entries.length === 0}
+      action={
+        <div className="flex items-center gap-4">
+          <a href={logHref} className="inline-flex items-center gap-1 text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+            <Plus size={14} /> Log time / cost
+          </a>
+          <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+            Download report
+          </a>
+        </div>
+      }
+    >
       <CostDateRangeFilter dateFrom={dateFrom} dateTo={dateTo} />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -148,6 +147,6 @@ export function CostSummarySection({
       )}
 
       <CostEntryLog entries={entries} clients={clients} leads={leads} teamMembers={teamMembers} workCategories={workCategories} />
-    </Card>
+    </CollapsibleSection>
   );
 }
