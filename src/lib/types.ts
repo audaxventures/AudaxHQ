@@ -118,6 +118,8 @@ export interface MeetingNote {
   meetingDate: string;
   /** "HH:MM:SS" (24-hour) or null if only a date was set — see migration 029. */
   startTime: string | null;
+  /** IANA identifier (e.g. "America/New_York") startTime is in — purely descriptive, never used for conversion. Null on notes created before migration 036 or left unset. */
+  timezone: string | null;
   durationMinutes: number | null;
   location: string | null;
   attendees: string | null;

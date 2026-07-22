@@ -27,7 +27,15 @@ function groupByMonth(notes: MeetingNote[]): { month: string; notes: MeetingNote
   return groups;
 }
 
-export function MeetingNotesList({ notes, senderFirstName }: { notes: MeetingNote[]; senderFirstName: string }) {
+export function MeetingNotesList({
+  notes,
+  senderFirstName,
+  defaultTimezone,
+}: {
+  notes: MeetingNote[];
+  senderFirstName: string;
+  defaultTimezone: string;
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
   const groups = groupByMonth(notes);
@@ -76,7 +84,12 @@ export function MeetingNotesList({ notes, senderFirstName }: { notes: MeetingNot
       </div>
 
       {selectedNote && (
-        <MeetingNoteDetailModal note={selectedNote} onClose={() => setSelectedId(null)} senderFirstName={senderFirstName} />
+        <MeetingNoteDetailModal
+          note={selectedNote}
+          onClose={() => setSelectedId(null)}
+          senderFirstName={senderFirstName}
+          defaultTimezone={defaultTimezone}
+        />
       )}
     </>
   );

@@ -39,17 +39,20 @@ function extractRichTextFields(formData: FormData): { agenda: string | null; not
   };
 }
 
-/** Start time / duration / location — see migration 029. All optional, shared by every create/update/schedule entry point. */
+/** Start time / timezone / duration / location — see migrations 029 and 036. All optional, shared by every create/update/schedule entry point. */
 function extractSchedulingFields(formData: FormData): {
   startTime: string | null;
+  timezone: string | null;
   durationMinutes: number | null;
   location: string | null;
 } {
   const startTime = (formData.get("startTime") as string) || null;
+  const timezone = (formData.get("timezone") as string) || null;
   const durationRaw = Number(formData.get("durationMinutes"));
   const location = (formData.get("location") as string)?.trim() || null;
   return {
     startTime,
+    timezone,
     durationMinutes: Number.isFinite(durationRaw) && durationRaw > 0 ? durationRaw : null,
     location,
   };

@@ -2,6 +2,7 @@ import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@
 import { RichTextBlocks } from "@/lib/pdf/richTextBlocks";
 import { loadLogoBuffer } from "@/lib/pdf/logo";
 import { formatDate, formatTime } from "@/lib/format";
+import { timezoneAbbreviation } from "@/lib/timezone";
 import { isRichTextEmpty } from "@/lib/richtext";
 import type { MeetingNote } from "@/lib/types";
 
@@ -50,7 +51,8 @@ function MeetingNotePdfDocument({
   businessName: string;
   logoBuffer: Buffer | null;
 }) {
-  const time = note.startTime ? formatTime(note.startTime) : null;
+  const rawTime = note.startTime ? formatTime(note.startTime) : null;
+  const time = rawTime && note.timezone ? `${rawTime} ${timezoneAbbreviation(note.timezone, note.meetingDate)}` : rawTime;
   const hasAgenda = !isRichTextEmpty(note.agenda);
   const hasNotes = !isRichTextEmpty(note.notes);
   const actionItems = note.actionItemTasks ?? [];

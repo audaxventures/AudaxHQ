@@ -18,10 +18,24 @@ export function currentHourInTimezone(timezone: string): number {
   );
 }
 
-/** Every IANA timezone identifier the runtime knows about, for a Settings picker. */
+/** Short label (e.g. "EST", "PDT") for `timezone` on the given date — accounts for DST, unlike a fixed offset table. Used to annotate a meeting's wall-clock start time with which zone it's in. */
+export function timezoneAbbreviation(timezone: string, atDate: Date | string = new Date()): string {
+  const date = typeof atDate === "string" ? new Date(atDate) : atDate;
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: timezone, timeZoneName: "short" }).formatToParts(date);
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? timezone;
+}
+
+/**
+ * Every IANA timezone identifier the runtime knows about, for a Settings
+ * picker. `Intl.supportedValuesOf("timeZone")` doesn't include bare "UTC"
+ * (its canonical zero-offset zone is "Etc/UTC"/"Africa/Abidjan"), so a
+ * `<select defaultValue="UTC">` against the raw list would silently select
+ * whichever zone happens to sort first — "UTC" is prepended here so it's
+ * always a real, selectable option, matching DEFAULT_TIMEZONE above.
+ */
 export function listTimezones(): string[] {
   if (typeof Intl.supportedValuesOf === "function") {
-    return Intl.supportedValuesOf("timeZone");
+    return ["UTC", ...Intl.supportedValuesOf("timeZone")];
   }
   return [DEFAULT_TIMEZONE];
 }

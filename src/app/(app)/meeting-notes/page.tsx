@@ -78,7 +78,7 @@ export default async function MeetingNotesPage({
       ) : notes.length === 0 ? (
         <EmptyState title="No matching meeting notes" description="Try a different search or clear the filters." />
       ) : (
-        <MeetingNotesList notes={notes} senderFirstName={senderFirstName(user)} />
+        <MeetingNotesList notes={notes} senderFirstName={senderFirstName(user)} defaultTimezone={user.business.timezone} />
       )}
     </div>
   );

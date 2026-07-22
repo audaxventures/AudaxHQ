@@ -25,6 +25,7 @@ export default async function NewMeetingNotePage() {
         <NewMeetingNoteForm
           clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
           leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
+          defaultTimezone={user.business.timezone}
         />
       </Card>
     </div>

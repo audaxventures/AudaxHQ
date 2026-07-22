@@ -6,6 +6,7 @@ import { Clock, MapPin } from "lucide-react";
 import { Input, Select, Label, FieldGroup } from "@/components/ui/Field";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
+import { TimezoneField } from "@/components/meetingnotes/TimezoneField";
 import { Button } from "@/components/ui/Button";
 import { createMeetingNote } from "@/lib/actions/meetingnotes";
 
@@ -31,7 +32,15 @@ function SubmitButton() {
   );
 }
 
-export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; leads: Option[] }) {
+export function NewMeetingNoteForm({
+  clients,
+  leads,
+  defaultTimezone,
+}: {
+  clients: Option[];
+  leads: Option[];
+  defaultTimezone: string;
+}) {
   const [ownerType, setOwnerType] = useState<"CLIENT" | "LEAD">("CLIENT");
 
   return (
@@ -102,11 +111,12 @@ export function NewMeetingNoteForm({ clients, leads }: { clients: Option[]; lead
           <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
         </FieldGroup>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <FieldGroup>
           <Label htmlFor="startTime">Time (optional)</Label>
           <Input id="startTime" name="startTime" type="time" className="min-w-0" />
         </FieldGroup>
+        <TimezoneField defaultValue={defaultTimezone} />
         <FieldGroup>
           <Label htmlFor="durationMinutes">Duration</Label>
           <Select id="durationMinutes" name="durationMinutes" defaultValue="30" icon={Clock}>

@@ -8,6 +8,7 @@ import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { AddToCalendarLinks } from "@/components/meetingnotes/AddToCalendarLinks";
+import { TimezoneField } from "@/components/meetingnotes/TimezoneField";
 import { MeetingNoteEmailDrawer } from "@/components/meetingnotes/MeetingNoteEmailDrawer";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -30,6 +31,7 @@ export function MeetingNoteDetailModal({
   onClose,
   showOwner = true,
   senderFirstName,
+  defaultTimezone,
 }: {
   note: MeetingNote;
   onClose: () => void;
@@ -37,6 +39,8 @@ export function MeetingNoteDetailModal({
   showOwner?: boolean;
   /** First name of whoever's signed in — used to sign the prefilled email body in the "Email to client/lead" drawer. */
   senderFirstName: string;
+  /** Business's own timezone — falls back for notes saved before this field existed, or left unset. */
+  defaultTimezone: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [, startToggleTransition] = useTransition();
@@ -129,11 +133,12 @@ export function MeetingNoteDetailModal({
             <Input id="attendees" name="attendees" defaultValue={note.attendees ?? ""} placeholder="Jane, Bob…" />
           </FieldGroup>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <FieldGroup>
             <Label htmlFor="startTime">Time (optional)</Label>
             <Input id="startTime" name="startTime" type="time" defaultValue={formatTimeInput(note.startTime)} className="min-w-0" />
           </FieldGroup>
+          <TimezoneField defaultValue={note.timezone ?? defaultTimezone} />
           <FieldGroup>
             <Label htmlFor="durationMinutes">Duration</Label>
             <Select id="durationMinutes" name="durationMinutes" defaultValue={String(note.durationMinutes ?? 30)} icon={Clock}>

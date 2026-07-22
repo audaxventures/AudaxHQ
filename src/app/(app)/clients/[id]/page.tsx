@@ -207,7 +207,13 @@ export default async function ClientDetailPage({
             title="Meetings & notes"
             isEmpty={client.meetingNotes.length === 0}
           >
-            <MeetingNotesSection owner={owner} notes={client.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
+            <MeetingNotesSection
+              owner={owner}
+              notes={client.meetingNotes}
+              today={today}
+              senderFirstName={senderFirstName(user)}
+              defaultTimezone={user.business.timezone}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection

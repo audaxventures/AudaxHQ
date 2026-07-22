@@ -190,7 +190,13 @@ export default async function LeadDetailPage({
             title="Meetings & notes"
             isEmpty={lead.meetingNotes.length === 0}
           >
-            <MeetingNotesSection owner={owner} notes={lead.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
+            <MeetingNotesSection
+              owner={owner}
+              notes={lead.meetingNotes}
+              today={today}
+              senderFirstName={senderFirstName(user)}
+              defaultTimezone={user.business.timezone}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection

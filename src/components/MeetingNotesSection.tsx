@@ -7,10 +7,19 @@ import { Button } from "@/components/ui/Button";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { AddToCalendarLinks } from "@/components/meetingnotes/AddToCalendarLinks";
+import { TimezoneField } from "@/components/meetingnotes/TimezoneField";
 import { formatDate, formatDateInput, formatTime } from "@/lib/format";
+import { timezoneAbbreviation } from "@/lib/timezone";
 import type { MeetingNote } from "@/lib/types";
 import { createScopedMeetingNote, scheduleMeeting } from "@/lib/actions/meetingnotes";
 import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
+
+/** "2:00 PM" + " EST" when a timezone is set, else just the time — shared by the next-meeting summary and the notes list. */
+function timeWithZone(startTime: string | null, timezone: string | null, meetingDate: string): string | null {
+  const time = formatTime(startTime);
+  if (!time) return null;
+  return timezone ? `${time} ${timezoneAbbreviation(timezone, meetingDate)}` : time;
+}
 
 type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string };
 
@@ -45,11 +54,13 @@ export function MeetingNotesSection({
   notes,
   today,
   senderFirstName,
+  defaultTimezone,
 }: {
   owner: Owner;
   notes: MeetingNote[];
   today: string;
   senderFirstName: string;
+  defaultTimezone: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const scheduleFormRef = useRef<HTMLFormElement>(null);
@@ -71,7 +82,12 @@ export function MeetingNotesSection({
             <p className="text-xs font-medium uppercase tracking-wide text-navy-400">Next meeting</p>
             <p className="mt-1 font-heading text-base font-medium text-navy-900">
               {formatDate(next.meetingDate)}
-              {next.startTime && <span className="font-sans text-sm text-navy-500"> at {formatTime(next.startTime)}</span>}
+              {next.startTime && (
+                <span className="font-sans text-sm text-navy-500">
+                  {" "}
+                  at {timeWithZone(next.startTime, next.timezone, next.meetingDate)}
+                </span>
+              )}
             </p>
             {next.location && (
               <p className="mt-0.5 flex items-center gap-1 text-sm text-navy-500">
@@ -119,7 +135,7 @@ export function MeetingNotesSection({
             }}
             className="mt-3 space-y-3 border-t border-navy-100 pt-3"
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <FieldGroup>
                 <Label htmlFor="schedule-date">Date</Label>
                 <Input id="schedule-date" name="meetingDate" type="date" required className="min-w-0" />
@@ -128,6 +144,7 @@ export function MeetingNotesSection({
                 <Label htmlFor="schedule-time">Time (optional)</Label>
                 <Input id="schedule-time" name="startTime" type="time" className="min-w-0" />
               </FieldGroup>
+              <TimezoneField id="schedule-timezone" defaultValue={defaultTimezone} />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FieldGroup>
@@ -177,11 +194,12 @@ export function MeetingNotesSection({
             <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
           </FieldGroup>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <FieldGroup>
             <Label htmlFor="startTime">Time (optional)</Label>
             <Input id="startTime" name="startTime" type="time" className="min-w-0" />
           </FieldGroup>
+          <TimezoneField defaultValue={defaultTimezone} />
           <FieldGroup>
             <Label htmlFor="location">Location (optional)</Label>
             <Input id="location" name="location" placeholder="Zoom, address, phone call…" icon={MapPin} />
@@ -226,7 +244,7 @@ export function MeetingNotesSection({
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <p className="text-xs font-medium text-navy-500">
                     {formatDate(note.meetingDate)}
-                    {note.startTime && ` at ${formatTime(note.startTime)}`}
+                    {note.startTime && ` at ${timeWithZone(note.startTime, note.timezone, note.meetingDate)}`}
                   </p>
                   {note.attendees && (
                     <span className="inline-flex items-center gap-1 text-xs text-navy-400">
@@ -247,6 +265,7 @@ export function MeetingNotesSection({
           onClose={() => setSelectedId(null)}
           showOwner={false}
           senderFirstName={senderFirstName}
+          defaultTimezone={defaultTimezone}
         />
       )}
     </div>
