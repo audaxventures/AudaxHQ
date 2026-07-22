@@ -15,8 +15,9 @@ import { listLeads } from "@/lib/data/leads";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
-import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { accessibleClientIdsFor, listAllClientAccess } from "@/lib/data/clientAccess";
 import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
+import { mentionOptions } from "@/lib/mentions";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -55,20 +56,34 @@ export default async function ClientDetailPage({
     const accessibleClientIds = await accessibleClientIdsFor(user);
     if (!accessibleClientIds?.includes(id)) notFound();
   }
-  const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads] = await Promise.all([
-    getClient(id, user.businessId),
-    isOwner
-      ? listCostEntries(user.businessId, { clientId: id, dateFrom: costFrom, dateTo: costTo })
-      : Promise.resolve([]),
-    listWorkTypes(user.businessId, { includeInactive: true }),
-    getBusinessToday(user.businessId),
-    // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
-    listTeamMembers(user.businessId),
-    isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
-    isOwner ? listClients(user.businessId) : Promise.resolve([]),
-    isOwner ? listLeads(user.businessId) : Promise.resolve([]),
-  ]);
+  const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads, clientAccessMap] =
+    await Promise.all([
+      getClient(id, user.businessId),
+      isOwner
+        ? listCostEntries(user.businessId, { clientId: id, dateFrom: costFrom, dateTo: costTo })
+        : Promise.resolve([]),
+      listWorkTypes(user.businessId, { includeInactive: true }),
+      getBusinessToday(user.businessId),
+      // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
+      listTeamMembers(user.businessId),
+      isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
+      isOwner ? listClients(user.businessId) : Promise.resolve([]),
+      isOwner ? listLeads(user.businessId) : Promise.resolve([]),
+      listAllClientAccess(user.businessId),
+    ]);
   if (!client) notFound();
+
+  // Who can be @mentioned on this client's notes — only team members who
+  // already have access to it, so a mention notification always links
+  // somewhere the recipient can actually open.
+  const accessTeamMemberIds = Object.entries(clientAccessMap)
+    .filter(([, clientIds]) => clientIds.includes(id))
+    .map(([teamMemberId]) => teamMemberId);
+  const noteMentionOptions = mentionOptions(
+    user,
+    teamMembers.filter((t) => t.hasLogin),
+    accessTeamMemberIds
+  );
 
   // Every to-do board is private — a client's Tasks panel only ever shows
   // the current viewer's own to-dos for that client, never a colleague's.
@@ -186,7 +201,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
-            <NotesLog notes={client.notes} kind="client" entityId={id} />
+            <NotesLog notes={client.notes} kind="client" entityId={id} mentionables={noteMentionOptions} />
           </Card>
         </div>
 

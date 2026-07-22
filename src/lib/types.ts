@@ -40,6 +40,9 @@ export interface ClientNote {
   clientId: string;
   body: string;
   createdAt: string;
+  /** Who wrote it — null means the business owner, or (for notes created before this field existed) unknown; the UI can't tell those apart and shows "Owner" either way. */
+  authorTeamMemberId: string | null;
+  authorName: string | null;
 }
 
 export interface LeadNote {
@@ -47,6 +50,8 @@ export interface LeadNote {
   leadId: string;
   body: string;
   createdAt: string;
+  authorTeamMemberId: string | null;
+  authorName: string | null;
 }
 
 export interface Invoice {
@@ -79,7 +84,7 @@ export interface FollowUp {
   assignedToTeamMemberId: string | null;
 }
 
-export type NotificationType = "TASK_ASSIGNED" | "FOLLOW_UP_ASSIGNED";
+export type NotificationType = "TASK_ASSIGNED" | "FOLLOW_UP_ASSIGNED" | "MENTION";
 
 /** A persisted "someone assigned you something" event — see migration 032. Time-based nudges (overdue/due-today) are computed live instead; see getNotificationSnapshot in src/lib/data/notifications.ts. */
 export interface Notification {

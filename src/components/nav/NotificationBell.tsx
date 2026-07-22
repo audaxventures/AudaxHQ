@@ -84,7 +84,7 @@ export function NotificationBell({
             {unread.length > 0 && (
               <div className="mb-2">
                 <div className="flex items-center justify-between px-2 pb-1 pt-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">Assigned to you</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">For you</p>
                   <button
                     type="button"
                     onClick={handleMarkAllRead}

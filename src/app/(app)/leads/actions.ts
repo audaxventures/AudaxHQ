@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as leads from "@/lib/data/leads";
+import * as notifications from "@/lib/data/notifications";
+import * as teamMembers from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser, requireLeadAccess } from "@/lib/currentUser";
-import type { EntityColor } from "@/lib/types";
+import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
+import { extractMentionIds } from "@/lib/mentions";
+import type { CurrentUser, EntityColor } from "@/lib/types";
 
 const leadSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -96,11 +100,39 @@ export async function deleteLead(id: string) {
   redirect("/leads");
 }
 
+/** Fires a "mentioned you" notification for each valid @mention in a note body — never for a self-mention, and only for team members who actually exist in this business (a raw @[Name](id) token in a direct POST could otherwise be forged). Mirrors notifyTaskAssignee in actions/tasks.ts. */
+async function notifyMentionedTeamMembers(user: CurrentUser, body: string, link: string, entityLabel: string) {
+  const rawIds = extractMentionIds(body);
+  if (rawIds.length === 0) return;
+  const self = selfId(user);
+  const validIds = new Set((await teamMembers.listTeamMembers(user.businessId)).map((t) => t.id));
+  const recipients = new Set<string | null>();
+  for (const raw of rawIds) {
+    const recipientId = resolveAssignedTeamMemberId(raw, user);
+    if (recipientId === self) continue;
+    if (recipientId !== null && !validIds.has(recipientId)) continue;
+    recipients.add(recipientId);
+  }
+  await Promise.all(
+    [...recipients].map((recipientId) =>
+      notifications.createNotification(
+        user.businessId,
+        recipientId,
+        "MENTION",
+        `${actorDisplayName(user)} mentioned you in a note on ${entityLabel}`,
+        link
+      )
+    )
+  );
+}
+
 export async function addLeadNote(leadId: string, formData: FormData) {
   const user = await requireLeadAccess(leadId);
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
-  await leads.addLeadNote(leadId, user.businessId, body);
+  await leads.addLeadNote(leadId, user.businessId, body, selfId(user));
+  const companyName = await leads.getLeadCompanyName(leadId, user.businessId);
+  await notifyMentionedTeamMembers(user, body, `/leads/${leadId}`, companyName ?? "a lead");
   revalidatePath(`/leads/${leadId}`);
 }
 

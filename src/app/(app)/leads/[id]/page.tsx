@@ -6,6 +6,7 @@ import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
+import { mentionOptions } from "@/lib/mentions";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -56,6 +57,14 @@ export default async function LeadDetailPage({
       isOwner ? listLeads(user.businessId) : Promise.resolve([]),
     ]);
   if (!lead) notFound();
+
+  // Who can be @mentioned on this lead's notes — leads have no per-member
+  // access list, so every active, login-enabled team member is eligible.
+  const noteMentionOptions = mentionOptions(
+    user,
+    teamMembers.filter((t) => t.hasLogin),
+    null
+  );
 
   // Every to-do board is private — a lead's Tasks panel only ever shows the
   // current viewer's own to-dos for that lead, never a colleague's.
@@ -180,7 +189,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
-            <NotesLog notes={lead.notes} kind="lead" entityId={id} />
+            <NotesLog notes={lead.notes} kind="lead" entityId={id} mentionables={noteMentionOptions} />
           </Card>
         </div>
 

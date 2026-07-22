@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { formatDate } from "@/lib/format";
-import { Textarea } from "@/components/ui/Field";
+import { MentionTextarea } from "@/components/MentionTextarea";
+import { parseMentionSegments, type MentionOption } from "@/lib/mentions";
 import { addClientNote } from "@/app/(app)/clients/actions";
 import { addLeadNote } from "@/app/(app)/leads/actions";
 
@@ -11,6 +12,7 @@ interface Note {
   id: string;
   body: string;
   createdAt: string;
+  authorName: string | null;
 }
 
 function SubmitButton() {
@@ -26,34 +28,58 @@ function SubmitButton() {
   );
 }
 
+/** Renders a note body with @[Name](id) mention tokens highlighted as pills — plain text everywhere else. */
+function NoteBody({ body }: { body: string }) {
+  return (
+    <>
+      {parseMentionSegments(body).map((segment, i) =>
+        segment.type === "mention" ? (
+          <span key={i} className="rounded bg-burnt-100 px-1 py-0.5 font-medium text-burnt-700">
+            @{segment.value}
+          </span>
+        ) : (
+          <span key={i}>{segment.value}</span>
+        )
+      )}
+    </>
+  );
+}
+
 export function NotesLog({
   notes,
   kind,
   entityId,
+  mentionables,
 }: {
   notes: Note[];
   kind: "client" | "lead";
   entityId: string;
+  /** Who this note's author can @mention — see mentionOptions in src/lib/mentions.ts. */
+  mentionables: MentionOption[];
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
+  // Bumping this remounts MentionTextarea after a successful submit, clearing
+  // its internal state — a plain form.reset() can't reach into a controlled
+  // child's own useState the way it could the old uncontrolled Textarea.
+  const [formKey, setFormKey] = useState(0);
   const action = kind === "client" ? addClientNote.bind(null, entityId) : addLeadNote.bind(null, entityId);
 
   return (
     <div>
       <form
-        ref={formRef}
         action={(formData) => {
           startTransition(() => action(formData));
-          formRef.current?.reset();
+          setFormKey((k) => k + 1);
         }}
         className="flex flex-col gap-2 mb-5"
       >
-        <Textarea
+        <MentionTextarea
+          key={formKey}
           name="body"
-          placeholder="Log an update — a call, an email, a decision…"
+          placeholder="Log an update — a call, an email, a decision… Type @ to mention someone."
           rows={2}
           required
+          mentionables={mentionables}
         />
         <SubmitButton />
       </form>
@@ -64,9 +90,11 @@ export function NotesLog({
           {notes.map((note) => (
             <li key={note.id} className="border-l-2 border-burnt-200 pl-4">
               <p className="text-xs font-medium text-navy-400 mb-1">
-                {formatDate(note.createdAt)}
+                {note.authorName ?? "Owner"} · {formatDate(note.createdAt)}
               </p>
-              <p className="text-sm text-navy-800 whitespace-pre-wrap">{note.body}</p>
+              <p className="text-sm text-navy-800 whitespace-pre-wrap">
+                <NoteBody body={note.body} />
+              </p>
             </li>
           ))}
         </ol>

@@ -34,6 +34,8 @@ function mapNote(row: Record<string, unknown>): LeadNote {
     leadId: row.lead_id as string,
     body: row.body as string,
     createdAt: row.created_at as string,
+    authorTeamMemberId: (row.author_team_member_id as string | null) ?? null,
+    authorName: (row.author_name as string | null) ?? null,
   };
 }
 
@@ -143,7 +145,13 @@ export async function getLead(id: string, businessId: string): Promise<LeadWithR
       left join lead_sources ls on ls.id = l.source_id
       where l.id = ${id} and l.business_id = ${businessId}
     `,
-    sql`select * from lead_notes where lead_id = ${id} and business_id = ${businessId} order by created_at desc`,
+    sql`
+      select n.*, tm.name as author_name
+      from lead_notes n
+      left join team_members tm on tm.id = n.author_team_member_id
+      where n.lead_id = ${id} and n.business_id = ${businessId}
+      order by n.created_at desc
+    `,
     listTasks(businessId, { leadId: id }),
     listFollowUpsForLead(id, businessId),
     listMeetingNotes(businessId, { leadId: id }),
@@ -260,10 +268,13 @@ export async function convertLeadToClient(leadId: string, businessId: string, to
 
   await sql`insert into client_notes (client_id, business_id, body) values (${client.id}, ${businessId}, ${"Converted from lead — activity history below carried over."})`;
 
-  const leadNotes = await sql`select body, created_at from lead_notes where lead_id = ${leadId} and business_id = ${businessId} order by created_at asc`;
+  const leadNotes = await sql`select body, created_at, author_team_member_id from lead_notes where lead_id = ${leadId} and business_id = ${businessId} order by created_at asc`;
   for (const note of leadNotes) {
     const n = note as Record<string, unknown>;
-    await sql`insert into client_notes (client_id, business_id, body, created_at) values (${client.id}, ${businessId}, ${n.body as string}, ${n.created_at as string})`;
+    await sql`
+      insert into client_notes (client_id, business_id, body, created_at, author_team_member_id)
+      values (${client.id}, ${businessId}, ${n.body as string}, ${n.created_at as string}, ${n.author_team_member_id as string | null})
+    `;
   }
 
   return client.id;
@@ -273,6 +284,17 @@ export async function deleteLead(id: string, businessId: string): Promise<void> 
   await sql`delete from leads where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function addLeadNote(leadId: string, businessId: string, body: string): Promise<void> {
-  await sql`insert into lead_notes (lead_id, business_id, body) values (${leadId}, ${businessId}, ${body})`;
+export async function addLeadNote(
+  leadId: string,
+  businessId: string,
+  body: string,
+  authorTeamMemberId: string | null
+): Promise<void> {
+  await sql`insert into lead_notes (lead_id, business_id, body, author_team_member_id) values (${leadId}, ${businessId}, ${body}, ${authorTeamMemberId})`;
+}
+
+/** Cheap single-column lookup — names the lead in a mention notification's message without loading the full record. */
+export async function getLeadCompanyName(id: string, businessId: string): Promise<string | null> {
+  const rows = await sql`select company_name from leads where id = ${id} and business_id = ${businessId}`;
+  return rows[0] ? ((rows[0] as Record<string, unknown>).company_name as string) : null;
 }

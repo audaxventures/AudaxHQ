@@ -44,6 +44,8 @@ function mapNote(row: Record<string, unknown>): ClientNote {
     clientId: row.client_id as string,
     body: row.body as string,
     createdAt: row.created_at as string,
+    authorTeamMemberId: (row.author_team_member_id as string | null) ?? null,
+    authorName: (row.author_name as string | null) ?? null,
   };
 }
 
@@ -140,7 +142,13 @@ export async function getClient(id: string, businessId: string): Promise<ClientW
         left join work_types wt on wt.id = c.work_type_id
         where c.id = ${id} and c.business_id = ${businessId}
       `,
-      sql`select * from client_notes where client_id = ${id} and business_id = ${businessId} order by created_at desc`,
+      sql`
+        select n.*, tm.name as author_name
+        from client_notes n
+        left join team_members tm on tm.id = n.author_team_member_id
+        where n.client_id = ${id} and n.business_id = ${businessId}
+        order by n.created_at desc
+      `,
       sql`select * from client_links where client_id = ${id} and business_id = ${businessId} order by created_at asc`,
       sql`
         select * from invoices where client_id = ${id} and business_id = ${businessId}
@@ -253,8 +261,19 @@ export async function deleteClient(id: string, businessId: string): Promise<void
 
 // --- Notes ---
 
-export async function addClientNote(clientId: string, businessId: string, body: string): Promise<void> {
-  await sql`insert into client_notes (client_id, business_id, body) values (${clientId}, ${businessId}, ${body})`;
+export async function addClientNote(
+  clientId: string,
+  businessId: string,
+  body: string,
+  authorTeamMemberId: string | null
+): Promise<void> {
+  await sql`insert into client_notes (client_id, business_id, body, author_team_member_id) values (${clientId}, ${businessId}, ${body}, ${authorTeamMemberId})`;
+}
+
+/** Cheap single-column lookup — names the client in a mention notification's message without loading the full record. */
+export async function getClientCompanyName(id: string, businessId: string): Promise<string | null> {
+  const rows = await sql`select company_name from clients where id = ${id} and business_id = ${businessId}`;
+  return rows[0] ? ((rows[0] as Record<string, unknown>).company_name as string) : null;
 }
 
 // --- Links ---

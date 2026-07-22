@@ -5,10 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
 import * as clientAccess from "@/lib/data/clientAccess";
+import * as notifications from "@/lib/data/notifications";
+import * as teamMembers from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireClientAccess, requireCurrentUser, requireOwner } from "@/lib/currentUser";
+import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
+import { extractMentionIds } from "@/lib/mentions";
 import { deleteClientFiles } from "@/lib/storage";
-import type { EntityColor } from "@/lib/types";
+import type { CurrentUser, EntityColor } from "@/lib/types";
 
 const clientSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -135,11 +139,39 @@ export async function setClientColor(id: string, color: EntityColor | null) {
   revalidatePath("/");
 }
 
+/** Fires a "mentioned you" notification for each valid @mention in a note body — never for a self-mention, and only for team members who actually exist in this business (a raw @[Name](id) token in a direct POST could otherwise be forged). Mirrors notifyTaskAssignee in actions/tasks.ts. */
+async function notifyMentionedTeamMembers(user: CurrentUser, body: string, link: string, entityLabel: string) {
+  const rawIds = extractMentionIds(body);
+  if (rawIds.length === 0) return;
+  const self = selfId(user);
+  const validIds = new Set((await teamMembers.listTeamMembers(user.businessId)).map((t) => t.id));
+  const recipients = new Set<string | null>();
+  for (const raw of rawIds) {
+    const recipientId = resolveAssignedTeamMemberId(raw, user);
+    if (recipientId === self) continue;
+    if (recipientId !== null && !validIds.has(recipientId)) continue;
+    recipients.add(recipientId);
+  }
+  await Promise.all(
+    [...recipients].map((recipientId) =>
+      notifications.createNotification(
+        user.businessId,
+        recipientId,
+        "MENTION",
+        `${actorDisplayName(user)} mentioned you in a note on ${entityLabel}`,
+        link
+      )
+    )
+  );
+}
+
 export async function addClientNote(clientId: string, formData: FormData) {
   const user = await requireClientAccess(clientId);
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
-  await clients.addClientNote(clientId, user.businessId, body);
+  await clients.addClientNote(clientId, user.businessId, body, selfId(user));
+  const companyName = await clients.getClientCompanyName(clientId, user.businessId);
+  await notifyMentionedTeamMembers(user, body, `/clients/${clientId}`, companyName ?? "a client");
   revalidatePath(`/clients/${clientId}`);
 }
 
