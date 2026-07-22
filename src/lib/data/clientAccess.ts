@@ -31,3 +31,10 @@ export async function setClientAccess(teamMemberId: string, businessId: string, 
     await sql`insert into client_access (team_member_id, client_id, business_id) values (${teamMemberId}, ${clientId}, ${businessId})`;
   }
 }
+
+/** Grants a freshly-created client to a set of team members in one shot — the New Client form's "Give access to" checklist, so the owner doesn't have to remember a separate trip to Settings. Safe to call with an empty list (no-op). */
+export async function grantClientAccess(clientId: string, businessId: string, teamMemberIds: string[]): Promise<void> {
+  for (const teamMemberId of teamMemberIds) {
+    await sql`insert into client_access (team_member_id, client_id, business_id) values (${teamMemberId}, ${clientId}, ${businessId})`;
+  }
+}

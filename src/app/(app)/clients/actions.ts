@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
+import * as clientAccess from "@/lib/data/clientAccess";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireClientAccess, requireCurrentUser, requireOwner } from "@/lib/currentUser";
 import { deleteClientFiles } from "@/lib/storage";
@@ -64,6 +65,16 @@ export async function createClient(formData: FormData) {
   const user = await requireCurrentUser();
   const input = parseClientForm(formData);
   const client = await clients.createClient(user.businessId, input, await getBusinessToday(user.businessId));
+
+  // Only owners see the "Give access to" checklist (team-member access is
+  // owner-managed everywhere else too), so this is a no-op for a team
+  // member's own submission — formData simply won't carry teamMemberId.
+  if (user.role === "OWNER") {
+    const teamMemberIds = formData.getAll("teamMemberId").map((v) => String(v));
+    if (teamMemberIds.length > 0) {
+      await clientAccess.grantClientAccess(client.id, user.businessId, teamMemberIds);
+    }
+  }
 
   revalidatePath("/clients");
   revalidatePath("/");

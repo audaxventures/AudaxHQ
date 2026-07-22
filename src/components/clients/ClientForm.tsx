@@ -21,7 +21,7 @@ import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { Button } from "@/components/ui/Button";
-import type { Client, ClientStatus, ClientType, WorkType } from "@/lib/types";
+import type { Client, ClientStatus, ClientType, TeamMember, WorkType } from "@/lib/types";
 import { formatDateInput } from "@/lib/format";
 import { createClient, updateClient } from "@/app/(app)/clients/actions";
 
@@ -38,6 +38,7 @@ function SubmitButton({ label, compact }: { label: string; compact: boolean }) {
 export function ClientForm({
   client,
   workTypes,
+  teamMembers = [],
   submitLabel = "Save client",
   cancelHref,
   variant = "full",
@@ -45,6 +46,8 @@ export function ClientForm({
 }: {
   client?: Client;
   workTypes: WorkType[];
+  /** Active, login-enabled team members to offer in the "Give access to" checklist — only rendered on creation (no `client` prop), never on edit, since editing already has full access management in Settings. Empty/omitted hides the section entirely (solo operators, or a team member creating a client). */
+  teamMembers?: TeamMember[];
   submitLabel?: string;
   cancelHref?: string;
   /** "compact" drops the icons/uppercase labels/required-asterisks for the in-place edit panel on the client detail page; "full" (default) is the fuller treatment used by the standalone New Client page. */
@@ -212,6 +215,30 @@ export function ClientForm({
           <input type="hidden" name="color" value={client?.color ?? ""} />
         )}
       </div>
+      {!client && teamMembers.length > 0 && (
+        <FieldGroup>
+          <Label compact={compact}>Give access to</Label>
+          <div className="space-y-1 rounded-lg border border-navy-100 p-2">
+            {teamMembers.map((m) => (
+              <label
+                key={m.id}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-navy-50"
+              >
+                <input
+                  type="checkbox"
+                  name="teamMemberId"
+                  value={m.id}
+                  className="h-3.5 w-3.5 rounded-sm border-navy-300 text-burnt-600 focus:ring-burnt-500"
+                />
+                <span className="text-navy-700">{m.name}</span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-navy-400">
+            Team members only see clients you&apos;ve given them access to. You can change this anytime in Settings.
+          </p>
+        </FieldGroup>
+      )}
       {compact ? (
         <SubmitButton label={submitLabel} compact />
       ) : (
