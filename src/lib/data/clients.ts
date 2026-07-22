@@ -363,9 +363,18 @@ export async function deleteInvoice(id: string, businessId: string): Promise<voi
   await sql`delete from invoices where id = ${id} and business_id = ${businessId}`;
 }
 
+/**
+ * Also backfills invoiced_date defensively — every current call site only
+ * reaches this once an invoice is already INVOICED (so invoiced_date is
+ * already set), but this keeps the guarantee ("PAID always has both dates")
+ * true even if a future caller marks a NOT_INVOICED invoice paid directly.
+ */
 export async function markInvoicePaid(id: string, businessId: string, today: string): Promise<void> {
   await sql`
-    update invoices set status = 'PAID', paid_date = coalesce(paid_date, ${today}::date)
+    update invoices set
+      status = 'PAID',
+      invoiced_date = coalesce(invoiced_date, ${today}::date),
+      paid_date = coalesce(paid_date, ${today}::date)
     where id = ${id} and business_id = ${businessId}
   `;
 }

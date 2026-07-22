@@ -150,7 +150,7 @@ export function ClientForm({
         {!hideRate && (
           <FieldGroup>
             <Label htmlFor="rate" compact={compact}>
-              {type === "RECURRING" ? "Monthly fee ($)" : "Project total ($)"}
+              {type === "RECURRING" ? "Monthly fee ($)" : "Reference rate ($)"}
             </Label>
             <Input
               id="rate"
@@ -162,6 +162,11 @@ export function ClientForm({
               placeholder="e.g. 0.00"
               icon={fieldIcon(DollarSign)}
             />
+            {type === "PROJECT" && (
+              <p className="mt-1.5 text-xs text-navy-400">
+                A starting point for new invoices — actual totals come from the Invoices list, not this field.
+              </p>
+            )}
           </FieldGroup>
         )}
         <FieldGroup>

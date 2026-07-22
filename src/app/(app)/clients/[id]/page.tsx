@@ -98,6 +98,16 @@ export default async function ClientDetailPage({
   const boundActivateClient = activateClient.bind(null, id);
   const owner = { type: "CLIENT" as const, clientId: id };
 
+  // Real invoice totals, not a manually-typed figure — mirrors the same
+  // "Invoiced to date"/"Paid to date" stats shown in the Invoices section
+  // below, so the sidebar summary always agrees with what's actually there.
+  const invoicedToDate = client.invoices
+    .filter((i) => i.status !== "NOT_INVOICED")
+    .reduce((sum, i) => sum + Number(i.amount), 0);
+  const paidToDate = client.invoices
+    .filter((i) => i.status === "PAID")
+    .reduce((sum, i) => sum + Number(i.amount), 0);
+
   return (
     <div>
       <BackLink href="/clients" label="Back to clients" />
@@ -239,14 +249,18 @@ export default async function ClientDetailPage({
 
         <div className="space-y-6">
           {isOwner && (
-            <Card tone="burnt" variant="solid" className="p-6">
-              <PanelHeading
-                icon={DollarSign}
-                tone="burnt"
-                title={client.type === "RECURRING" ? "Monthly fee" : "Project total"}
-              />
-              <p className="font-heading text-2xl text-navy-900">{formatCurrency(client.rate)}</p>
-              {client.type === "RECURRING" && <p className="text-xs text-navy-500">/ month</p>}
+            <Card className="p-6">
+              <PanelHeading icon={DollarSign} tone="sage" title="Revenue" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-navy-500">Invoiced to date</p>
+                  <p className="font-heading text-xl text-navy-900 mt-0.5">{formatCurrency(invoicedToDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-navy-500">Paid to date</p>
+                  <p className="font-heading text-xl text-navy-900 mt-0.5">{formatCurrency(paidToDate)}</p>
+                </div>
+              </div>
             </Card>
           )}
 

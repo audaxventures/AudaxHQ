@@ -151,6 +151,7 @@ function InvoiceEditForm({
           <Input id={`paid-${invoice.id}`} name="paidDate" type="date" defaultValue={formatDateInput(invoice.paidDate)} />
         </FieldGroup>
       </div>
+      <p className="text-xs text-navy-400">Left blank, these default to today the moment status is set to Invoiced or Paid.</p>
       <FieldGroup>
         <Label htmlFor={`notes-${invoice.id}`}>Notes (optional)</Label>
         <Textarea
@@ -279,6 +280,7 @@ function AddInvoiceForm({ clientId, defaultHourlyRate }: { clientId: string; def
           <Input id="new-paid" name="paidDate" type="date" />
         </FieldGroup>
       </div>
+      <p className="text-xs text-navy-400">Left blank, these default to today the moment status is set to Invoiced or Paid.</p>
       <FieldGroup>
         <Label htmlFor="new-notes">Notes (optional)</Label>
         <Textarea id="new-notes" name="description" rows={2} placeholder="What this invoice covers…" />
