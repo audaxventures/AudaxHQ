@@ -1,19 +1,20 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, Download, Mail, MapPin } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
 import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
 import { AddToCalendarLinks } from "@/components/meetingnotes/AddToCalendarLinks";
+import { MeetingNoteEmailDrawer } from "@/components/meetingnotes/MeetingNoteEmailDrawer";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { updateMeetingNote } from "@/lib/actions/meetingnotes";
 import { setTaskStatus } from "@/lib/actions/tasks";
-import { formatDateInput, formatTimeInput } from "@/lib/format";
+import { formatDate, formatDateInput, formatTimeInput } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
@@ -28,14 +29,18 @@ export function MeetingNoteDetailModal({
   note,
   onClose,
   showOwner = true,
+  senderFirstName,
 }: {
   note: MeetingNote;
   onClose: () => void;
   /** Hide the owner name/link header when the modal is already opened from that client/lead's own page. */
   showOwner?: boolean;
+  /** First name of whoever's signed in — used to sign the prefilled email body in the "Email to client/lead" drawer. */
+  senderFirstName: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [, startToggleTransition] = useTransition();
+  const [showEmailDrawer, setShowEmailDrawer] = useState(false);
   const ownerHref = note.clientId ? `/clients/${note.clientId}` : `/leads/${note.leadId}`;
 
   function toggleActionItem(taskId: string, completed: boolean) {
@@ -46,6 +51,34 @@ export function MeetingNoteDetailModal({
 
   return (
     <Modal title="Meeting note" onClose={onClose}>
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <a
+          href={`/api/meeting-notes/${note.id}/pdf`}
+          download
+          className="inline-flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-400 hover:bg-navy-100/50"
+        >
+          <Download size={14} /> Download PDF
+        </a>
+        <button
+          type="button"
+          onClick={() => setShowEmailDrawer(true)}
+          disabled={!note.ownerEmail}
+          title={note.ownerEmail ? undefined : "Add a contact email on the client/lead record first"}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-400 hover:bg-navy-100/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-navy-200 disabled:hover:bg-transparent cursor-pointer"
+        >
+          <Mail size={14} /> Email to {note.clientId ? "client" : "lead"}
+        </button>
+        {note.lastEmailedTo && note.lastEmailedAt && (
+          <span className="text-xs text-navy-400">
+            Emailed to {note.lastEmailedTo} on {formatDate(note.lastEmailedAt)}
+          </span>
+        )}
+      </div>
+
+      {showEmailDrawer && (
+        <MeetingNoteEmailDrawer note={note} senderFirstName={senderFirstName} onClose={() => setShowEmailDrawer(false)} />
+      )}
+
       {showOwner && (
         <div className="mb-5 flex items-center gap-3">
           <AvatarChip name={note.ownerName ?? "?"} color={note.ownerColor} />

@@ -122,8 +122,15 @@ export interface MeetingNote {
   // present when returned from a query that joins in the owner's name/color
   ownerName?: string;
   ownerColor?: EntityColor | null;
+  /** The client/lead's contact email, joined in for the PDF-email action — present when returned from listMeetingNotes/getMeetingNoteById. */
+  ownerEmail?: string | null;
+  /** The client/lead's contact person name (not the company name) — used for the email greeting, falls back to the company name when unset. */
+  ownerContactName?: string | null;
   /** To-dos quick-added from this meeting's action items — present when returned from listMeetingNotes. */
   actionItemTasks?: MeetingActionItemTask[];
+  /** Last time this note's branded PDF was emailed out, and to whom — null until the first send. */
+  lastEmailedTo: string | null;
+  lastEmailedAt: string | null;
 }
 
 /** Whose action item this is — 'TEAM' shows up on the workspace's own to-do board; 'EXTERNAL' is the client/lead's own commitment and stays attached to the meeting note only. */

@@ -391,3 +391,59 @@ export async function sendContactFormEmail(name: string, fromEmail: string, mess
     throw new Error(`Failed to send contact form email (${res.status}): ${body || res.statusText}`);
   }
 }
+
+/**
+ * Sends a meeting note's branded PDF to a client/lead contact. `bodyText` is
+ * the sender's own editable message (plain text, from the compose drawer —
+ * see MeetingNoteEmailDrawer.tsx), escaped and line-broken into simple HTML.
+ * `cc`/`replyTo` point back at whoever sent it, so they get a copy and any
+ * reply lands in their own inbox rather than a generic sender address.
+ */
+export async function sendMeetingNotePdfEmail(params: {
+  to: string;
+  cc?: string | null;
+  replyTo?: string | null;
+  senderName: string;
+  businessName: string;
+  subject: string;
+  bodyText: string;
+  attachmentFilename: string;
+  attachmentBase64: string;
+}): Promise<void> {
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
+
+  const escapedBody = params.bodyText
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br />");
+
+  const html = `
+    <div style="font-family: Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #101d33;">
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapedBody}</p>
+      <p style="margin: 24px 0 0; font-size: 13px; color: #7c8aa3;">${params.senderName} &middot; ${params.businessName}</p>
+    </div>
+  `;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: params.to,
+      ...(params.cc ? { cc: params.cc } : {}),
+      ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+      subject: params.subject,
+      html,
+      attachments: [{ filename: params.attachmentFilename, content: params.attachmentBase64 }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to send meeting note email (${res.status}): ${body || res.statusText}`);
+  }
+}

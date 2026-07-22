@@ -9,7 +9,7 @@ import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { requireCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { toPlainText } from "@/lib/richtext";
 
 export default async function MeetingNotesPage({
@@ -78,7 +78,7 @@ export default async function MeetingNotesPage({
       ) : notes.length === 0 ? (
         <EmptyState title="No matching meeting notes" description="Try a different search or clear the filters." />
       ) : (
-        <MeetingNotesList notes={notes} />
+        <MeetingNotesList notes={notes} senderFirstName={senderFirstName(user)} />
       )}
     </div>
   );

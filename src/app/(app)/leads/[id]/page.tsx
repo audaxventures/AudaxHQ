@@ -5,7 +5,7 @@ import { listClients } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
-import { requireCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -170,7 +170,7 @@ export default async function LeadDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={NotebookPen} tone="slate" title="Meetings & notes" />
-            <MeetingNotesSection owner={owner} notes={lead.meetingNotes} today={today} />
+            <MeetingNotesSection owner={owner} notes={lead.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
           </Card>
 
           <Card className="p-6">

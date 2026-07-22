@@ -27,7 +27,7 @@ function groupByMonth(notes: MeetingNote[]): { month: string; notes: MeetingNote
   return groups;
 }
 
-export function MeetingNotesList({ notes }: { notes: MeetingNote[] }) {
+export function MeetingNotesList({ notes, senderFirstName }: { notes: MeetingNote[]; senderFirstName: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
   const groups = groupByMonth(notes);
@@ -76,7 +76,7 @@ export function MeetingNotesList({ notes }: { notes: MeetingNote[] }) {
       </div>
 
       {selectedNote && (
-        <MeetingNoteDetailModal note={selectedNote} onClose={() => setSelectedId(null)} />
+        <MeetingNoteDetailModal note={selectedNote} onClose={() => setSelectedId(null)} senderFirstName={senderFirstName} />
       )}
     </>
   );

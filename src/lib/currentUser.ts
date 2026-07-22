@@ -38,6 +38,12 @@ export async function requireOwner(): Promise<CurrentUser & { role: "OWNER" }> {
   return user;
 }
 
+/** First name of whoever's signed in — owner or team member — for use in prefilled outbound copy like the meeting-note email drawer's sign-off. */
+export function senderFirstName(user: CurrentUser): string {
+  const fullName = user.role === "OWNER" ? user.business.ownerName : user.teamMember.name;
+  return fullName.trim().split(/\s+/)[0] || fullName;
+}
+
 /** Emails allowed onto the platform admin portal — comma-separated PLATFORM_ADMIN_EMAILS env var, unset means nobody has access. */
 function platformAdminEmails(): string[] {
   return (process.env.PLATFORM_ADMIN_EMAILS ?? "")

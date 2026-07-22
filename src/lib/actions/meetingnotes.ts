@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
 import * as todos from "@/lib/data/todos";
-import { requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
+import { requireClientAccess, requireLeadAccess, requireCurrentUser } from "@/lib/currentUser";
+import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
+import { sendMeetingNotePdfEmail } from "@/lib/email";
+import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
+import { meetingNotePdfFilename } from "@/lib/pdf/filename";
 import type { CurrentUser, TaskOwner } from "@/lib/types";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null) {
@@ -233,4 +237,56 @@ export async function deleteMeetingNote(
   const user = await resolveOwnerAccess(owner);
   await meetingNotes.deleteMeetingNote(id, user.businessId);
   revalidateOwner(owner.clientId, owner.leadId);
+}
+
+export interface SendMeetingNoteEmailState {
+  success: boolean;
+  error: string | null;
+}
+
+/** Emails a meeting note's branded PDF to its client/lead contact — see MeetingNoteEmailDrawer.tsx for the compose UI this backs. CC's and reply-tos the sender so they get a copy and replies land in their own inbox. */
+export async function sendMeetingNoteEmail(
+  _prevState: SendMeetingNoteEmailState,
+  formData: FormData
+): Promise<SendMeetingNoteEmailState> {
+  const noteId = String(formData.get("noteId") ?? "");
+  const subject = String(formData.get("subject") ?? "").trim();
+  const bodyText = String(formData.get("bodyText") ?? "").trim();
+  if (!noteId || !subject || !bodyText) {
+    return { success: false, error: "Fill in a subject and message before sending." };
+  }
+
+  const user = await requireCurrentUser();
+  const accessibleClientIds = await accessibleClientIdsFor(user);
+  const note = await meetingNotes.getMeetingNoteById(noteId, user.businessId, { accessibleClientIds });
+  if (!note) {
+    return { success: false, error: "Meeting note not found." };
+  }
+  if (!note.ownerEmail) {
+    return { success: false, error: "This client/lead doesn't have an email on file yet." };
+  }
+
+  const senderName = user.role === "OWNER" ? user.business.ownerName : user.teamMember.name;
+  const senderEmail = user.role === "OWNER" ? user.business.ownerEmail : user.teamMember.email;
+
+  try {
+    const pdf = await renderMeetingNotePdf(note, { name: user.business.name, logoUrl: user.business.logoUrl });
+    await sendMeetingNotePdfEmail({
+      to: note.ownerEmail,
+      cc: senderEmail,
+      replyTo: senderEmail,
+      senderName,
+      businessName: user.business.name,
+      subject,
+      bodyText,
+      attachmentFilename: meetingNotePdfFilename(note),
+      attachmentBase64: pdf.toString("base64"),
+    });
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Couldn't send the email. Try again later." };
+  }
+
+  await meetingNotes.recordMeetingNoteEmailSent(noteId, user.businessId, note.ownerEmail);
+  revalidateOwner(note.clientId, note.leadId);
+  return { success: true, error: null };
 }

@@ -40,7 +40,17 @@ function nextUpcomingMeeting(notes: MeetingNote[], today: string): MeetingNote |
     })[0];
 }
 
-export function MeetingNotesSection({ owner, notes, today }: { owner: Owner; notes: MeetingNote[]; today: string }) {
+export function MeetingNotesSection({
+  owner,
+  notes,
+  today,
+  senderFirstName,
+}: {
+  owner: Owner;
+  notes: MeetingNote[];
+  today: string;
+  senderFirstName: string;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const scheduleFormRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
@@ -236,6 +246,7 @@ export function MeetingNotesSection({ owner, notes, today }: { owner: Owner; not
           note={selectedNote}
           onClose={() => setSelectedId(null)}
           showOwner={false}
+          senderFirstName={senderFirstName}
         />
       )}
     </div>

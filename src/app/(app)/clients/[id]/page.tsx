@@ -16,7 +16,7 @@ import { listCostEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { requireCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -176,7 +176,7 @@ export default async function ClientDetailPage({
 
           <Card className="p-6">
             <PanelHeading icon={NotebookPen} tone="slate" title="Meetings & notes" />
-            <MeetingNotesSection owner={owner} notes={client.meetingNotes} today={today} />
+            <MeetingNotesSection owner={owner} notes={client.meetingNotes} today={today} senderFirstName={senderFirstName(user)} />
           </Card>
 
           <Card className="p-6">
