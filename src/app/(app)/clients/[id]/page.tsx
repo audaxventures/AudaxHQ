@@ -200,7 +200,7 @@ export default async function ClientDetailPage({
           </Card>
 
           <Card className="p-6">
-            <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
+            <PanelHeading icon={StickyNote} tone="slate" title="Discussion & Notes" />
             <NotesLog notes={client.notes} kind="client" entityId={id} mentionables={noteMentionOptions} />
           </Card>
         </div>

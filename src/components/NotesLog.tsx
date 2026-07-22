@@ -68,6 +68,10 @@ export function NotesLog({
     <div>
       <form
         action={(formData) => {
+          // MentionTextarea's editor is a contentEditable div, not a native
+          // form field with `required` — replicate the "don't submit an
+          // empty note" behavior the old Textarea got for free.
+          if (!String(formData.get("body") ?? "").trim()) return;
           startTransition(() => action(formData));
           setFormKey((k) => k + 1);
         }}
@@ -77,8 +81,6 @@ export function NotesLog({
           key={formKey}
           name="body"
           placeholder="Log an update — a call, an email, a decision… Type @ to mention someone."
-          rows={2}
-          required
           mentionables={mentionables}
         />
         <SubmitButton />

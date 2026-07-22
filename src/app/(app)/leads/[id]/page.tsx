@@ -188,7 +188,7 @@ export default async function LeadDetailPage({
           </Card>
 
           <Card className="p-6">
-            <PanelHeading icon={StickyNote} tone="slate" title="Activity & notes" />
+            <PanelHeading icon={StickyNote} tone="slate" title="Discussion & Notes" />
             <NotesLog notes={lead.notes} kind="lead" entityId={id} mentionables={noteMentionOptions} />
           </Card>
         </div>
