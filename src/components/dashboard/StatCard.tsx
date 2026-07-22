@@ -8,6 +8,7 @@ export function StatCard({
   value,
   caption,
   href,
+  topRight,
 }: {
   backgroundImage: string;
   label: string;
@@ -15,9 +16,12 @@ export function StatCard({
   caption: React.ReactNode;
   /** When set, the whole card links to the relevant page. */
   href?: string;
+  /** A small secondary figure pinned to the top-right corner (e.g. a prior-period comparison) — sits above the card's own decorative art. */
+  topRight?: React.ReactNode;
 }) {
   const content = (
     <>
+      {topRight && <div className="absolute right-5 top-4 text-right">{topRight}</div>}
       <p className="mt-16 text-xs font-semibold uppercase tracking-wide text-navy-600">{label}</p>
       <p className="font-heading text-4xl font-semibold text-navy-900 tabular-nums leading-tight">{value}</p>
       <div className="mt-1.5 text-sm font-medium">{caption}</div>

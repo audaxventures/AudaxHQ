@@ -232,6 +232,22 @@ function parseInvoiceForm(formData: FormData) {
   return { ...shared, invoiceType: "FIXED" as const, hours: null, hourlyRate: null, amount: parsed.amount ?? 0 };
 }
 
+/**
+ * The invoice form lets someone set status to INVOICED/PAID without ever
+ * touching the separate invoicedDate/paidDate fields — without this, that
+ * invoice would have no date to attribute revenue to (the whole revenue
+ * feature keys off invoicedDate). Defaults each date to today the moment its
+ * status is reached, but never overwrites an already-set date.
+ */
+function backfillInvoiceDates<T extends { status: string; invoicedDate: string | null; paidDate: string | null }>(
+  input: T,
+  today: string
+): T {
+  const invoicedDate = (input.status === "INVOICED" || input.status === "PAID") && !input.invoicedDate ? today : input.invoicedDate;
+  const paidDate = input.status === "PAID" && !input.paidDate ? today : input.paidDate;
+  return { ...input, invoicedDate, paidDate };
+}
+
 async function requireOwnerClientAccess(clientId: string) {
   const user = await requireOwner();
   if (!(await clients.clientBelongsToBusiness(clientId, user.businessId))) {
@@ -242,17 +258,26 @@ async function requireOwnerClientAccess(clientId: string) {
 
 export async function addInvoice(clientId: string, formData: FormData) {
   const user = await requireOwnerClientAccess(clientId);
-  const input = parseInvoiceForm(formData);
-  await clients.addInvoice(clientId, user.businessId, input);
+  const today = await getBusinessToday(user.businessId);
+  const input = backfillInvoiceDates(parseInvoiceForm(formData), today);
+  const workType = await clients.getClientWorkType(clientId, user.businessId);
+  await clients.addInvoice(clientId, user.businessId, {
+    ...input,
+    workTypeId: workType?.workTypeId ?? null,
+    workTypeOther: workType?.workTypeOther ?? null,
+  });
   revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/invoices");
   revalidatePath("/");
 }
 
 export async function updateInvoice(clientId: string, invoiceId: string, formData: FormData) {
   const user = await requireOwnerClientAccess(clientId);
-  const input = parseInvoiceForm(formData);
+  const today = await getBusinessToday(user.businessId);
+  const input = backfillInvoiceDates(parseInvoiceForm(formData), today);
   await clients.updateInvoice(invoiceId, user.businessId, input);
   revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/invoices");
   revalidatePath("/");
 }
 

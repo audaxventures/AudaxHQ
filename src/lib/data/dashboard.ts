@@ -3,6 +3,7 @@ import { ensureRecurringInvoicesForAllActiveClients } from "@/lib/data/clients";
 import { listHotFollowUps, type HotFollowUp } from "@/lib/data/followups";
 import { getLeadPipelineSummary, type LeadPipelineSummary } from "@/lib/data/leads";
 import { getBusinessToday } from "@/lib/data/businesses";
+import { getRevenueSummary, monthBounds } from "@/lib/data/revenue";
 import type { Client, ClientType, Task, TaskOwner, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
 export interface AttentionFlag {
@@ -14,8 +15,10 @@ export interface AttentionFlag {
 export interface DashboardData {
   projectClients: Client[];
   recurringClients: Client[];
-  /** Recurring monthly fees plus unpaid project-invoice work across active clients. Null for team members — client billing is hidden from them entirely. */
-  projectedRevenue: number | null;
+  /** Paid invoices dated within the current calendar month — actual recognized revenue, not a forecast. Null for team members — client billing is hidden from them entirely. */
+  thisMonthRevenue: number | null;
+  /** Same calculation, prior calendar month — shown as a small comparison figure next to thisMonthRevenue. */
+  lastMonthRevenue: number | null;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
   /** Up to 5 open to-dos, soonest due date first (regardless of overdue/today/future). */
@@ -73,7 +76,8 @@ export async function getDashboardData(
 
   const [
     activeRows,
-    projectRemainingRows,
+    thisMonthSummary,
+    lastMonthSummary,
     hotFollowUps,
     staleInvoiceRows,
     todoRows,
@@ -88,13 +92,11 @@ export async function getDashboardData(
       order by company_name asc
     `,
     isOwner
-      ? sql`
-          select coalesce(sum(i.amount), 0) as total
-          from invoices i
-          join clients c on c.id = i.client_id
-          where i.business_id = ${businessId} and c.status = 'ACTIVE' and c.type = 'PROJECT' and i.status <> 'PAID'
-        `
-      : Promise.resolve([{ total: 0 }]),
+      ? getRevenueSummary(businessId, { dateFrom: monthBounds(today, 0).from, dateTo: monthBounds(today, 0).to })
+      : Promise.resolve(null),
+    isOwner
+      ? getRevenueSummary(businessId, { dateFrom: monthBounds(today, 1).from, dateTo: monthBounds(today, 1).to })
+      : Promise.resolve(null),
     listHotFollowUps(businessId, today, accessibleClientIds),
     isOwner
       ? sql`
@@ -143,12 +145,8 @@ export async function getDashboardData(
   const projectClients = activeClients.filter((c) => c.type === "PROJECT");
   const recurringClients = activeClients.filter((c) => c.type === "RECURRING");
 
-  let projectedRevenue: number | null = null;
-  if (isOwner) {
-    const recurringMonthlyTotal = recurringClients.reduce((sum, c) => sum + Number(c.rate), 0);
-    const projectRemaining = Number((projectRemainingRows[0] as Record<string, unknown>).total);
-    projectedRevenue = recurringMonthlyTotal + projectRemaining;
-  }
+  const thisMonthRevenue = thisMonthSummary?.paid ?? null;
+  const lastMonthRevenue = lastMonthSummary?.paid ?? null;
 
   const attentionFlags: AttentionFlag[] = [];
   for (const row of staleInvoiceRows) {
@@ -193,7 +191,8 @@ export async function getDashboardData(
   return {
     projectClients: projectClients.map(sanitizeClientRate),
     recurringClients: recurringClients.map(sanitizeClientRate),
-    projectedRevenue,
+    thisMonthRevenue,
+    lastMonthRevenue,
     hotFollowUps,
     attentionFlags,
     todoSnapshot,

@@ -73,6 +73,9 @@ function mapInvoice(row: Record<string, unknown>): Invoice {
     paidDate: row.paid_date as string | null,
     periodMonth: row.period_month as number | null,
     periodYear: row.period_year as number | null,
+    workTypeId: row.work_type_id as string | null,
+    workTypeName: (row.work_type_name as string | null) ?? null,
+    workTypeOther: row.work_type_other as string | null,
     createdAt: row.created_at as string,
   };
 }
@@ -151,8 +154,11 @@ export async function getClient(id: string, businessId: string): Promise<ClientW
       `,
       sql`select * from client_links where client_id = ${id} and business_id = ${businessId} order by created_at asc`,
       sql`
-        select * from invoices where client_id = ${id} and business_id = ${businessId}
-        order by period_year desc nulls last, period_month desc nulls last, created_at desc
+        select i.*, wt.name as work_type_name
+        from invoices i
+        left join work_types wt on wt.id = i.work_type_id
+        where i.client_id = ${id} and i.business_id = ${businessId}
+        order by i.period_year desc nulls last, i.period_month desc nulls last, i.created_at desc
       `,
       listTasks(businessId, { clientId: id }),
       listFollowUpsForClient(id, businessId),
@@ -276,6 +282,16 @@ export async function getClientCompanyName(id: string, businessId: string): Prom
   return rows[0] ? ((rows[0] as Record<string, unknown>).company_name as string) : null;
 }
 
+/** Cheap lookup — used to default a new invoice's work-type fields from its client at creation time (see addInvoice in app/(app)/clients/actions.ts). */
+export async function getClientWorkType(
+  id: string,
+  businessId: string
+): Promise<{ workTypeId: string | null; workTypeOther: string | null } | null> {
+  const rows = await sql`select work_type_id, work_type_other from clients where id = ${id} and business_id = ${businessId}`;
+  const row = rows[0] as Record<string, unknown> | undefined;
+  return row ? { workTypeId: row.work_type_id as string | null, workTypeOther: row.work_type_other as string | null } : null;
+}
+
 // --- Links ---
 
 export async function addClientLink(
@@ -304,19 +320,29 @@ export interface InvoiceInput {
   status: InvoiceStatus;
   invoicedDate: string | null;
   paidDate: string | null;
+  /** Only read by addInvoice — see mapInvoice's field comment on why updateInvoice never touches these. */
+  workTypeId?: string | null;
+  workTypeOther?: string | null;
 }
 
 export async function addInvoice(clientId: string, businessId: string, input: InvoiceInput): Promise<void> {
   await sql`
-    insert into invoices (client_id, business_id, label, amount, invoice_type, hours, hourly_rate, description, status, invoiced_date, paid_date)
+    insert into invoices (client_id, business_id, label, amount, invoice_type, hours, hourly_rate, description, status, invoiced_date, paid_date, work_type_id, work_type_other)
     values (
       ${clientId}, ${businessId}, ${input.label}, ${input.amount},
       ${input.invoiceType}, ${input.hours}, ${input.hourlyRate}, ${input.description},
-      ${input.status}, ${input.invoicedDate}, ${input.paidDate}
+      ${input.status}, ${input.invoicedDate}, ${input.paidDate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}
     )
   `;
 }
 
+/**
+ * Deliberately never touches work_type_id/work_type_other — those are set
+ * once at creation (defaulted from the client's work type at that moment,
+ * see addInvoice's caller in actions.ts) and stay historically accurate even
+ * if the client's work type later changes. The edit form has no work-type
+ * field, so there's nothing in `input` to write here anyway.
+ */
 export async function updateInvoice(id: string, businessId: string, input: InvoiceInput): Promise<void> {
   await sql`
     update invoices set
@@ -348,29 +374,35 @@ export async function ensureCurrentMonthRecurringInvoice(
   businessId: string,
   clientId: string,
   rate: number,
-  today: string
+  today: string,
+  workTypeId: string | null = null,
+  workTypeOther: string | null = null
 ): Promise<void> {
   const [year, month] = today.split("-").map(Number);
   const label = `${monthName(month)} ${year}`;
   await sql`
-    insert into invoices (client_id, business_id, label, amount, status, period_month, period_year)
-    values (${clientId}, ${businessId}, ${label}, ${rate}, 'NOT_INVOICED', ${month}, ${year})
+    insert into invoices (client_id, business_id, label, amount, status, period_month, period_year, work_type_id, work_type_other)
+    values (${clientId}, ${businessId}, ${label}, ${rate}, 'NOT_INVOICED', ${month}, ${year}, ${workTypeId}, ${workTypeOther})
     on conflict (client_id, period_year, period_month) where period_month is not null do nothing
   `;
 }
 
 export async function ensureRecurringInvoicesForAllActiveClients(businessId: string, today: string): Promise<void> {
   const clients = await sql`
-    select id, rate from clients where business_id = ${businessId} and type = 'RECURRING' and status = 'ACTIVE'
+    select id, rate, work_type_id, work_type_other from clients
+    where business_id = ${businessId} and type = 'RECURRING' and status = 'ACTIVE'
   `;
   await Promise.all(
-    clients.map((c) =>
-      ensureCurrentMonthRecurringInvoice(
+    clients.map((c) => {
+      const row = c as Record<string, unknown>;
+      return ensureCurrentMonthRecurringInvoice(
         businessId,
-        (c as Record<string, unknown>).id as string,
-        Number((c as Record<string, unknown>).rate),
-        today
-      )
-    )
+        row.id as string,
+        Number(row.rate),
+        today,
+        row.work_type_id as string | null,
+        row.work_type_other as string | null
+      );
+    })
   );
 }

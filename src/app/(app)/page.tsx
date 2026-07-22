@@ -72,10 +72,18 @@ export default async function DashboardPage() {
           {isOwner && (
             <StatCard
               backgroundImage="/revenuebackground-card.png"
-              label="Projected revenue this month"
-              value={formatCurrency(data.projectedRevenue ?? 0)}
-              caption={<span className="text-navy-500">Recurring fees & project work</span>}
+              label="This month's revenue"
+              value={formatCurrency(data.thisMonthRevenue ?? 0)}
+              caption={<span className="text-navy-500">Paid invoices this month</span>}
               href="/invoices"
+              topRight={
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-500">Last month</p>
+                  <p className="text-sm font-semibold text-navy-800 tabular-nums">
+                    {formatCurrency(data.lastMonthRevenue ?? 0)}
+                  </p>
+                </>
+              }
             />
           )}
           <StatCard

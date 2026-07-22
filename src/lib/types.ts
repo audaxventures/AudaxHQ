@@ -68,6 +68,10 @@ export interface Invoice {
   paidDate: string | null;
   periodMonth: number | null;
   periodYear: number | null;
+  /** Set once at creation (defaulted from the client's work type), never rewritten on edit — see migration 035. */
+  workTypeId: string | null;
+  workTypeName: string | null;
+  workTypeOther: string | null;
   createdAt: string;
 }
 

@@ -1,7 +1,6 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { RichTextBlocks } from "@/lib/pdf/richTextBlocks";
+import { loadLogoBuffer } from "@/lib/pdf/logo";
 import { formatDate, formatTime } from "@/lib/format";
 import { isRichTextEmpty } from "@/lib/richtext";
 import type { MeetingNote } from "@/lib/types";
@@ -10,28 +9,6 @@ function durationLabel(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
   const hours = minutes / 60;
   return `${hours} hr${hours > 1 ? "s" : ""}`;
-}
-
-/**
- * Fetches the business's uploaded logo into a Buffer for embedding, falling
- * back to the bundled default logo on any failure (missing logoUrl, a dead
- * Supabase Storage URL, a network hiccup) — a PDF export should never fail
- * outright just because the logo couldn't be fetched.
- */
-async function loadLogoBuffer(logoUrl: string | null): Promise<Buffer | null> {
-  if (logoUrl) {
-    try {
-      const res = await fetch(logoUrl);
-      if (res.ok) return Buffer.from(await res.arrayBuffer());
-    } catch {
-      // fall through to the bundled default below
-    }
-  }
-  try {
-    return await fs.readFile(path.join(process.cwd(), "public", "logo.png"));
-  } catch {
-    return null;
-  }
 }
 
 const styles = StyleSheet.create({
