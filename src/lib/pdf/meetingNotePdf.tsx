@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   logo: { width: 130, height: 44, objectFit: "contain", objectPosition: "right center" },
   businessName: { fontSize: 14, fontFamily: "Helvetica-Bold", color: "#101d33" },
+  meetingWith: { fontSize: 9, color: "#7c8aa3", marginTop: 2 },
   divider: { borderBottomWidth: 1, borderBottomColor: "#e9ecf2", marginBottom: 20 },
   title: { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#101d33", marginBottom: 14 },
   metaRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
@@ -50,6 +51,7 @@ const styles = StyleSheet.create({
   actionItemRow: { flexDirection: "row", marginBottom: 5 },
   actionItemCheckbox: { width: 22, fontSize: 10, color: "#be5a1e", fontFamily: "Helvetica-Bold" },
   actionItemText: { flex: 1, fontSize: 10, lineHeight: 1.4, color: "#33496e" },
+  actionItemMeta: { fontSize: 9, color: "#7c8aa3" },
   footer: { position: "absolute", bottom: 24, left: 48, right: 48, fontSize: 8, color: "#aeb8cb", textAlign: "center" },
 });
 
@@ -75,12 +77,17 @@ function MeetingNotePdfDocument({
   const hasAgenda = !isRichTextEmpty(note.agenda);
   const hasNotes = !isRichTextEmpty(note.notes);
   const actionItems = note.actionItemTasks ?? [];
+  // Matches ActionItemsQuickAdd's theirLabel convention (src/components/meetingnotes/ActionItemsQuickAdd.tsx).
+  const theirLabel = note.clientId ? "Client" : "Lead";
 
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.businessName}>{businessName}</Text>
+          <View>
+            <Text style={styles.businessName}>{businessName}</Text>
+            {note.ownerName && <Text style={styles.meetingWith}>A meeting with {note.ownerName}</Text>}
+          </View>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image, not an HTML <img>; no alt prop exists on this component */}
           {logoBuffer && <Image src={logoBuffer} style={styles.logo} />}
         </View>
@@ -123,6 +130,10 @@ function MeetingNotePdfDocument({
                 <Text style={styles.actionItemText}>
                   {task.title}
                   {task.dueDate ? `  (due ${formatDate(task.dueDate)})` : ""}
+                  {"  "}
+                  <Text style={styles.actionItemMeta}>
+                    — Assigned to {task.ownedBy === "EXTERNAL" ? theirLabel : task.assigneeName}
+                  </Text>
                 </Text>
               </View>
             ))}

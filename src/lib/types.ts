@@ -148,6 +148,8 @@ export interface MeetingActionItemTask {
   status: TaskStatus;
   dueDate: string | null;
   ownedBy: TaskOwner;
+  /** Who it's assigned to on the team's own board — the business owner's name when unassigned. Only meaningful when ownedBy is "TEAM"; an "EXTERNAL" item is the client/lead's own commitment, shown against their name instead. */
+  assigneeName: string;
 }
 
 export interface Document {

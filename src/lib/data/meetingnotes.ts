@@ -67,8 +67,15 @@ export async function listMeetingNotes(businessId: string, filters: MeetingNoteF
       coalesce(c.contact_name, l.contact_name) as owner_contact_name,
       coalesce(
         (
-          select json_agg(json_build_object('id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date, 'ownedBy', t.owned_by) order by t.created_at asc)
+          select json_agg(
+            json_build_object(
+              'id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date, 'ownedBy', t.owned_by,
+              'assigneeName', coalesce(tm.name, b.owner_name)
+            )
+            order by t.created_at asc
+          )
           from todos t
+          left join team_members tm on tm.id = t.assigned_to_team_member_id
           where t.meeting_note_id = m.id
         ),
         '[]'
@@ -76,6 +83,7 @@ export async function listMeetingNotes(businessId: string, filters: MeetingNoteF
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id
+    left join businesses b on b.id = m.business_id
     where m.business_id = ${businessId}
       and (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or m.lead_id = ${filters.leadId ?? null})
@@ -105,8 +113,15 @@ export async function getMeetingNoteById(
       coalesce(c.contact_name, l.contact_name) as owner_contact_name,
       coalesce(
         (
-          select json_agg(json_build_object('id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date, 'ownedBy', t.owned_by) order by t.created_at asc)
+          select json_agg(
+            json_build_object(
+              'id', t.id, 'title', t.title, 'status', t.status, 'dueDate', t.due_date, 'ownedBy', t.owned_by,
+              'assigneeName', coalesce(tm.name, b.owner_name)
+            )
+            order by t.created_at asc
+          )
           from todos t
+          left join team_members tm on tm.id = t.assigned_to_team_member_id
           where t.meeting_note_id = m.id
         ),
         '[]'
@@ -114,6 +129,7 @@ export async function getMeetingNoteById(
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id
+    left join businesses b on b.id = m.business_id
     where m.id = ${id} and m.business_id = ${businessId}
       and (
         ${filters.accessibleClientIds ?? null}::uuid[] is null
