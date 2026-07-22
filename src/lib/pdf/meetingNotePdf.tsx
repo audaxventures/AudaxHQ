@@ -36,9 +36,9 @@ async function loadLogoBuffer(logoUrl: string | null): Promise<Buffer | null> {
 
 const styles = StyleSheet.create({
   page: { paddingTop: 48, paddingBottom: 56, paddingHorizontal: 48, fontFamily: "Helvetica" },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  logo: { width: 32, height: 32, marginRight: 10, objectFit: "contain" },
-  businessName: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#101d33" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  logo: { width: 130, height: 44, objectFit: "contain", objectPosition: "right center" },
+  businessName: { fontSize: 14, fontFamily: "Helvetica-Bold", color: "#101d33" },
   divider: { borderBottomWidth: 1, borderBottomColor: "#e9ecf2", marginBottom: 20 },
   title: { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#101d33", marginBottom: 14 },
   metaRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
@@ -80,9 +80,9 @@ function MeetingNotePdfDocument({
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
+          <Text style={styles.businessName}>{businessName}</Text>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image, not an HTML <img>; no alt prop exists on this component */}
           {logoBuffer && <Image src={logoBuffer} style={styles.logo} />}
-          <Text style={styles.businessName}>{businessName}</Text>
         </View>
         <View style={styles.divider} />
 
