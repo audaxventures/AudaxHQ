@@ -260,12 +260,6 @@ export default function MarketingHomePage() {
                   Start for free <ArrowRight size={16} />
                 </Link>
                 <BookDemoButton variant="on-light" />
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl border border-navy-300 px-5 py-3 text-sm font-semibold text-navy-800 transition-colors hover:border-navy-400 hover:bg-white"
-                >
-                  Talk to us
-                </Link>
               </div>
             </div>
           </div>
