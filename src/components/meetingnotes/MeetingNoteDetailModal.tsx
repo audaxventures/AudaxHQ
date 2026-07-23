@@ -117,7 +117,7 @@ export function MeetingNoteDetailModal({
           <Label htmlFor="title">Title</Label>
           <Input id="title" name="title" defaultValue={note.title ?? ""} placeholder="e.g. Kickoff call, Q3 check-in…" />
         </FieldGroup>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FieldGroup className="min-w-0">
             <Label htmlFor="meetingDate">Meeting date</Label>
             <Input

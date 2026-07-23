@@ -101,7 +101,7 @@ export function NewMeetingNoteForm({
         <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
       </FieldGroup>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FieldGroup className="min-w-0">
           <Label htmlFor="meetingDate">Meeting date</Label>
           <Input id="meetingDate" name="meetingDate" type="date" required className="min-w-0" />

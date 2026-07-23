@@ -271,7 +271,6 @@ export function TaskFormDrawer({
             name="dueDate"
             type="date"
             defaultValue={formatDateInput(task?.dueDate)}
-            className="min-w-0"
           />
         </FieldGroup>
 

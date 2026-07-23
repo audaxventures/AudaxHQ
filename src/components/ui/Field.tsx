@@ -8,13 +8,15 @@ import { cn } from "@/lib/cn";
 const fieldBase =
   "w-full rounded-lg border border-navy-200 bg-cream-50 px-3 py-2 text-base sm:text-sm text-navy-900 placeholder:text-navy-400 transition-colors focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100";
 
-// Mobile Safari's date/time inputs default to inline-block and can
-// ignore an inherited width: 100% there, sizing off their own shadow-DOM
-// content instead — which squishes whatever they share a row with.
-// Forcing block display makes them respect width like any other field.
-// (Not forcing min/max-width here — several callers deliberately pass a
-// fixed w-* for compact filter bars, and that must keep working.)
-const temporalFieldFix = "block";
+// Mobile Safari renders date/time inputs with its own "menulist-button"
+// chrome, which has a documented bug: it ignores width: 100% (and any
+// other width) entirely, sizing itself off internal shadow-DOM content
+// instead — overflowing its container and, on a phone, the whole page.
+// Forcing block display plus -webkit/-moz-appearance: textfield swaps in
+// the plain-textfield sizing algorithm, which does respect width — same
+// box model as a normal text input (like the field below it). The native
+// picker icon is a separate shadow part and keeps working regardless.
+const temporalFieldFix = "block [-webkit-appearance:textfield] [-moz-appearance:textfield]";
 
 export function Input({
   icon: Icon,

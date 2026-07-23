@@ -135,7 +135,7 @@ export function MeetingNotesSection({
             }}
             className="mt-3 space-y-3 border-t border-navy-100 pt-3"
           >
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FieldGroup className="min-w-0">
                 <Label htmlFor="schedule-date">Date</Label>
                 <Input id="schedule-date" name="meetingDate" type="date" required className="min-w-0" />
@@ -184,7 +184,7 @@ export function MeetingNotesSection({
           <Label htmlFor="title">Title</Label>
           <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
         </FieldGroup>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FieldGroup className="min-w-0">
             <Label htmlFor="meetingDate">Meeting date</Label>
             <Input id="meetingDate" name="meetingDate" type="date" required className="min-w-0" />
