@@ -54,7 +54,7 @@ export function MeetingNoteDetailModal({
   }
 
   return (
-    <Modal title="Meeting note" onClose={onClose}>
+    <Modal title="Meeting note" onClose={onClose} maxWidth="max-w-3xl">
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <a
           href={`/api/meeting-notes/${note.id}/pdf`}
