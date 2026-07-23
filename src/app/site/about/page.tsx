@@ -71,7 +71,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "See linked invoices, meeting notes, tasks, and documents on one page",
       "Control exactly which team members can see and work on each client",
     ],
-    image: "/clientsdesktopdesk.png",
+    image: "/client.png",
     imageAlt: "The Verclara client detail page open on a desktop",
   },
   {
@@ -88,7 +88,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "One-click conversion from lead to client, carrying notes and history forward",
       "Lead source tracking to see which channels actually bring in business",
     ],
-    image: "/leadsdesktop.png",
+    image: "/leads.png",
     imageAlt: "The Verclara leads pipeline open on a desktop",
   },
   {
@@ -105,7 +105,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Branded PDF export you can email straight to a client after the call",
       "Rich text formatting for agendas and notes",
     ],
-    image: "/meetingnotesdesktop.png",
+    image: "/meetingnotes.png",
     imageAlt: "A Verclara meeting note open on a desktop",
   },
   {
@@ -122,6 +122,8 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Assign follow-ups to specific team members",
       "See what's due today right from the dashboard",
     ],
+    image: "/calendar.png",
+    imageAlt: "The Verclara calendar open on a desktop",
   },
   {
     iconSmall: <Receipt size={18} />,
@@ -137,7 +139,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Export a PDF or CSV invoice report per client — built for reconciling against your bank or bookkeeping software",
       "Support for both fixed-fee and hourly invoices",
     ],
-    image: "/revenuetrackingdesktop.png",
+    image: "/revenuetracking.png",
     imageAlt: "The Verclara revenue tracking page open on a desktop",
   },
   {
@@ -154,7 +156,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Track billable vs. non-billable time separately",
       "Export a cost report for any date range",
     ],
-    image: "/costtrackerdesktop.png",
+    image: "/hour&costtracker.png",
     imageAlt: "The Verclara hour and cost tracker open on a desktop",
   },
   {
@@ -171,8 +173,8 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Tasks link back to the client or lead they belong to automatically",
       "Quick-add tasks straight from a meeting note's action items",
     ],
-    image: "/todolaptop.png",
-    imageAlt: "The Verclara to-do board open on a laptop",
+    image: "/to-dos.png",
+    imageAlt: "The Verclara to-do board open on a desktop",
   },
   {
     iconSmall: <BarChart3 size={18} />,
@@ -188,7 +190,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
       "Snapshot of what's due today across tasks and follow-ups",
       "A quick view into your most active clients",
     ],
-    image: "/demodashboardweb.png",
+    image: "/dashboard.png",
     imageAlt: "The Verclara dashboard open on a desktop",
   },
 ];
