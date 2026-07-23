@@ -8,18 +8,27 @@ import { cn } from "@/lib/cn";
 const fieldBase =
   "w-full rounded-lg border border-navy-200 bg-cream-50 px-3 py-2 text-base sm:text-sm text-navy-900 placeholder:text-navy-400 transition-colors focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100";
 
+// Mobile Safari's date/time inputs default to inline-block and can
+// ignore an inherited width: 100% there, sizing off their own shadow-DOM
+// content instead — which squishes whatever they share a row with.
+// Forcing block display makes them respect width like any other field.
+// (Not forcing min/max-width here — several callers deliberately pass a
+// fixed w-* for compact filter bars, and that must keep working.)
+const temporalFieldFix = "block";
+
 export function Input({
   icon: Icon,
   className,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { icon?: LucideIcon }) {
+  const isTemporal = props.type === "date" || props.type === "time" || props.type === "datetime-local";
   if (!Icon) {
-    return <input {...props} className={cn(fieldBase, className)} />;
+    return <input {...props} className={cn(fieldBase, isTemporal && temporalFieldFix, className)} />;
   }
   return (
     <div className="relative">
       <Icon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" />
-      <input {...props} className={cn(fieldBase, "pl-9", className)} />
+      <input {...props} className={cn(fieldBase, isTemporal && temporalFieldFix, "pl-9", className)} />
     </div>
   );
 }

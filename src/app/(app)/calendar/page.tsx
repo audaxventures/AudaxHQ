@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { CalendarControls } from "@/components/calendar/CalendarControls";
 import { CalendarDayCell } from "@/components/calendar/CalendarDayCell";
+import { CalendarAgendaList } from "@/components/calendar/CalendarAgendaList";
 import { buildMonthGrid, parseMonthParam, todayDateStr } from "@/lib/calendarGrid";
 import { listCalendarEvents, CALENDAR_EVENT_KIND_ORDER, type CalendarEventKind } from "@/lib/data/calendar";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
@@ -59,30 +60,36 @@ export default async function CalendarPage({
 
       <CalendarControls year={year} month={month} activeTypes={activeTypes} today={today} />
 
-      <Card tone="navy" className="overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-navy-100">
-          {WEEKDAY_LABELS.map((label) => (
-            <div
-              key={label}
-              className="px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-navy-400"
-            >
-              {label}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {grid.map((day) => (
-            <CalendarDayCell
-              key={day.date}
-              date={day.date}
-              day={day.day}
-              inCurrentMonth={day.inCurrentMonth}
-              isToday={day.date === today}
-              events={eventsByDate.get(day.date) ?? []}
-            />
-          ))}
-        </div>
-      </Card>
+      <div className="hidden md:block">
+        <Card tone="navy" className="overflow-hidden">
+          <div className="grid grid-cols-7 border-b border-navy-100">
+            {WEEKDAY_LABELS.map((label) => (
+              <div
+                key={label}
+                className="px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-navy-400"
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {grid.map((day) => (
+              <CalendarDayCell
+                key={day.date}
+                date={day.date}
+                day={day.day}
+                inCurrentMonth={day.inCurrentMonth}
+                isToday={day.date === today}
+                events={eventsByDate.get(day.date) ?? []}
+              />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <div className="md:hidden">
+        <CalendarAgendaList days={grid} eventsByDate={eventsByDate} today={today} />
+      </div>
     </div>
   );
 }

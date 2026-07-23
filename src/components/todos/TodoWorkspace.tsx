@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, Circle, GripVertical, Inbox, ListTodo, Plus, Send } from "lucide-react";
@@ -13,6 +13,25 @@ import { TASK_STATUS_LABELS } from "@/lib/types";
 import type { Task, TaskStatus, TodoType } from "@/lib/types";
 import { TaskCard } from "@/components/todos/TaskCard";
 import { TaskFormDrawer } from "@/components/todos/TaskFormDrawer";
+
+// Tailwind's lg breakpoint is also where the board switches from a single
+// stacked column to a side-by-side grid — below it, native drag conflicts
+// with the page's own vertical scroll gesture, so drag is disabled there.
+const DESKTOP_BOARD_QUERY = "(min-width: 1024px)";
+
+function subscribeToBoardQuery(callback: () => void) {
+  const mql = window.matchMedia(DESKTOP_BOARD_QUERY);
+  mql.addEventListener("change", callback);
+  return () => mql.removeEventListener("change", callback);
+}
+
+function useIsMobileBoard(): boolean {
+  return useSyncExternalStore(
+    subscribeToBoardQuery,
+    () => !window.matchMedia(DESKTOP_BOARD_QUERY).matches,
+    () => false
+  );
+}
 
 interface OwnerOption {
   id: string;
@@ -130,6 +149,10 @@ export function TodoWorkspace({
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
   const quickAddRef = useRef<HTMLFormElement>(null);
   const [quickAddPending, startQuickAdd] = useTransition();
+  const isMobileBoard = useIsMobileBoard();
+  // Which single column is showing on the mobile tab strip — desktop
+  // ignores this entirely and shows every column side by side.
+  const [mobileColumnKey, setMobileColumnKey] = useState<string | null>(null);
 
   // Strip the ?new=1 param once handled so a later refresh doesn't reopen the drawer.
   useEffect(() => {
@@ -154,9 +177,23 @@ export function TodoWorkspace({
     filterStatus ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus)) : BOARD_COLUMNS
   ).filter((c) => c.scope === "own" || assignOptions.length > 1);
 
+  // Falls back to the first visible column whenever the stored key no
+  // longer matches one (first render, or the status filter just changed
+  // which columns exist) — recomputed every render instead of an effect.
+  const activeMobileColumnKey =
+    mobileColumnKey && visibleColumns.some((c) => c.key === mobileColumnKey)
+      ? mobileColumnKey
+      : (visibleColumns[0]?.key ?? null);
+
   const completedTasks = [...optimisticTasks]
     .filter((t) => t.status === "COMPLETED")
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  function itemsForColumn(column: BoardColumn): Task[] {
+    return optimisticTasks.filter(
+      (t) => column.statuses.includes(t.status) && t.status !== "COMPLETED" && taskScope(t, currentAssigneeId) === column.scope
+    );
+  }
 
   function moveTaskToColumn(taskId: string, columnKey: string) {
     const column = BOARD_COLUMNS.find((c) => c.key === columnKey);
@@ -214,6 +251,39 @@ export function TodoWorkspace({
         </p>
       )}
 
+      {visibleColumns.length > 1 && (
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+          {visibleColumns.map((column) => {
+            const active = column.key === activeMobileColumnKey;
+            const Icon = column.icon;
+            return (
+              <button
+                key={column.key}
+                type="button"
+                onClick={() => setMobileColumnKey(column.key)}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                  active
+                    ? "border-navy-900 bg-navy-900 text-cream-50"
+                    : "border-navy-200 text-navy-600 hover:border-navy-400"
+                )}
+              >
+                <Icon size={14} />
+                {column.label}
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-xs font-semibold",
+                    active ? "bg-white/20" : "bg-navy-100 text-navy-500"
+                  )}
+                >
+                  {itemsForColumn(column).length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div
         className={cn(
           "grid grid-cols-1 gap-4",
@@ -221,9 +291,7 @@ export function TodoWorkspace({
         )}
       >
         {visibleColumns.map((column) => {
-          const items = optimisticTasks.filter(
-            (t) => column.statuses.includes(t.status) && t.status !== "COMPLETED" && taskScope(t, currentAssigneeId) === column.scope
-          );
+          const items = itemsForColumn(column);
           const isConsolidatedColumn = column.scope !== "own";
           const isHandedOffColumn = column.scope === "handedOff";
           const Icon = column.icon;
@@ -233,7 +301,8 @@ export function TodoWorkspace({
               key={column.key}
               data-column-key={column.key}
               className={cn(
-                "flex flex-col rounded-2xl border p-3 transition-colors",
+                "flex-col rounded-2xl border p-3 transition-colors",
+                column.key === activeMobileColumnKey ? "flex" : "hidden lg:flex",
                 dragOverColumn === column.key ? "border-burnt-300 bg-burnt-100/30" : "border-navy-100 bg-cream-100/40"
               )}
             >
@@ -253,7 +322,7 @@ export function TodoWorkspace({
                     key={task.id}
                     task={task}
                     today={today}
-                    draggable={!isConsolidatedColumn}
+                    draggable={!isConsolidatedColumn && !isMobileBoard}
                     assignedToLabel={isHandedOffColumn ? assigneeLabelFor(task) : undefined}
                     onDragColumnChange={setDragOverColumn}
                     onDropOnColumn={(columnKey) => moveTaskToColumn(task.id, columnKey)}
@@ -279,7 +348,7 @@ export function TodoWorkspace({
         })}
       </div>
 
-      <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-navy-400">
+      <p className="mt-6 hidden items-center justify-center gap-1.5 text-xs text-navy-400 lg:flex">
         <GripVertical size={14} /> Drag and drop tasks to update status
       </p>
 

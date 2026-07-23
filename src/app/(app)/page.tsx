@@ -25,6 +25,10 @@ function todayLabel(today: string) {
   }).format(new Date(`${today}T00:00:00Z`));
 }
 
+function monthLabel(today: string) {
+  return new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(new Date(`${today}T00:00:00Z`));
+}
+
 function greetingWord(hour: number): string {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
@@ -74,7 +78,7 @@ export default async function DashboardPage() {
               backgroundImage="/revenuebackground-card.png"
               label="This month's revenue"
               value={formatCurrency(data.thisMonthRevenue ?? 0)}
-              caption={<span className="text-navy-500">Paid invoices this month</span>}
+              caption={<span className="text-navy-500">{monthLabel(data.today)} invoices</span>}
               href="/invoices"
               topRight={
                 <>

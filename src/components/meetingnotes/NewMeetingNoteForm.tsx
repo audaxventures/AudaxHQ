@@ -101,21 +101,21 @@ export function NewMeetingNoteForm({
         <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
       </FieldGroup>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FieldGroup>
+      <div className="grid grid-cols-2 gap-4">
+        <FieldGroup className="min-w-0">
           <Label htmlFor="meetingDate">Meeting date</Label>
-          <Input id="meetingDate" name="meetingDate" type="date" required />
+          <Input id="meetingDate" name="meetingDate" type="date" required className="min-w-0" />
         </FieldGroup>
-        <FieldGroup>
-          <Label htmlFor="attendees">Attendees</Label>
-          <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
-        </FieldGroup>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <FieldGroup>
+        <FieldGroup className="min-w-0">
           <Label htmlFor="startTime">Time (optional)</Label>
           <Input id="startTime" name="startTime" type="time" className="min-w-0" />
         </FieldGroup>
+      </div>
+      <FieldGroup>
+        <Label htmlFor="attendees">Attendees</Label>
+        <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
+      </FieldGroup>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TimezoneField defaultValue={defaultTimezone} />
         <FieldGroup>
           <Label htmlFor="durationMinutes">Duration</Label>

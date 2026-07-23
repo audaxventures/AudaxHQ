@@ -135,18 +135,18 @@ export function MeetingNotesSection({
             }}
             className="mt-3 space-y-3 border-t border-navy-100 pt-3"
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <FieldGroup>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldGroup className="min-w-0">
                 <Label htmlFor="schedule-date">Date</Label>
                 <Input id="schedule-date" name="meetingDate" type="date" required className="min-w-0" />
               </FieldGroup>
-              <FieldGroup>
+              <FieldGroup className="min-w-0">
                 <Label htmlFor="schedule-time">Time (optional)</Label>
                 <Input id="schedule-time" name="startTime" type="time" className="min-w-0" />
               </FieldGroup>
-              <TimezoneField id="schedule-timezone" defaultValue={defaultTimezone} />
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <TimezoneField id="schedule-timezone" defaultValue={defaultTimezone} />
               <FieldGroup>
                 <Label htmlFor="schedule-duration">Duration</Label>
                 <Select id="schedule-duration" name="durationMinutes" defaultValue="30" icon={Clock}>
@@ -184,21 +184,21 @@ export function MeetingNotesSection({
           <Label htmlFor="title">Title</Label>
           <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
         </FieldGroup>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FieldGroup>
+        <div className="grid grid-cols-2 gap-3">
+          <FieldGroup className="min-w-0">
             <Label htmlFor="meetingDate">Meeting date</Label>
             <Input id="meetingDate" name="meetingDate" type="date" required className="min-w-0" />
           </FieldGroup>
-          <FieldGroup>
-            <Label htmlFor="attendees">Attendees</Label>
-            <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
-          </FieldGroup>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <FieldGroup>
+          <FieldGroup className="min-w-0">
             <Label htmlFor="startTime">Time (optional)</Label>
             <Input id="startTime" name="startTime" type="time" className="min-w-0" />
           </FieldGroup>
+        </div>
+        <FieldGroup>
+          <Label htmlFor="attendees">Attendees</Label>
+          <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
+        </FieldGroup>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <TimezoneField defaultValue={defaultTimezone} />
           <FieldGroup>
             <Label htmlFor="location">Location (optional)</Label>

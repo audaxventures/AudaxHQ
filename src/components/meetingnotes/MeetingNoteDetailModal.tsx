@@ -117,8 +117,8 @@ export function MeetingNoteDetailModal({
           <Label htmlFor="title">Title</Label>
           <Input id="title" name="title" defaultValue={note.title ?? ""} placeholder="e.g. Kickoff call, Q3 check-in…" />
         </FieldGroup>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FieldGroup>
+        <div className="grid grid-cols-2 gap-3">
+          <FieldGroup className="min-w-0">
             <Label htmlFor="meetingDate">Meeting date</Label>
             <Input
               id="meetingDate"
@@ -126,18 +126,19 @@ export function MeetingNoteDetailModal({
               type="date"
               required
               defaultValue={formatDateInput(note.meetingDate)}
+              className="min-w-0"
             />
           </FieldGroup>
-          <FieldGroup>
-            <Label htmlFor="attendees">Attendees</Label>
-            <Input id="attendees" name="attendees" defaultValue={note.attendees ?? ""} placeholder="Jane, Bob…" />
-          </FieldGroup>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <FieldGroup>
+          <FieldGroup className="min-w-0">
             <Label htmlFor="startTime">Time (optional)</Label>
             <Input id="startTime" name="startTime" type="time" defaultValue={formatTimeInput(note.startTime)} className="min-w-0" />
           </FieldGroup>
+        </div>
+        <FieldGroup>
+          <Label htmlFor="attendees">Attendees</Label>
+          <Input id="attendees" name="attendees" defaultValue={note.attendees ?? ""} placeholder="Jane, Bob…" />
+        </FieldGroup>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <TimezoneField defaultValue={note.timezone ?? defaultTimezone} />
           <FieldGroup>
             <Label htmlFor="durationMinutes">Duration</Label>
