@@ -1,5 +1,4 @@
-import { AlertTriangle, PieChart, Plus } from "lucide-react";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { AlertTriangle, Plus } from "lucide-react";
 import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { CostDateRangeFilter } from "@/components/CostDateRangeFilter";
 import { cn } from "@/lib/cn";
@@ -57,23 +56,16 @@ export function CostSummarySection({
   const summary = buildCostSummary(entries, totalInvoiced, budgetedHours);
 
   return (
-    <CollapsibleSection
-      sectionKey="cost-profitability"
-      icon={<PieChart size={14} />}
-      tone="slate"
-      title="Cost & profitability"
-      isEmpty={entries.length === 0}
-      action={
-        <div className="flex items-center gap-4">
-          <a href={logHref} className="inline-flex items-center gap-1 text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-            <Plus size={14} /> Log time / cost
-          </a>
-          <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
-            Download report
-          </a>
-        </div>
-      }
-    >
+    <div>
+      <div className="mb-4 flex items-center justify-end gap-4">
+        <a href={logHref} className="inline-flex items-center gap-1 text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+          <Plus size={14} /> Log time / cost
+        </a>
+        <a href={reportHref} className="text-sm font-medium text-burnt-600 hover:text-burnt-700 hover:underline">
+          Download report
+        </a>
+      </div>
+
       <CostDateRangeFilter dateFrom={dateFrom} dateTo={dateTo} />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -147,6 +139,6 @@ export function CostSummarySection({
       )}
 
       <CostEntryLog entries={entries} clients={clients} leads={leads} teamMembers={teamMembers} workCategories={workCategories} />
-    </CollapsibleSection>
+    </div>
   );
 }

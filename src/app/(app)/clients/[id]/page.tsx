@@ -21,7 +21,7 @@ import { mentionOptions } from "@/lib/mentions";
 import { activateClient, archiveClient, setClientColor } from "@/app/(app)/clients/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { RecordSectionTabs, type SectionTab } from "@/components/ui/RecordSectionTabs";
 import { BackLink } from "@/components/ui/BackLink";
 import { ClientStatusBadge, Badge } from "@/components/ui/Badge";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
@@ -108,6 +108,108 @@ export default async function ClientDetailPage({
     .filter((i) => i.status === "PAID")
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
+  const clientSectionTabs: SectionTab[] = [
+    {
+      key: "follow-ups",
+      label: "Follow-ups",
+      icon: <CalendarClock size={15} />,
+      color: "burnt",
+      count: client.followUps.length,
+      content: (
+        <FollowUpsList
+          owner={{ clientId: id }}
+          followUps={client.followUps}
+          today={today}
+          assignOptions={assignOptions}
+          currentAssigneeId={currentAssigneeId}
+        />
+      ),
+    },
+    {
+      key: "meetings-notes",
+      label: "Meetings & Notes",
+      icon: <NotebookPen size={15} />,
+      color: "violet",
+      count: client.meetingNotes.length,
+      content: (
+        <MeetingNotesSection
+          owner={owner}
+          notes={client.meetingNotes}
+          today={today}
+          senderFirstName={senderFirstName(user)}
+          defaultTimezone={user.business.timezone}
+        />
+      ),
+    },
+    {
+      key: "documents",
+      label: "Documents",
+      icon: <FileText size={15} />,
+      color: "blue",
+      count: client.documents.length,
+      content: <DocumentsSection owner={{ clientId: id }} documents={client.documents} />,
+    },
+    {
+      key: "discussion-notes",
+      label: "Discussion & Notes",
+      icon: <StickyNote size={15} />,
+      color: "slate",
+      count: client.notes.length,
+      content: <NotesLog notes={client.notes} kind="client" entityId={id} mentionables={noteMentionOptions} />,
+    },
+    ...(isOwner
+      ? [
+          {
+            key: "invoices",
+            label: "Invoices",
+            icon: <Receipt size={15} />,
+            color: "gold" as const,
+            count: client.invoices.length,
+            content: (
+              <>
+                <p className="text-sm text-navy-500 mb-4">
+                  {client.type === "RECURRING"
+                    ? "One entry per month, created automatically — add one-off invoices any time."
+                    : "Split the project total across deposits, milestones, or however you invoice this client."}
+                </p>
+                <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
+              </>
+            ),
+          },
+          {
+            key: "cost-profitability",
+            label: "Cost & Profitability",
+            icon: <DollarSign size={15} />,
+            color: "teal" as const,
+            count: costEntries.length,
+            content: (
+              <CostSummarySection
+                entries={costEntries}
+                clients={allClients}
+                leads={leads}
+                teamMembers={teamMembers}
+                workCategories={workCategories}
+                totalInvoiced={client.invoices
+                  .filter((i) => i.status !== "NOT_INVOICED")
+                  .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
+                  .reduce((sum, i) => sum + Number(i.amount), 0)}
+                budgetedHours={client.budgetedHours}
+                reportHref={`/api/reports?${new URLSearchParams({
+                  clientId: id,
+                  summary: "1",
+                  ...(costFrom ? { dateFrom: costFrom } : {}),
+                  ...(costTo ? { dateTo: costTo } : {}),
+                }).toString()}`}
+                logHref={`/tracker?logTime=1&clientId=${id}`}
+                dateFrom={costFrom}
+                dateTo={costTo}
+              />
+            ),
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div>
       <BackLink href="/clients" label="Back to clients" />
@@ -153,98 +255,7 @@ export default async function ClientDetailPage({
             />
           </Card>
 
-          {isOwner && (
-            <>
-              <CollapsibleSection
-                sectionKey="invoices"
-                icon={<Receipt size={14} />}
-                tone="slate"
-                title="Invoices"
-                isEmpty={client.invoices.length === 0}
-              >
-                <p className="text-sm text-navy-500 mb-4">
-                  {client.type === "RECURRING"
-                    ? "One entry per month, created automatically — add one-off invoices any time."
-                    : "Split the project total across deposits, milestones, or however you invoice this client."}
-                </p>
-                <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
-              </CollapsibleSection>
-
-              <CostSummarySection
-                entries={costEntries}
-                clients={allClients}
-                leads={leads}
-                teamMembers={teamMembers}
-                workCategories={workCategories}
-                totalInvoiced={client.invoices
-                  .filter((i) => i.status !== "NOT_INVOICED")
-                  .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
-                  .reduce((sum, i) => sum + Number(i.amount), 0)}
-                budgetedHours={client.budgetedHours}
-                reportHref={`/api/reports?${new URLSearchParams({
-                  clientId: id,
-                  summary: "1",
-                  ...(costFrom ? { dateFrom: costFrom } : {}),
-                  ...(costTo ? { dateTo: costTo } : {}),
-                }).toString()}`}
-                logHref={`/tracker?logTime=1&clientId=${id}`}
-                dateFrom={costFrom}
-                dateTo={costTo}
-              />
-            </>
-          )}
-
-          <CollapsibleSection
-            sectionKey="follow-ups"
-            icon={<CalendarClock size={14} />}
-            tone="slate"
-            title="Follow-ups"
-            isEmpty={client.followUps.length === 0}
-          >
-            <FollowUpsList
-              owner={{ clientId: id }}
-              followUps={client.followUps}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="meetings-notes"
-            icon={<NotebookPen size={14} />}
-            tone="slate"
-            title="Meetings & notes"
-            isEmpty={client.meetingNotes.length === 0}
-          >
-            <MeetingNotesSection
-              owner={owner}
-              notes={client.meetingNotes}
-              today={today}
-              senderFirstName={senderFirstName(user)}
-              defaultTimezone={user.business.timezone}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="documents"
-            icon={<FileText size={14} />}
-            tone="slate"
-            title="Documents"
-            isEmpty={client.documents.length === 0}
-          >
-            <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="discussion-notes"
-            icon={<StickyNote size={14} />}
-            tone="slate"
-            title="Discussion & Notes"
-            isEmpty={client.notes.length === 0}
-          >
-            <NotesLog notes={client.notes} kind="client" entityId={id} mentionables={noteMentionOptions} />
-          </CollapsibleSection>
+          <RecordSectionTabs storageKey="record-detail" tabs={clientSectionTabs} />
         </div>
 
         <div className="space-y-6">

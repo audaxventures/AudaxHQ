@@ -1,5 +1,15 @@
 import { notFound } from "next/navigation";
-import { ArrowRight, IdCard, CalendarClock, NotebookPen, FileText, StickyNote, BarChart3, CheckSquare } from "lucide-react";
+import {
+  ArrowRight,
+  IdCard,
+  CalendarClock,
+  NotebookPen,
+  FileText,
+  StickyNote,
+  BarChart3,
+  CheckSquare,
+  DollarSign,
+} from "lucide-react";
 import { getLead, listLeads } from "@/lib/data/leads";
 import { listClients } from "@/lib/data/clients";
 import { listCostEntries } from "@/lib/data/costEntries";
@@ -10,7 +20,7 @@ import { mentionOptions } from "@/lib/mentions";
 import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
-import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { RecordSectionTabs, type SectionTab } from "@/components/ui/RecordSectionTabs";
 import { BackLink } from "@/components/ui/BackLink";
 import { LeadStatusBadge, Badge } from "@/components/ui/Badge";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
@@ -77,6 +87,88 @@ export default async function LeadDetailPage({
   const boundDeleteLead = deleteLead.bind(null, id);
   const boundConvert = convertLeadToClient.bind(null, id);
   const owner = { type: "LEAD" as const, leadId: id };
+
+  const leadSectionTabs: SectionTab[] = [
+    {
+      key: "follow-ups",
+      label: "Follow-ups",
+      icon: <CalendarClock size={15} />,
+      color: "burnt",
+      count: lead.followUps.length,
+      content: (
+        <FollowUpsList
+          owner={{ leadId: id }}
+          followUps={lead.followUps}
+          today={today}
+          assignOptions={assignOptions}
+          currentAssigneeId={currentAssigneeId}
+        />
+      ),
+    },
+    {
+      key: "meetings-notes",
+      label: "Meetings & Notes",
+      icon: <NotebookPen size={15} />,
+      color: "violet",
+      count: lead.meetingNotes.length,
+      content: (
+        <MeetingNotesSection
+          owner={owner}
+          notes={lead.meetingNotes}
+          today={today}
+          senderFirstName={senderFirstName(user)}
+          defaultTimezone={user.business.timezone}
+        />
+      ),
+    },
+    {
+      key: "documents",
+      label: "Documents",
+      icon: <FileText size={15} />,
+      color: "blue",
+      count: lead.documents.length,
+      content: <DocumentsSection owner={{ leadId: id }} documents={lead.documents} />,
+    },
+    {
+      key: "discussion-notes",
+      label: "Discussion & Notes",
+      icon: <StickyNote size={15} />,
+      color: "slate",
+      count: lead.notes.length,
+      content: <NotesLog notes={lead.notes} kind="lead" entityId={id} mentionables={noteMentionOptions} />,
+    },
+    ...(isOwner
+      ? [
+          {
+            key: "cost-profitability",
+            label: "Cost & Profitability",
+            icon: <DollarSign size={15} />,
+            color: "teal" as const,
+            count: costEntries.length,
+            content: (
+              <CostSummarySection
+                entries={costEntries}
+                clients={clients}
+                leads={allLeads}
+                teamMembers={teamMembers}
+                workCategories={workCategories}
+                totalInvoiced={0}
+                budgetedHours={null}
+                reportHref={`/api/reports?${new URLSearchParams({
+                  leadId: id,
+                  summary: "1",
+                  ...(costFrom ? { dateFrom: costFrom } : {}),
+                  ...(costTo ? { dateTo: costTo } : {}),
+                }).toString()}`}
+                logHref={`/tracker?logTime=1&leadId=${id}`}
+                dateFrom={costFrom}
+                dateTo={costTo}
+              />
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div>
@@ -146,78 +238,7 @@ export default async function LeadDetailPage({
             />
           </Card>
 
-          {isOwner && (
-            <CostSummarySection
-              entries={costEntries}
-              clients={clients}
-              leads={allLeads}
-              teamMembers={teamMembers}
-              workCategories={workCategories}
-              totalInvoiced={0}
-              budgetedHours={null}
-              reportHref={`/api/reports?${new URLSearchParams({
-                leadId: id,
-                summary: "1",
-                ...(costFrom ? { dateFrom: costFrom } : {}),
-                ...(costTo ? { dateTo: costTo } : {}),
-              }).toString()}`}
-              logHref={`/tracker?logTime=1&leadId=${id}`}
-              dateFrom={costFrom}
-              dateTo={costTo}
-            />
-          )}
-
-          <CollapsibleSection
-            sectionKey="follow-ups"
-            icon={<CalendarClock size={14} />}
-            tone="slate"
-            title="Follow-ups"
-            isEmpty={lead.followUps.length === 0}
-          >
-            <FollowUpsList
-              owner={{ leadId: id }}
-              followUps={lead.followUps}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="meetings-notes"
-            icon={<NotebookPen size={14} />}
-            tone="slate"
-            title="Meetings & notes"
-            isEmpty={lead.meetingNotes.length === 0}
-          >
-            <MeetingNotesSection
-              owner={owner}
-              notes={lead.meetingNotes}
-              today={today}
-              senderFirstName={senderFirstName(user)}
-              defaultTimezone={user.business.timezone}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="documents"
-            icon={<FileText size={14} />}
-            tone="slate"
-            title="Documents"
-            isEmpty={lead.documents.length === 0}
-          >
-            <DocumentsSection owner={{ leadId: id }} documents={lead.documents} />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            sectionKey="discussion-notes"
-            icon={<StickyNote size={14} />}
-            tone="slate"
-            title="Discussion & Notes"
-            isEmpty={lead.notes.length === 0}
-          >
-            <NotesLog notes={lead.notes} kind="lead" entityId={id} mentionables={noteMentionOptions} />
-          </CollapsibleSection>
+          <RecordSectionTabs storageKey="record-detail" tabs={leadSectionTabs} />
         </div>
 
         <div className="space-y-6">
