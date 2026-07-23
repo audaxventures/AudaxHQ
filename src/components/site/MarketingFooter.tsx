@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { appPath } from "@/lib/site";
 
+const CALENDLY_URL = "https://calendly.com/audax-ventures/verclara";
+
 const PRODUCT_LINKS = [
   { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
@@ -50,6 +52,16 @@ export function MarketingFooter() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <a
+                  href={CALENDLY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-navy-200 transition-colors hover:text-cream-50"
+                >
+                  Book a free demo
+                </a>
+              </li>
             </ul>
           </div>
 

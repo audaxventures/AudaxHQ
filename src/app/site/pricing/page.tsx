@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Wrench } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { PricingTiers, type PricingTier } from "@/components/site/PricingTiers";
+import { BookDemoButton } from "@/components/site/BookDemoButton";
 import { appPath } from "@/lib/site";
 
 const TITLE = "Pricing — Verclara";
@@ -102,6 +103,26 @@ export default function PricingPage() {
             </div>
           </div>
           <PricingTiers tiers={TIERS} />
+
+          <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-navy-100 bg-white p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-100 px-3 py-1 text-xs font-semibold text-navy-600">
+                <Wrench size={12} /> Custom
+              </span>
+              <h2 className="mt-4 font-heading text-2xl font-semibold text-navy-900">
+                Need something built specifically for you?
+              </h2>
+              <p className="mt-2 max-w-xl text-base leading-relaxed text-navy-500">
+                For teams with workflows the standard tiers don&rsquo;t quite fit, we&rsquo;ll build custom
+                features and integrations directly into your workspace — tell us what you need, and we&rsquo;ll
+                tell you what it takes.
+              </p>
+            </div>
+            <div className="mt-6 shrink-0 lg:mt-0">
+              <BookDemoButton variant="primary" />
+            </div>
+          </div>
+
           <p className="mt-8 text-center text-sm text-navy-400">
             Questions about pricing or what’s included?{" "}
             <Link href="/about#faq" className="font-medium text-burnt-600 hover:underline">

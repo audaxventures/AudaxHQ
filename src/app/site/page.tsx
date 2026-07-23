@@ -5,6 +5,7 @@ import { ArrowRight, Check, CheckSquare, Clock, NotebookPen, Quote, Receipt, Tar
 import { Section } from "@/components/site/Section";
 import { DeviceShowcase } from "@/components/site/DeviceShowcase";
 import { PlatformShotsGallery } from "@/components/site/PlatformShotsGallery";
+import { BookDemoButton } from "@/components/site/BookDemoButton";
 import { appPath } from "@/lib/site";
 
 // Both are framer-motion consumers — split into their own chunks so the
@@ -258,6 +259,7 @@ export default function MarketingHomePage() {
                 >
                   Start for free <ArrowRight size={16} />
                 </Link>
+                <BookDemoButton variant="on-light" />
                 <Link
                   href="/contact"
                   className="inline-flex items-center gap-2 rounded-xl border border-navy-300 px-5 py-3 text-sm font-semibold text-navy-800 transition-colors hover:border-navy-400 hover:bg-white"

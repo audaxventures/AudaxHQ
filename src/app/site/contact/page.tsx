@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Mail } from "lucide-react";
+import { CalendarClock, Mail } from "lucide-react";
 import { Section } from "@/components/site/Section";
 import { ContactForm } from "@/components/site/ContactForm";
+
+const CALENDLY_URL = "https://calendly.com/audax-ventures/verclara";
 
 const TITLE = "Contact — Verclara";
 const DESCRIPTION = "Get in touch with the Verclara team.";
@@ -38,6 +40,18 @@ export default function ContactPage() {
                 <Mail size={16} />
               </span>
               info@audaxventures.ca
+            </a>
+            <p className="mt-6 text-sm text-navy-500">Prefer to talk it through live?</p>
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-3 text-sm font-medium text-navy-700 transition-colors hover:text-burnt-600"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-navy-100 bg-white text-navy-500">
+                <CalendarClock size={16} />
+              </span>
+              Book a free demo
             </a>
           </div>
           <div className="rounded-2xl border border-navy-100 bg-white p-7 sm:p-9">

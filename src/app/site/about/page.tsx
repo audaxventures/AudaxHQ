@@ -20,6 +20,8 @@ import {
 import { Section } from "@/components/site/Section";
 import { FAQAccordion } from "@/components/site/FAQAccordion";
 import { ScreenshotGallery } from "@/components/site/ScreenshotGallery";
+import { FeatureExplorer, type FeatureDetail } from "@/components/site/FeatureExplorer";
+import { BookDemoButton } from "@/components/site/BookDemoButton";
 import { appPath } from "@/lib/site";
 
 const TITLE = "About — Verclara";
@@ -52,6 +54,143 @@ const FEATURES = [
   { icon: Clock, title: "Hour & Cost Tracker", tone: "rose", description: "Track time and costs against every client." },
   { icon: CheckSquare, title: "To-Dos & Tasks", tone: "brick", description: "Stay on top of what matters most, together." },
   { icon: BarChart3, title: "Dashboard & Reports", tone: "slate", description: "A real-time view of how the business is doing." },
+];
+
+const FEATURE_DETAILS: FeatureDetail[] = [
+  {
+    iconSmall: <Users size={18} />,
+    iconLarge: <Users size={56} strokeWidth={1.5} />,
+    title: "Clients",
+    tone: "sage",
+    summary: "Every client relationship in one record.",
+    description:
+      "Each client gets a single home for everything about that relationship — contact details, project or retainer terms, meeting history, invoices, files, and every task tied to their account. No more digging through email threads or a dozen scattered docs to remember where things stand.",
+    capabilities: [
+      "Track project-based or recurring (monthly) engagements, each with its own rate and billing rhythm",
+      "Color-code and organize clients by status — active, paused, or archived",
+      "See linked invoices, meeting notes, tasks, and documents on one page",
+      "Control exactly which team members can see and work on each client",
+    ],
+    image: "/clientsdesktopdesk.png",
+    imageAlt: "The Verclara client detail page open on a desktop",
+  },
+  {
+    iconSmall: <Target size={18} />,
+    iconLarge: <Target size={56} strokeWidth={1.5} />,
+    title: "Leads & Pipeline",
+    tone: "gold",
+    summary: "Every opportunity, tracked to close.",
+    description:
+      "Leads move through a clear pipeline from first contact to signed client, so nothing sits forgotten in an inbox. Convert a lead into a client with its history intact the moment a deal closes.",
+    capabilities: [
+      "A visual pipeline you can adapt to how you actually sell",
+      "Follow-up reminders so a promising lead never goes cold",
+      "One-click conversion from lead to client, carrying notes and history forward",
+      "Lead source tracking to see which channels actually bring in business",
+    ],
+    image: "/leadsdesktop.png",
+    imageAlt: "The Verclara leads pipeline open on a desktop",
+  },
+  {
+    iconSmall: <NotebookPen size={18} />,
+    iconLarge: <NotebookPen size={56} strokeWidth={1.5} />,
+    title: "Meeting Notes",
+    tone: "violet",
+    summary: "Every conversation, captured and searchable.",
+    description:
+      "Log meeting notes directly against the client or lead they belong to, complete with agenda, discussion notes, and action items — so anyone on the team can catch up on a relationship in seconds.",
+    capabilities: [
+      "Schedule meetings ahead of time with date, time, timezone, and location",
+      "Quick-add action items that turn into to-dos automatically — split between your team and the client's own commitments",
+      "Branded PDF export you can email straight to a client after the call",
+      "Rich text formatting for agendas and notes",
+    ],
+    image: "/meetingnotesdesktop.png",
+    imageAlt: "A Verclara meeting note open on a desktop",
+  },
+  {
+    iconSmall: <Calendar size={18} />,
+    iconLarge: <Calendar size={56} strokeWidth={1.5} />,
+    title: "Calendar & Follow-ups",
+    tone: "blue",
+    summary: "Never miss a check-in or a deadline.",
+    description:
+      "A shared calendar pulls together meetings, follow-ups, and task due dates so your whole week is visible in one place — including events from any external calendar you connect.",
+    capabilities: [
+      "Set follow-up reminders on any client or lead so nothing falls through",
+      "Connect an external calendar feed to see personal commitments alongside client work",
+      "Assign follow-ups to specific team members",
+      "See what's due today right from the dashboard",
+    ],
+  },
+  {
+    iconSmall: <Receipt size={18} />,
+    iconLarge: <Receipt size={56} strokeWidth={1.5} />,
+    title: "Revenue Tracking",
+    tone: "teal",
+    summary: "Revenue and cash flow, always up to date.",
+    description:
+      "Every invoice is tracked through its real billing status — not invoiced, invoiced, or paid — so you always know what's outstanding, what's collected, and how revenue breaks down by client and type of work.",
+    capabilities: [
+      "Dashboard card showing this month's and last month's revenue, calculated from what's actually been paid",
+      "Revenue trends over time, plus a breakdown by client and by type of work",
+      "Export a PDF or CSV invoice report per client — built for reconciling against your bank or bookkeeping software",
+      "Support for both fixed-fee and hourly invoices",
+    ],
+    image: "/revenuetrackingdesktop.png",
+    imageAlt: "The Verclara revenue tracking page open on a desktop",
+  },
+  {
+    iconSmall: <Clock size={18} />,
+    iconLarge: <Clock size={56} strokeWidth={1.5} />,
+    title: "Hour & Cost Tracker",
+    tone: "rose",
+    summary: "Track time and costs against every client.",
+    description:
+      "Log billable and non-billable hours or one-off costs against a client, then see profitability at a glance — what a client actually costs you to serve, not just what they're billed.",
+    capabilities: [
+      "Log time entries or fixed costs in a couple of clicks, right from the client page",
+      "See cost and profitability rollups by client, date range, or team member",
+      "Track billable vs. non-billable time separately",
+      "Export a cost report for any date range",
+    ],
+    image: "/costtrackerdesktop.png",
+    imageAlt: "The Verclara hour and cost tracker open on a desktop",
+  },
+  {
+    iconSmall: <CheckSquare size={18} />,
+    iconLarge: <CheckSquare size={56} strokeWidth={1.5} />,
+    title: "To-Dos & Tasks",
+    tone: "brick",
+    summary: "Stay on top of what matters most, together.",
+    description:
+      "A shared to-do board keeps client work, internal tasks, and follow-ups organized by priority and assignee — so everyone on the team knows exactly what's theirs to do next.",
+    capabilities: [
+      "Kanban-style board with priority levels and due dates",
+      "Assign tasks to specific team members, or keep a personal board",
+      "Tasks link back to the client or lead they belong to automatically",
+      "Quick-add tasks straight from a meeting note's action items",
+    ],
+    image: "/todolaptop.png",
+    imageAlt: "The Verclara to-do board open on a laptop",
+  },
+  {
+    iconSmall: <BarChart3 size={18} />,
+    iconLarge: <BarChart3 size={56} strokeWidth={1.5} />,
+    title: "Dashboard & Reports",
+    tone: "slate",
+    summary: "A real-time view of how the business is doing.",
+    description:
+      "The dashboard pulls together revenue, pipeline, tasks, and client activity into one view the moment you log in — so you know exactly where the business stands without opening five different tabs.",
+    capabilities: [
+      "This month's and last month's revenue, calculated automatically",
+      "Pipeline summary showing where every lead stands",
+      "Snapshot of what's due today across tasks and follow-ups",
+      "A quick view into your most active clients",
+    ],
+    image: "/demodashboardweb.png",
+    imageAlt: "The Verclara dashboard open on a desktop",
+  },
 ];
 
 const AUDIENCE = [
@@ -265,6 +404,22 @@ export default function AboutPage() {
       <div className="bg-cream-50">
         <Section>
           <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">Explore the platform</span>
+            <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
+              What each feature actually does.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-navy-600">
+              The overview above is the quick version. Pick a feature below for the details — what it tracks, how
+              it fits together with the rest of your workspace, and exactly what you can do with it.
+            </p>
+          </div>
+          <FeatureExplorer features={FEATURE_DETAILS} />
+        </Section>
+      </div>
+
+      <div className="bg-cream-50">
+        <Section>
+          <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs font-semibold uppercase tracking-wider text-burnt-600">Who it’s for</span>
             <h2 className="mt-3 font-heading text-3xl font-semibold text-navy-900 sm:text-4xl">
               Built for service-based businesses like yours.
@@ -339,6 +494,7 @@ export default function AboutPage() {
             >
               Start for free <ArrowRight size={16} />
             </Link>
+            <BookDemoButton variant="on-dark" />
             <Link
               href="/contact"
               className="inline-flex items-center gap-2 rounded-xl border border-navy-600 px-5 py-3 text-sm font-semibold text-cream-100 transition-colors hover:border-navy-400 hover:bg-navy-800"
