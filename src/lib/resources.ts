@@ -111,4 +111,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-07-20",
     readingMinutes: 6,
   },
+  {
+    slug: "how-to-handle-scope-creep",
+    title: "How to Handle Scope Creep Without Losing the Client Relationship",
+    description:
+      "Scope creep rarely looks like a client asking for “more.” Here's how to spot it early, push back without souring the relationship, and protect your margins.",
+    category: "Scope & Delivery",
+    publishedAt: "2026-07-23",
+    readingMinutes: 6,
+  },
 ];

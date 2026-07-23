@@ -95,7 +95,7 @@ export default function PricingPage() {
               <Sparkles size={30} />
             </span>
             <div>
-              <p className="font-heading text-2xl font-semibold text-sage-900 sm:text-3xl">You&rsquo;re on Early Access</p>
+              <p className="font-heading text-2xl font-semibold text-sage-900 sm:text-3xl">We&rsquo;re on Early Access</p>
               <p className="mt-2 text-base leading-relaxed text-sage-800 sm:text-lg">
                 Every workspace is free and unrestricted right now — no credit card, nothing to unlock. Prices below
                 are what plans will cost once early access ends.
