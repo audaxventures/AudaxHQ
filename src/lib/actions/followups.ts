@@ -56,6 +56,21 @@ export async function addFollowUp(
   revalidateOwner(ownerIds.clientId, ownerIds.leadId);
 }
 
+export async function updateFollowUp(
+  id: string,
+  owner: { clientId?: string; leadId?: string },
+  formData: FormData
+) {
+  const user = await resolveOwnerAccess(owner);
+  const label = String(formData.get("label") ?? "").trim();
+  const date = String(formData.get("date") ?? "");
+  const status = String(formData.get("status") ?? "UPCOMING") as FollowUpStatus;
+  const assignedToTeamMemberId = String(formData.get("assignedToTeamMemberId") ?? "") || null;
+  if (!label || !date) return;
+  await followups.updateFollowUp(id, user.businessId, { label, date, status, assignedToTeamMemberId });
+  revalidateOwner(owner.clientId, owner.leadId);
+}
+
 export async function setFollowUpStatus(
   id: string,
   status: FollowUpStatus,

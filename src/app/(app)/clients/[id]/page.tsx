@@ -127,7 +127,7 @@ export default async function ClientDetailPage({
     },
     {
       key: "meetings-notes",
-      label: "Meetings & Notes",
+      label: "Meeting Notes",
       icon: <NotebookPen size={15} />,
       color: "violet",
       count: client.meetingNotes.length,
@@ -151,7 +151,7 @@ export default async function ClientDetailPage({
     },
     {
       key: "discussion-notes",
-      label: "Discussion & Notes",
+      label: "Notes & Activity",
       icon: <StickyNote size={15} />,
       color: "slate",
       count: client.notes.length,

@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Trash2, Plus, CalendarClock, UserCircle2 } from "lucide-react";
+import { Trash2, Plus, CalendarClock, UserCircle2, Pencil, Check, X } from "lucide-react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
-import { formatDate, isOverdue } from "@/lib/format";
+import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
 import { assigneeSelectValue } from "@/lib/assign";
 import type { FollowUp } from "@/lib/types";
-import { addFollowUp, deleteFollowUp, setFollowUpAssignee, setFollowUpStatus } from "@/lib/actions/followups";
+import { addFollowUp, deleteFollowUp, setFollowUpAssignee, setFollowUpStatus, updateFollowUp } from "@/lib/actions/followups";
 
 type Owner = { clientId: string } | { leadId: string };
 type AssignOption = { value: string; label: string };
@@ -27,8 +27,62 @@ function FollowUpRow({
 }) {
   const [, startTransition] = useTransition();
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const overdue = followUp.status === "UPCOMING" && isOverdue(followUp.date, today);
   const completed = followUp.status === "COMPLETED";
+
+  if (editing) {
+    return (
+      <li className="rounded-lg border border-navy-200 bg-cream-100/40 p-3 -mx-2">
+        <form
+          action={(formData) => {
+            startTransition(async () => {
+              await updateFollowUp(followUp.id, owner, formData);
+              setEditing(false);
+            });
+          }}
+          className="flex flex-wrap items-end gap-2"
+        >
+          <input type="hidden" name="status" value={followUp.status} />
+          <input type="hidden" name="assignedToTeamMemberId" value={followUp.assignedToTeamMemberId ?? ""} />
+          <FieldGroup className="flex-1 min-w-[10rem]">
+            <Label htmlFor={`edit-label-${followUp.id}`} compact>
+              Follow-up
+            </Label>
+            <Input id={`edit-label-${followUp.id}`} name="label" defaultValue={followUp.label} required />
+          </FieldGroup>
+          <FieldGroup>
+            <Label htmlFor={`edit-date-${followUp.id}`} compact>
+              Date
+            </Label>
+            <Input
+              id={`edit-date-${followUp.id}`}
+              name="date"
+              type="date"
+              defaultValue={formatDateInput(followUp.date)}
+              required
+              className="w-40"
+            />
+          </FieldGroup>
+          <div className="flex gap-1.5">
+            <button
+              type="submit"
+              className="flex items-center gap-1 rounded-lg bg-navy-900 px-3 py-1.5 text-sm font-medium text-cream-50 hover:bg-navy-800 cursor-pointer"
+            >
+              <Check size={14} /> Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="flex items-center gap-1 rounded-lg border border-navy-200 px-3 py-1.5 text-sm font-medium text-navy-600 hover:bg-navy-100 cursor-pointer"
+            >
+              <X size={14} /> Cancel
+            </button>
+          </div>
+        </form>
+      </li>
+    );
+  }
 
   return (
     <li className="group flex items-center justify-between gap-3 rounded-lg px-2 py-2 -mx-2 hover:bg-cream-100/60">
@@ -93,14 +147,24 @@ function FollowUpRow({
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => startTransition(async () => deleteFollowUp(followUp.id, owner))}
-        className="opacity-0 group-hover:opacity-100 text-navy-300 hover:text-brick-600 transition-opacity cursor-pointer shrink-0"
-        aria-label="Delete follow-up"
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="p-1.5 text-navy-300 hover:text-navy-600 cursor-pointer"
+          aria-label="Edit follow-up"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => startTransition(async () => deleteFollowUp(followUp.id, owner))}
+          className="p-1.5 text-navy-300 hover:text-brick-600 cursor-pointer"
+          aria-label="Delete follow-up"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </li>
   );
 }
