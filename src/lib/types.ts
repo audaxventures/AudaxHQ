@@ -256,6 +256,7 @@ export interface Lead {
   /** Who's responsible for this lead — null means nobody's claimed it yet. */
   leadOwnerTeamMemberId: string | null;
   leadOwnerName: string | null;
+  leadOwnerColor: EntityColor | null;
 }
 
 export interface LeadWithRelations extends Lead {
@@ -276,6 +277,8 @@ export interface TeamMember {
   email: string | null;
   /** True once a passcode has been set for this person — they can sign in. */
   hasLogin: boolean;
+  /** Explicit accent color, same palette as clients/leads — falls back to a hash-of-name color when unset. */
+  color: EntityColor | null;
 }
 
 /**

@@ -67,6 +67,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/035_invoice_work_type.sql
    psql "$DATABASE_URL" -f migrations/036_meeting_note_timezone.sql
    psql "$DATABASE_URL" -f migrations/037_lead_owner.sql
+   psql "$DATABASE_URL" -f migrations/038_team_member_color.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -202,6 +203,7 @@ migrations/034_note_mentions.sql       adds client_notes.author_team_member_id/l
 migrations/035_invoice_work_type.sql   adds invoices.work_type_id/work_type_other — set once at creation (defaulted from the client's current work type, see addInvoice in app/(app)/clients/actions.ts) and never rewritten on edit, so revenue-by-type-of-work reporting (src/lib/data/revenue.ts, the Revenue Tracking page) stays historically accurate even if a client's work type later changes
 migrations/036_meeting_note_timezone.sql  adds meeting_notes.timezone — the IANA zone a meeting's start_time is in, purely descriptive (never used for conversion), shown next to the time in the meeting note forms and the branded PDF export
 migrations/037_lead_owner.sql          adds leads.lead_owner_team_member_id — who's responsible for a lead, separate from who a follow-up/to-do on it is assigned to. Nullable ("Unassigned"); set from the Lead Owner field on the new-lead form and the lead detail page's Core Information panel, shown as a tag on every lead list row/card, and filterable (multi-select, plus an "Unassigned" pill) from the Leads page
+migrations/038_team_member_color.sql   adds team_members.color — same optional accent-color palette clients/leads already have (see migration 011), set via the swatch picker next to each row in Settings → Team Members. Used to color the "Lead Owner" tag on the Leads list per-owner instead of every tag rendering identically; falls back to the existing hash-of-name color when unset
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

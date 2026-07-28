@@ -9,7 +9,7 @@ import * as teamMembers from "@/lib/data/teamMembers";
 import * as todos from "@/lib/data/todos";
 import * as workCategories from "@/lib/data/workCategories";
 import { getCurrentUser, requireOwner } from "@/lib/currentUser";
-import type { FixedCostCategory } from "@/lib/types";
+import type { EntityColor, FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
   revalidatePath("/tracker");
@@ -169,6 +169,7 @@ export async function deleteFixedCost(id: string, clientId: string | null, leadI
 function revalidateTeamMembers() {
   revalidatePath("/tracker");
   revalidatePath("/settings/team-members");
+  revalidatePath("/leads");
 }
 
 function revalidateWorkCategories() {
@@ -203,6 +204,12 @@ export async function activateTeamMember(id: string) {
 export async function deactivateTeamMember(id: string) {
   const user = await requireOwner();
   await teamMembers.setTeamMemberActive(id, user.businessId, false);
+  revalidateTeamMembers();
+}
+
+export async function setTeamMemberColor(id: string, color: EntityColor | null) {
+  const user = await requireOwner();
+  await teamMembers.setTeamMemberColor(id, user.businessId, color);
   revalidateTeamMembers();
 }
 

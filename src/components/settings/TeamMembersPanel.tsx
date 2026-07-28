@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { InfoNote } from "@/components/ui/InfoNote";
+import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import type { TeamMember } from "@/lib/types";
@@ -16,6 +17,7 @@ import {
   enableTeamMemberLogin,
   linkOwnerTeamMember,
   resetTeamMemberPasscode,
+  setTeamMemberColor,
   unlinkOwnerTeamMember,
   updateClientAccess,
   updateTeamMember,
@@ -304,6 +306,7 @@ function TeamMemberRow({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
+              <EntityColorPicker color={member.color} onSelect={(color) => setTeamMemberColor(member.id, color)} />
               <p className={cn("truncate text-sm font-medium", member.active ? "text-navy-900" : "text-navy-400")}>
                 {member.name}
               </p>

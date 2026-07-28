@@ -27,6 +27,7 @@ function mapLead(row: Record<string, unknown>): Lead {
     convertedClientId: row.converted_client_id as string | null,
     leadOwnerTeamMemberId: (row.lead_owner_team_member_id as string | null) ?? null,
     leadOwnerName: (row.lead_owner_name as string | null) ?? null,
+    leadOwnerColor: (row.lead_owner_color as EntityColor | null) ?? null,
   };
 }
 
@@ -76,7 +77,7 @@ export async function listLeads(
   const leadOwnerIds = filters.leadOwnerIds && filters.leadOwnerIds.length > 0 ? filters.leadOwnerIds : null;
   const includeUnassignedOwner = filters.includeUnassignedOwner ?? false;
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, f.next_date as next_follow_up_date
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color, f.next_date as next_follow_up_date
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
@@ -125,7 +126,7 @@ export async function listConvertedLeads(businessId: string): Promise<Lead[]> {
 /** Leads marked LOST — hidden from the main leads list by default, surfaced only via the Lost leads drawer. */
 export async function listLostLeads(businessId: string): Promise<Lead[]> {
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
@@ -179,7 +180,7 @@ export async function leadBelongsToBusiness(leadId: string, businessId: string):
 export async function getLead(id: string, businessId: string): Promise<LeadWithRelations | null> {
   const [leadRows, noteRows, tasks, followUps, meetingNotes, documents] = await Promise.all([
     sql`
-      select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name
+      select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color
       from leads l
       left join work_types wt on wt.id = l.work_type_id
       left join lead_sources ls on ls.id = l.source_id
