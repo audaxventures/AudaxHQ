@@ -59,7 +59,7 @@ export function RecordSectionTabs({ storageKey, tabs }: { storageKey: string; ta
 
   return (
     <div>
-      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const active = tab.key === activeTab?.key;
           const colors = TAB_COLOR_CLASSES[tab.color];

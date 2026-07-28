@@ -1,13 +1,11 @@
 import { notFound } from "next/navigation";
 import {
   IdCard,
-  Receipt,
   CalendarClock,
   NotebookPen,
   FileText,
   StickyNote,
   CheckSquare,
-  Link2,
   DollarSign,
 } from "lucide-react";
 import { getClient, listClients } from "@/lib/data/clients";
@@ -143,11 +141,19 @@ export default async function ClientDetailPage({
     },
     {
       key: "documents",
-      label: "Documents",
+      label: "Documents & Links",
       icon: <FileText size={15} />,
       color: "blue",
-      count: client.documents.length,
-      content: <DocumentsSection owner={{ clientId: id }} documents={client.documents} />,
+      count: client.documents.length + client.links.length,
+      content: (
+        <>
+          <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
+          <div className="mt-6 border-t border-navy-100 pt-5">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Links</h4>
+            <ClientLinks clientId={id} links={client.links} />
+          </div>
+        </>
+      ),
     },
     {
       key: "discussion-notes",
@@ -160,50 +166,49 @@ export default async function ClientDetailPage({
     ...(isOwner
       ? [
           {
-            key: "invoices",
-            label: "Invoices",
-            icon: <Receipt size={15} />,
+            key: "finance",
+            label: "Finance",
+            icon: <DollarSign size={15} />,
             color: "gold" as const,
-            count: client.invoices.length,
+            count: client.invoices.length + costEntries.length,
             content: (
               <>
-                <p className="text-sm text-navy-500 mb-4">
-                  {client.type === "RECURRING"
-                    ? "One entry per month, created automatically — add one-off invoices any time."
-                    : "Split the project total across deposits, milestones, or however you invoice this client."}
-                </p>
-                <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
+                <div>
+                  <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Invoices</h4>
+                  <p className="text-sm text-navy-500 mb-4">
+                    {client.type === "RECURRING"
+                      ? "One entry per month, created automatically — add one-off invoices any time."
+                      : "Split the project total across deposits, milestones, or however you invoice this client."}
+                  </p>
+                  <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
+                </div>
+                <div className="mt-6 border-t border-navy-100 pt-5">
+                  <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">
+                    Cost &amp; Profitability
+                  </h4>
+                  <CostSummarySection
+                    entries={costEntries}
+                    clients={allClients}
+                    leads={leads}
+                    teamMembers={teamMembers}
+                    workCategories={workCategories}
+                    totalInvoiced={client.invoices
+                      .filter((i) => i.status !== "NOT_INVOICED")
+                      .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
+                      .reduce((sum, i) => sum + Number(i.amount), 0)}
+                    budgetedHours={client.budgetedHours}
+                    reportHref={`/api/reports?${new URLSearchParams({
+                      clientId: id,
+                      summary: "1",
+                      ...(costFrom ? { dateFrom: costFrom } : {}),
+                      ...(costTo ? { dateTo: costTo } : {}),
+                    }).toString()}`}
+                    logHref={`/tracker?logTime=1&clientId=${id}`}
+                    dateFrom={costFrom}
+                    dateTo={costTo}
+                  />
+                </div>
               </>
-            ),
-          },
-          {
-            key: "cost-profitability",
-            label: "Cost & Profitability",
-            icon: <DollarSign size={15} />,
-            color: "teal" as const,
-            count: costEntries.length,
-            content: (
-              <CostSummarySection
-                entries={costEntries}
-                clients={allClients}
-                leads={leads}
-                teamMembers={teamMembers}
-                workCategories={workCategories}
-                totalInvoiced={client.invoices
-                  .filter((i) => i.status !== "NOT_INVOICED")
-                  .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
-                  .reduce((sum, i) => sum + Number(i.amount), 0)}
-                budgetedHours={client.budgetedHours}
-                reportHref={`/api/reports?${new URLSearchParams({
-                  clientId: id,
-                  summary: "1",
-                  ...(costFrom ? { dateFrom: costFrom } : {}),
-                  ...(costTo ? { dateTo: costTo } : {}),
-                }).toString()}`}
-                logHref={`/tracker?logTime=1&clientId=${id}`}
-                dateFrom={costFrom}
-                dateTo={costTo}
-              />
             ),
           },
         ]
@@ -284,11 +289,6 @@ export default async function ClientDetailPage({
           <Card className="p-6">
             <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
             <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
-          </Card>
-
-          <Card className="p-6">
-            <PanelHeading icon={Link2} tone="slate" title="Links" />
-            <ClientLinks clientId={id} links={client.links} />
           </Card>
         </div>
       </div>
