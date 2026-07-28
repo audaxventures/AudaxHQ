@@ -5,7 +5,6 @@ import {
   NotebookPen,
   FileText,
   StickyNote,
-  CheckSquare,
   DollarSign,
 } from "lucide-react";
 import { getClient, listClients } from "@/lib/data/clients";
@@ -112,15 +111,21 @@ export default async function ClientDetailPage({
       label: "Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
-      count: client.followUps.length,
+      count: client.followUps.length + myTasks.length,
       content: (
-        <FollowUpsList
-          owner={{ clientId: id }}
-          followUps={client.followUps}
-          today={today}
-          assignOptions={assignOptions}
-          currentAssigneeId={currentAssigneeId}
-        />
+        <>
+          <FollowUpsList
+            owner={{ clientId: id }}
+            followUps={client.followUps}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
+          <div className="mt-6 border-t border-navy-100 pt-5">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Your tasks</h4>
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
+          </div>
+        </>
       ),
     },
     {
@@ -283,11 +288,6 @@ export default async function ClientDetailPage({
             contactName={client.contactName}
             companyName={client.companyName}
           />
-
-          <Card className="p-6">
-            <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
-          </Card>
         </div>
       </div>
 

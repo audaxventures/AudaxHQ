@@ -7,7 +7,6 @@ import {
   FileText,
   StickyNote,
   BarChart3,
-  CheckSquare,
   DollarSign,
 } from "lucide-react";
 import { getLead, listLeads } from "@/lib/data/leads";
@@ -94,15 +93,21 @@ export default async function LeadDetailPage({
       label: "Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
-      count: lead.followUps.length,
+      count: lead.followUps.length + myTasks.length,
       content: (
-        <FollowUpsList
-          owner={{ leadId: id }}
-          followUps={lead.followUps}
-          today={today}
-          assignOptions={assignOptions}
-          currentAssigneeId={currentAssigneeId}
-        />
+        <>
+          <FollowUpsList
+            owner={{ leadId: id }}
+            followUps={lead.followUps}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
+          <div className="mt-6 border-t border-navy-100 pt-5">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Your tasks</h4>
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
+          </div>
+        </>
       ),
     },
     {
@@ -267,11 +272,6 @@ export default async function LeadDetailPage({
             contactName={lead.contactName}
             companyName={lead.companyName}
           />
-
-          <Card className="p-6">
-            <PanelHeading icon={CheckSquare} tone="sage" title="Tasks" />
-            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
-          </Card>
         </div>
       </div>
 
