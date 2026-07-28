@@ -237,8 +237,6 @@ export default async function LeadDetailPage({
               variant="compact"
             />
           </Card>
-
-          <RecordSectionTabs storageKey="record-detail" tabs={leadSectionTabs} />
         </div>
 
         <div className="space-y-6">
@@ -275,6 +273,10 @@ export default async function LeadDetailPage({
             <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <RecordSectionTabs storageKey="record-detail" tabs={leadSectionTabs} />
       </div>
     </div>
   );

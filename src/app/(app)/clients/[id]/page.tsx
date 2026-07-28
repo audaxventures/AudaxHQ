@@ -259,8 +259,6 @@ export default async function ClientDetailPage({
               hideRate={!isOwner}
             />
           </Card>
-
-          <RecordSectionTabs storageKey="record-detail" tabs={clientSectionTabs} />
         </div>
 
         <div className="space-y-6">
@@ -291,6 +289,10 @@ export default async function ClientDetailPage({
             <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
           </Card>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <RecordSectionTabs storageKey="record-detail" tabs={clientSectionTabs} />
       </div>
     </div>
   );
