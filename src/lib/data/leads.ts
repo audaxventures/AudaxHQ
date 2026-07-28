@@ -41,6 +41,8 @@ function mapNote(row: Record<string, unknown>): LeadNote {
 
 export interface LeadFilters {
   status?: LeadStatus;
+  /** Multi-select: leads whose source_id is any of these. Undefined/empty = no restriction. */
+  sourceIds?: string[];
   /**
    * Leads that have already been converted to a client are, from this point
    * on, worked on as a client — they default to hidden everywhere a lead
@@ -57,6 +59,7 @@ export async function listLeads(
   businessId: string,
   filters: LeadFilters = {}
 ): Promise<(Lead & { nextFollowUpDate: string | null })[]> {
+  const sourceIds = filters.sourceIds && filters.sourceIds.length > 0 ? filters.sourceIds : null;
   const rows = await sql`
     select l.*, wt.name as work_type_name, ls.name as source_name, f.next_date as next_follow_up_date
     from leads l
@@ -70,6 +73,7 @@ export async function listLeads(
     ) f on f.lead_id = l.id
     where l.business_id = ${businessId}
       and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
+      and (${sourceIds}::uuid[] is null or l.source_id = any(${sourceIds}::uuid[]))
       and (${filters.converted === "include"} or l.converted_client_id is null)
     order by
       case when f.next_date is null then 1 else 0 end asc,

@@ -5,12 +5,15 @@ import Link from "next/link";
 import { CalendarClock, CheckCircle2, UserCircle2 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Field";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { setFollowUpStatus, setFollowUpAssignee } from "@/lib/actions/followups";
 import { assigneeSelectValue } from "@/lib/assign";
 import type { HotFollowUp } from "@/lib/data/followups";
+
+const ALL_ASSIGNEES = "ALL";
 
 type AssignOption = { value: string; label: string };
 
@@ -114,17 +117,39 @@ export function FollowUpsWorkspace({
   currentAssigneeId: string | null;
 }) {
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
+  const [assigneeFilter, setAssigneeFilter] = useState(ALL_ASSIGNEES);
+
+  const visibleFollowUps =
+    assigneeFilter === ALL_ASSIGNEES
+      ? followUps
+      : followUps.filter((f) => assigneeSelectValue(f.assignedToTeamMemberId, currentAssigneeId) === assigneeFilter);
 
   const byDateAsc = (a: HotFollowUp, b: HotFollowUp) => new Date(a.date).getTime() - new Date(b.date).getTime();
-  const upcoming = followUps.filter((f) => f.status === "UPCOMING" && !f.isOverdue).sort(byDateAsc);
-  const overdue = followUps.filter((f) => f.status === "UPCOMING" && f.isOverdue).sort(byDateAsc);
-  const completed = [...followUps]
+  const upcoming = visibleFollowUps.filter((f) => f.status === "UPCOMING" && !f.isOverdue).sort(byDateAsc);
+  const overdue = visibleFollowUps.filter((f) => f.status === "UPCOMING" && f.isOverdue).sort(byDateAsc);
+  const completed = [...visibleFollowUps]
     .filter((f) => f.status === "COMPLETED")
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return (
     <div>
-      <div className="mb-5 flex justify-end">
+      <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+        {assignOptions.length > 1 && (
+          <Select
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            icon={UserCircle2}
+            aria-label="Filter by assignee"
+            className="w-auto min-w-[9rem]"
+          >
+            <option value={ALL_ASSIGNEES}>Everyone</option>
+            {assignOptions.map((opt) => (
+              <option key={opt.value || "self"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+        )}
         <Button variant="secondary" onClick={() => setShowCompletedDrawer(true)}>
           <CheckCircle2 size={16} /> Completed ({completed.length})
         </Button>

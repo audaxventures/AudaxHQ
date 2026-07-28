@@ -7,6 +7,7 @@ import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { ConvertedLeadsDrawer } from "@/components/leads/ConvertedLeadsDrawer";
 import { listConvertedLeads, listLeads } from "@/lib/data/leads";
+import { listLeadSources } from "@/lib/data/leadSources";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser } from "@/lib/currentUser";
 import type { LeadStatus } from "@/lib/types";
@@ -14,16 +15,18 @@ import type { LeadStatus } from "@/lib/types";
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; view?: string }>;
+  searchParams: Promise<{ status?: string; view?: string; sources?: string }>;
 }) {
-  const { status, view } = await searchParams;
+  const { status, view, sources } = await searchParams;
   const isGrid = view === "grid";
   const user = await requireCurrentUser();
+  const sourceIds = sources ? sources.split(",").filter(Boolean) : [];
 
-  const [leads, convertedLeads, today] = await Promise.all([
-    listLeads(user.businessId, { status: status as LeadStatus | undefined }),
+  const [leads, convertedLeads, today, leadSources] = await Promise.all([
+    listLeads(user.businessId, { status: status as LeadStatus | undefined, sourceIds }),
     listConvertedLeads(user.businessId),
     getBusinessToday(user.businessId),
+    listLeadSources(user.businessId, { includeInactive: true }),
   ]);
 
   return (
@@ -41,7 +44,7 @@ export default async function LeadsPage({
         }
       />
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <LeadFilterBar status={status} view={view} />
+        <LeadFilterBar status={status} view={view} sources={sources} leadSources={leadSources} />
         <ConvertedLeadsDrawer leads={convertedLeads} />
       </div>
       {leads.length === 0 ? (
