@@ -57,16 +57,18 @@ export default async function LeadsPage({
           </LinkButton>
         }
       />
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <LeadFilterBar
-          status={status}
-          view={view}
-          sources={sources}
-          leadSources={leadSources}
-          owners={owners}
-          teamMembers={teamMembers}
-        />
-        <div className="flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-[280px] flex-1">
+          <LeadFilterBar
+            status={status}
+            view={view}
+            sources={sources}
+            leadSources={leadSources}
+            owners={owners}
+            teamMembers={teamMembers}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
           <LostLeadsDrawer leads={lostLeads} />
           <ConvertedLeadsDrawer leads={convertedLeads} />
         </div>
