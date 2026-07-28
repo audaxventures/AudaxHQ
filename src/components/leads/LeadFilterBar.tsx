@@ -109,7 +109,12 @@ export function LeadFilterBar({
         </div>
       )}
 
-      <ViewToggle isGrid={isGrid} listHref={buildViewHref(undefined)} gridHref={buildViewHref("grid")} />
+      <ViewToggle
+        isGrid={isGrid}
+        listHref={buildViewHref(undefined)}
+        gridHref={buildViewHref("grid")}
+        storageKey="leads-view"
+      />
     </div>
   );
 }

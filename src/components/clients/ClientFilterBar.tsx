@@ -71,6 +71,7 @@ export function ClientFilterBar({
         isGrid={isGrid}
         listHref={buildHref(current, "view", undefined)}
         gridHref={buildHref(current, "view", "grid")}
+        storageKey="clients-view"
       />
     </div>
   );
