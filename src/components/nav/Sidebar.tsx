@@ -40,7 +40,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-3 relative hidden h-[calc(100dvh-1.5rem)] overflow-y-auto overflow-x-hidden bg-navy-900 bg-cover bg-center py-6 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_20px_40px_-24px_rgba(16,29,51,0.45)] transition-[width] duration-200 ease-in-out md:ml-3 md:flex md:shrink-0 md:flex-col md:rounded-[20px]",
+        "sticky top-3 hidden h-[calc(100dvh-1.5rem)] overflow-y-auto overflow-x-hidden bg-navy-900 bg-cover bg-center py-6 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_20px_40px_-24px_rgba(16,29,51,0.45)] transition-[width] duration-200 ease-in-out md:ml-3 md:flex md:shrink-0 md:flex-col md:rounded-[20px]",
         collapsed ? "md:w-[76px] px-2.5" : "md:w-60 px-4"
       )}
       style={{ backgroundImage: "url('/sidebar.png')" }}
