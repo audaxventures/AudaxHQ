@@ -108,22 +108,25 @@ export default async function ClientDetailPage({
   const clientSectionTabs: SectionTab[] = [
     {
       key: "follow-ups",
-      label: "Follow-ups",
+      label: "Tasks & Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
       count: client.followUps.length + myTasks.length,
       content: (
         <>
-          <FollowUpsList
-            owner={{ clientId: id }}
-            followUps={client.followUps}
-            today={today}
-            assignOptions={assignOptions}
-            currentAssigneeId={currentAssigneeId}
-          />
-          <div className="mt-6 border-t border-navy-100 pt-5">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Your tasks</h4>
+          <div>
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Your tasks</h4>
             <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
+          </div>
+          <div className="mt-8 border-t-2 border-navy-100 pt-6">
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>
+            <FollowUpsList
+              owner={{ clientId: id }}
+              followUps={client.followUps}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           </div>
         </>
       ),
@@ -152,9 +155,12 @@ export default async function ClientDetailPage({
       count: client.documents.length + client.links.length,
       content: (
         <>
-          <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
-          <div className="mt-6 border-t border-navy-100 pt-5">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Links</h4>
+          <div>
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Documents</h4>
+            <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
+          </div>
+          <div className="mt-8 border-t-2 border-navy-100 pt-6">
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Links</h4>
             <ClientLinks clientId={id} links={client.links} />
           </div>
         </>
@@ -179,7 +185,7 @@ export default async function ClientDetailPage({
             content: (
               <>
                 <div>
-                  <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Invoices</h4>
+                  <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Invoices</h4>
                   <p className="text-sm text-navy-500 mb-4">
                     {client.type === "RECURRING"
                       ? "One entry per month, created automatically — add one-off invoices any time."
@@ -187,8 +193,8 @@ export default async function ClientDetailPage({
                   </p>
                   <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
                 </div>
-                <div className="mt-6 border-t border-navy-100 pt-5">
-                  <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">
+                <div className="mt-8 border-t-2 border-navy-100 pt-6">
+                  <h4 className="mb-3 font-heading text-base font-bold text-navy-900">
                     Cost &amp; Profitability
                   </h4>
                   <CostSummarySection

@@ -90,22 +90,25 @@ export default async function LeadDetailPage({
   const leadSectionTabs: SectionTab[] = [
     {
       key: "follow-ups",
-      label: "Follow-ups",
+      label: "Tasks & Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
       count: lead.followUps.length + myTasks.length,
       content: (
         <>
-          <FollowUpsList
-            owner={{ leadId: id }}
-            followUps={lead.followUps}
-            today={today}
-            assignOptions={assignOptions}
-            currentAssigneeId={currentAssigneeId}
-          />
-          <div className="mt-6 border-t border-navy-100 pt-5">
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-400">Your tasks</h4>
+          <div>
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Your tasks</h4>
             <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
+          </div>
+          <div className="mt-8 border-t-2 border-navy-100 pt-6">
+            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>
+            <FollowUpsList
+              owner={{ leadId: id }}
+              followUps={lead.followUps}
+              today={today}
+              assignOptions={assignOptions}
+              currentAssigneeId={currentAssigneeId}
+            />
           </div>
         </>
       ),
