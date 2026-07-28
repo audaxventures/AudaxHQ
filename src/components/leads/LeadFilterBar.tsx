@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { Tag } from "lucide-react";
+import { Tag, UserCheck } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ViewToggle } from "@/components/ui/ViewToggle";
-import { LEAD_STATUS_LABELS, LEAD_STATUS_ORDER, type LeadSource } from "@/lib/types";
+import { LEAD_STATUS_LABELS, LEAD_STATUS_ORDER, type LeadSource, type TeamMember } from "@/lib/types";
+
+/** Sentinel mixed into the comma-joined "owners" param to represent leads with no lead owner set — safe alongside real uuids, which never equal this literal string. */
+const UNASSIGNED_OWNER_TOKEN = "unassigned";
 
 function buildHref(current: Record<string, string | undefined>, key: string, value: string | undefined) {
   const params = new URLSearchParams();
@@ -14,12 +17,17 @@ function buildHref(current: Record<string, string | undefined>, key: string, val
   return qs ? `/leads?${qs}` : "/leads";
 }
 
-/** Toggles a single source id in/out of the comma-joined "sources" param, keeping status/view untouched. */
-function buildSourceToggleHref(current: Record<string, string | undefined>, sourceId: string, activeIds: Set<string>) {
-  const next = new Set(activeIds);
-  if (next.has(sourceId)) next.delete(sourceId);
-  else next.add(sourceId);
-  return buildHref(current, "sources", next.size > 0 ? Array.from(next).join(",") : undefined);
+/** Toggles a single value in/out of a comma-joined multi-select param, keeping the rest of the filter state untouched. */
+function buildMultiToggleHref(
+  current: Record<string, string | undefined>,
+  key: string,
+  value: string,
+  activeValues: Set<string>
+) {
+  const next = new Set(activeValues);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return buildHref(current, key, next.size > 0 ? Array.from(next).join(",") : undefined);
 }
 
 function FilterPill({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
@@ -43,16 +51,22 @@ export function LeadFilterBar({
   view,
   sources,
   leadSources,
+  owners,
+  teamMembers,
 }: {
   status?: string;
   view?: string;
   /** Raw comma-joined source ids from the URL. */
   sources?: string;
   leadSources: LeadSource[];
+  /** Raw comma-joined lead-owner ids (plus the "unassigned" sentinel) from the URL. */
+  owners?: string;
+  teamMembers: TeamMember[];
 }) {
-  const current = { status, view, sources };
+  const current = { status, view, sources, owners };
   const isGrid = view === "grid";
   const activeSourceIds = new Set((sources ?? "").split(",").filter(Boolean));
+  const activeOwnerValues = new Set((owners ?? "").split(",").filter(Boolean));
 
   return (
     <div className="mb-6 flex flex-col gap-3">
@@ -86,10 +100,38 @@ export function LeadFilterBar({
             {leadSources.map((source) => (
               <FilterPill
                 key={source.id}
-                href={buildSourceToggleHref(current, source.id, activeSourceIds)}
+                href={buildMultiToggleHref(current, "sources", source.id, activeSourceIds)}
                 active={activeSourceIds.has(source.id)}
               >
                 {source.name}
+              </FilterPill>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {teamMembers.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-navy-400">
+            <UserCheck size={13} /> Owner
+          </span>
+          <div className="flex flex-wrap gap-2 overflow-x-auto">
+            <FilterPill href={buildHref(current, "owners", undefined)} active={activeOwnerValues.size === 0}>
+              All
+            </FilterPill>
+            <FilterPill
+              href={buildMultiToggleHref(current, "owners", UNASSIGNED_OWNER_TOKEN, activeOwnerValues)}
+              active={activeOwnerValues.has(UNASSIGNED_OWNER_TOKEN)}
+            >
+              Unassigned
+            </FilterPill>
+            {teamMembers.map((member) => (
+              <FilterPill
+                key={member.id}
+                href={buildMultiToggleHref(current, "owners", member.id, activeOwnerValues)}
+                active={activeOwnerValues.has(member.id)}
+              >
+                {member.name}
               </FilterPill>
             ))}
           </div>

@@ -8,25 +8,37 @@ import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { ConvertedLeadsDrawer } from "@/components/leads/ConvertedLeadsDrawer";
 import { listConvertedLeads, listLeads } from "@/lib/data/leads";
 import { listLeadSources } from "@/lib/data/leadSources";
+import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser } from "@/lib/currentUser";
 import type { LeadStatus } from "@/lib/types";
 
+const UNASSIGNED_OWNER_TOKEN = "unassigned";
+
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; view?: string; sources?: string }>;
+  searchParams: Promise<{ status?: string; view?: string; sources?: string; owners?: string }>;
 }) {
-  const { status, view, sources } = await searchParams;
+  const { status, view, sources, owners } = await searchParams;
   const isGrid = view === "grid";
   const user = await requireCurrentUser();
   const sourceIds = sources ? sources.split(",").filter(Boolean) : [];
+  const ownerValues = owners ? owners.split(",").filter(Boolean) : [];
+  const includeUnassignedOwner = ownerValues.includes(UNASSIGNED_OWNER_TOKEN);
+  const leadOwnerIds = ownerValues.filter((v) => v !== UNASSIGNED_OWNER_TOKEN);
 
-  const [leads, convertedLeads, today, leadSources] = await Promise.all([
-    listLeads(user.businessId, { status: status as LeadStatus | undefined, sourceIds }),
+  const [leads, convertedLeads, today, leadSources, teamMembers] = await Promise.all([
+    listLeads(user.businessId, {
+      status: status as LeadStatus | undefined,
+      sourceIds,
+      leadOwnerIds,
+      includeUnassignedOwner,
+    }),
     listConvertedLeads(user.businessId),
     getBusinessToday(user.businessId),
     listLeadSources(user.businessId, { includeInactive: true }),
+    listTeamMembers(user.businessId),
   ]);
 
   return (
@@ -44,7 +56,14 @@ export default async function LeadsPage({
         }
       />
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <LeadFilterBar status={status} view={view} sources={sources} leadSources={leadSources} />
+        <LeadFilterBar
+          status={status}
+          view={view}
+          sources={sources}
+          leadSources={leadSources}
+          owners={owners}
+          teamMembers={teamMembers}
+        />
         <ConvertedLeadsDrawer leads={convertedLeads} />
       </div>
       {leads.length === 0 ? (

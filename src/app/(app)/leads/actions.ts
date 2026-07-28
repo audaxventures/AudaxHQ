@@ -24,6 +24,7 @@ const leadSchema = z.object({
   sourceId: z.string().optional(),
   sourceOther: z.string().optional(),
   color: z.enum(["navy", "slate", "blue", "teal", "sage", "burnt", "gold", "brick", "rose", "violet"]).optional(),
+  leadOwnerTeamMemberId: z.string().optional(),
 });
 
 function parseLeadForm(formData: FormData) {
@@ -40,6 +41,7 @@ function parseLeadForm(formData: FormData) {
     sourceId: formData.get("sourceId") || undefined,
     sourceOther: formData.get("sourceOther") || undefined,
     color: formData.get("color") || undefined,
+    leadOwnerTeamMemberId: formData.get("leadOwnerTeamMemberId") || undefined,
   });
   return {
     companyName: parsed.companyName,
@@ -53,6 +55,7 @@ function parseLeadForm(formData: FormData) {
     sourceId: parsed.sourceId ?? null,
     sourceOther: parsed.sourceOther ?? null,
     color: parsed.color ?? null,
+    leadOwnerTeamMemberId: parsed.leadOwnerTeamMemberId ?? null,
   };
 }
 

@@ -25,6 +25,8 @@ function mapLead(row: Record<string, unknown>): Lead {
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     convertedClientId: row.converted_client_id as string | null,
+    leadOwnerTeamMemberId: (row.lead_owner_team_member_id as string | null) ?? null,
+    leadOwnerName: (row.lead_owner_name as string | null) ?? null,
   };
 }
 
@@ -43,6 +45,10 @@ export interface LeadFilters {
   status?: LeadStatus;
   /** Multi-select: leads whose source_id is any of these. Undefined/empty = no restriction. */
   sourceIds?: string[];
+  /** Multi-select: leads whose lead_owner_team_member_id is any of these. Undefined/empty (with includeUnassignedOwner falsy) = no restriction. */
+  leadOwnerIds?: string[];
+  /** Include leads with no lead owner set — combines with leadOwnerIds (OR'd together), not a replacement for it. */
+  includeUnassignedOwner?: boolean;
   /**
    * Leads that have already been converted to a client are, from this point
    * on, worked on as a client — they default to hidden everywhere a lead
@@ -60,11 +66,14 @@ export async function listLeads(
   filters: LeadFilters = {}
 ): Promise<(Lead & { nextFollowUpDate: string | null })[]> {
   const sourceIds = filters.sourceIds && filters.sourceIds.length > 0 ? filters.sourceIds : null;
+  const leadOwnerIds = filters.leadOwnerIds && filters.leadOwnerIds.length > 0 ? filters.leadOwnerIds : null;
+  const includeUnassignedOwner = filters.includeUnassignedOwner ?? false;
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name, f.next_date as next_follow_up_date
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, f.next_date as next_follow_up_date
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
+    left join team_members lo on lo.id = l.lead_owner_team_member_id
     left join (
       select lead_id, min(date) as next_date
       from follow_ups
@@ -74,6 +83,11 @@ export async function listLeads(
     where l.business_id = ${businessId}
       and (${filters.status ?? null}::lead_status is null or l.status = ${filters.status ?? null})
       and (${sourceIds}::uuid[] is null or l.source_id = any(${sourceIds}::uuid[]))
+      and (
+        (${leadOwnerIds}::uuid[] is null and not ${includeUnassignedOwner})
+        or (${leadOwnerIds}::uuid[] is not null and l.lead_owner_team_member_id = any(${leadOwnerIds}::uuid[]))
+        or (${includeUnassignedOwner} and l.lead_owner_team_member_id is null)
+      )
       and (${filters.converted === "include"} or l.converted_client_id is null)
     order by
       case when f.next_date is null then 1 else 0 end asc,
@@ -143,10 +157,11 @@ export async function leadBelongsToBusiness(leadId: string, businessId: string):
 export async function getLead(id: string, businessId: string): Promise<LeadWithRelations | null> {
   const [leadRows, noteRows, tasks, followUps, meetingNotes, documents] = await Promise.all([
     sql`
-      select l.*, wt.name as work_type_name, ls.name as source_name
+      select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name
       from leads l
       left join work_types wt on wt.id = l.work_type_id
       left join lead_sources ls on ls.id = l.source_id
+      left join team_members lo on lo.id = l.lead_owner_team_member_id
       where l.id = ${id} and l.business_id = ${businessId}
     `,
     sql`
@@ -184,15 +199,16 @@ export interface LeadInput {
   sourceId?: string | null;
   sourceOther?: string | null;
   color?: EntityColor | null;
+  leadOwnerTeamMemberId?: string | null;
 }
 
 export async function createLead(businessId: string, input: LeadInput): Promise<Lead> {
   const rows = await sql`
-    insert into leads (business_id, company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color)
+    insert into leads (business_id, company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color, lead_owner_team_member_id)
     values (
       ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.status}, ${input.estimatedValue ?? null}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null},
-      ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}
+      ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}, ${input.leadOwnerTeamMemberId ?? null}
     )
     returning *
   `;
@@ -229,6 +245,7 @@ export async function updateLead(
       source_id = ${input.sourceId ?? null},
       source_other = ${input.sourceOther ?? null},
       color = ${input.color ?? null},
+      lead_owner_team_member_id = ${input.leadOwnerTeamMemberId ?? null},
       updated_at = now()
     where id = ${id} and business_id = ${businessId}
   `;

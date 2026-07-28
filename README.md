@@ -66,6 +66,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/034_note_mentions.sql
    psql "$DATABASE_URL" -f migrations/035_invoice_work_type.sql
    psql "$DATABASE_URL" -f migrations/036_meeting_note_timezone.sql
+   psql "$DATABASE_URL" -f migrations/037_lead_owner.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -200,6 +201,7 @@ migrations/033_meeting_note_email_log.sql  adds meeting_notes.last_emailed_to/la
 migrations/034_note_mentions.sql       adds client_notes.author_team_member_id/lead_notes.author_team_member_id (who wrote each "Activity & notes" entry) and a MENTION notification type — @mentioning a team member inline in a note (src/components/MentionTextarea.tsx) fires a "mentioned you" notification (src/lib/mentions.ts, notifyMentionedTeamMembers in the client/lead actions files)
 migrations/035_invoice_work_type.sql   adds invoices.work_type_id/work_type_other — set once at creation (defaulted from the client's current work type, see addInvoice in app/(app)/clients/actions.ts) and never rewritten on edit, so revenue-by-type-of-work reporting (src/lib/data/revenue.ts, the Revenue Tracking page) stays historically accurate even if a client's work type later changes
 migrations/036_meeting_note_timezone.sql  adds meeting_notes.timezone — the IANA zone a meeting's start_time is in, purely descriptive (never used for conversion), shown next to the time in the meeting note forms and the branded PDF export
+migrations/037_lead_owner.sql          adds leads.lead_owner_team_member_id — who's responsible for a lead, separate from who a follow-up/to-do on it is assigned to. Nullable ("Unassigned"); set from the Lead Owner field on the new-lead form and the lead detail page's Core Information panel, shown as a tag on every lead list row/card, and filterable (multi-select, plus an "Unassigned" pill) from the Leads page
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

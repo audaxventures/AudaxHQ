@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, CalendarClock } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
-import { LeadStatusBadge } from "@/components/ui/Badge";
+import { Badge, LeadStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { entityColorClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
@@ -37,6 +37,7 @@ export function LeadGridCard({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <LeadStatusBadge status={lead.status} />
+        <Badge tone="slate">{lead.leadOwnerName ?? "Unassigned"}</Badge>
         {lead.nextFollowUpDate ? (
           <span
             className={cn(

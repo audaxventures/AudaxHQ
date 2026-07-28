@@ -51,7 +51,7 @@ export default async function LeadDetailPage({
   const { converted, costFrom, costTo } = await searchParams;
   const user = await requireCurrentUser();
   const isOwner = user.role === "OWNER";
-  const [lead, costEntries, workTypes, leadSources, today, teamMembers, workCategories, clients, allLeads] =
+  const [lead, costEntries, workTypes, leadSources, today, teamMembers, allTeamMembers, workCategories, clients, allLeads] =
     await Promise.all([
       getLead(id, user.businessId),
       isOwner
@@ -62,6 +62,8 @@ export default async function LeadDetailPage({
       getBusinessToday(user.businessId),
       // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
       listTeamMembers(user.businessId),
+      // Includes inactive members too, so the Lead Owner field can still show a since-archived owner rather than silently clearing it on save.
+      listTeamMembers(user.businessId, { includeInactive: true }),
       isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
       isOwner ? listClients(user.businessId) : Promise.resolve([]),
       isOwner ? listLeads(user.businessId) : Promise.resolve([]),
@@ -241,6 +243,7 @@ export default async function LeadDetailPage({
               lead={lead}
               workTypes={workTypes}
               leadSources={leadSources}
+              teamMembers={allTeamMembers}
               submitLabel="Save changes"
               variant="compact"
             />

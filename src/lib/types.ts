@@ -253,6 +253,9 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   convertedClientId: string | null;
+  /** Who's responsible for this lead — null means nobody's claimed it yet. */
+  leadOwnerTeamMemberId: string | null;
+  leadOwnerName: string | null;
 }
 
 export interface LeadWithRelations extends Lead {
