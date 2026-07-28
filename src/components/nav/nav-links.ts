@@ -6,8 +6,16 @@ export const NAV_LINKS = [
   { href: "/meeting-notes", label: "Meeting Notes", tabLabel: "Notes", icon: "meetingNotes" },
   { href: "/calendar", label: "Calendar", icon: "calendar" },
   { href: "/follow-ups", label: "Follow-ups", icon: "followUps" },
-  { href: "/invoices", label: "Revenue Tracking", tabLabel: "Revenue", icon: "invoices" },
-  { href: "/tracker", label: "Hour & Cost Tracker", tabLabel: "Tracker", icon: "tracker" },
+  {
+    href: "/invoices",
+    label: "Finance",
+    tabLabel: "Finance",
+    icon: "finance",
+    // Revenue Tracking and Hour & Cost Tracker live under one Finance nav
+    // entry with an in-page tab switcher — the sidebar link should read as
+    // active on either sub-page, not just the one its href points to.
+    matchPrefixes: ["/invoices", "/tracker"],
+  },
   { href: "/todos", label: "To-Dos", icon: "todos" },
 ] as const;
 

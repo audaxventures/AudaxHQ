@@ -10,9 +10,8 @@ import {
   NotebookPen,
   Calendar,
   CalendarClock,
-  Receipt,
+  DollarSign,
   BarChart3,
-  Clock,
   Settings,
   ShieldCheck,
 } from "lucide-react";
@@ -27,8 +26,7 @@ const ICONS = {
   meetingNotes: NotebookPen,
   calendar: Calendar,
   followUps: CalendarClock,
-  invoices: Receipt,
-  tracker: Clock,
+  finance: DollarSign,
   todos: CheckSquare,
   settings: Settings,
   admin: ShieldCheck,
@@ -41,6 +39,8 @@ export function NavLink({
   icon,
   variant = "sidebar",
   onClick,
+  matchPrefixes,
+  collapsed,
 }: {
   href: string;
   label: string;
@@ -48,10 +48,15 @@ export function NavLink({
   icon: NavIconKey;
   variant?: "sidebar" | "tab";
   onClick?: () => void;
+  /** Extra path prefixes that should also count as "active" for this link, e.g. a merged nav entry whose sub-pages live under different routes. Defaults to just `href`. */
+  matchPrefixes?: readonly string[];
+  /** Icon-only rendering for the collapsed desktop sidebar — only meaningful for variant="sidebar". */
+  collapsed?: boolean;
 }) {
   const Icon = ICONS[icon];
   const pathname = usePathname();
-  const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const prefixes = matchPrefixes ?? [href];
+  const active = href === "/" ? pathname === "/" : prefixes.some((p) => pathname.startsWith(p));
 
   if (variant === "tab") {
     return (
@@ -73,15 +78,17 @@ export function NavLink({
     <Link
       href={href}
       onClick={onClick}
+      title={collapsed ? label : undefined}
       className={cn(
-        "relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+        "relative flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-colors",
+        collapsed ? "justify-center px-2.5" : "px-3.5",
         active
           ? "bg-navy-800 text-cream-50"
           : "text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
       )}
     >
       <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
-      {label}
+      {!collapsed && label}
       {active && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-burnt-500" />}
     </Link>
   );

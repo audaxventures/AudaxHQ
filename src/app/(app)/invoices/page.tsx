@@ -9,6 +9,7 @@ import { Badge, InvoiceAgeBracketBadge, InvoiceStatusBadge } from "@/components/
 import { InvoiceAgingFilterBar } from "@/components/invoicing/InvoiceAgingFilterBar";
 import { RevenueFilters } from "@/components/invoicing/RevenueFilters";
 import { RevenueTrendChart } from "@/components/invoicing/RevenueTrendChart";
+import { FinanceTabs } from "@/components/finance/FinanceTabs";
 import { listOutstandingInvoices } from "@/lib/data/invoicing";
 import {
   getRevenueSummary,
@@ -98,10 +99,12 @@ export default async function RevenuePage({
       <PageHeader
         icon={Receipt}
         tone="burnt"
-        eyebrow="Invoicing"
+        eyebrow="Finance"
         title="Revenue Tracking"
         description="How much you're billing, collecting, and still owed — by client and by type of work."
       />
+
+      <FinanceTabs active="revenue" />
 
       <RevenueFilters dateFrom={effectiveFrom} dateTo={effectiveTo} clientId={clientId} clients={allClients} />
 

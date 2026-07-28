@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { TrackerFilters } from "@/components/tracker/TrackerFilters";
+import { FinanceTabs } from "@/components/finance/FinanceTabs";
 import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { LogTimeEntryButton } from "@/components/tracker/LogTimeEntryButton";
 import { Pagination } from "@/components/ui/Pagination";
@@ -146,7 +147,7 @@ export default async function TrackerPage({
       <PageHeader
         icon={Clock}
         tone="navy"
-        eyebrow="Time & Cost"
+        eyebrow="Finance"
         title="Hour & Cost Tracker"
         description="Log time and expenses against clients and leads to see real profitability"
         action={
@@ -166,6 +167,8 @@ export default async function TrackerPage({
           </div>
         }
       />
+
+      {isOwner && <FinanceTabs active="tracker" />}
 
       <div className={cn("mb-6 grid grid-cols-2 gap-4", isOwner ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-2")}>
         <StatTile label="Hours logged" value={rollup.totalHours.toFixed(1)} tone="navy" />
