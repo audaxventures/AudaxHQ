@@ -6,7 +6,8 @@ import { LeadFilterBar } from "@/components/leads/LeadFilterBar";
 import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { ConvertedLeadsDrawer } from "@/components/leads/ConvertedLeadsDrawer";
-import { listConvertedLeads, listLeads } from "@/lib/data/leads";
+import { LostLeadsDrawer } from "@/components/leads/LostLeadsDrawer";
+import { listConvertedLeads, listLeads, listLostLeads } from "@/lib/data/leads";
 import { listLeadSources } from "@/lib/data/leadSources";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
@@ -28,7 +29,7 @@ export default async function LeadsPage({
   const includeUnassignedOwner = ownerValues.includes(UNASSIGNED_OWNER_TOKEN);
   const leadOwnerIds = ownerValues.filter((v) => v !== UNASSIGNED_OWNER_TOKEN);
 
-  const [leads, convertedLeads, today, leadSources, teamMembers] = await Promise.all([
+  const [leads, convertedLeads, lostLeads, today, leadSources, teamMembers] = await Promise.all([
     listLeads(user.businessId, {
       status: status as LeadStatus | undefined,
       sourceIds,
@@ -36,6 +37,7 @@ export default async function LeadsPage({
       includeUnassignedOwner,
     }),
     listConvertedLeads(user.businessId),
+    listLostLeads(user.businessId),
     getBusinessToday(user.businessId),
     listLeadSources(user.businessId, { includeInactive: true }),
     listTeamMembers(user.businessId),
@@ -64,7 +66,10 @@ export default async function LeadsPage({
           owners={owners}
           teamMembers={teamMembers}
         />
-        <ConvertedLeadsDrawer leads={convertedLeads} />
+        <div className="flex items-center gap-3">
+          <LostLeadsDrawer leads={lostLeads} />
+          <ConvertedLeadsDrawer leads={convertedLeads} />
+        </div>
       </div>
       {leads.length === 0 ? (
         <EmptyState

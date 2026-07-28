@@ -57,6 +57,13 @@ export interface LeadFilters {
    * the data export.
    */
   converted?: "exclude" | "include";
+  /**
+   * Leads marked LOST default to hidden the same way converted leads do —
+   * they're not being actively worked, but stay around for the Lost leads
+   * drawer in case the deal comes back. Pass true for views that need full
+   * history, like the data export.
+   */
+  includeLost?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -89,6 +96,7 @@ export async function listLeads(
         or (${includeUnassignedOwner} and l.lead_owner_team_member_id is null)
       )
       and (${filters.converted === "include"} or l.converted_client_id is null)
+      and (${filters.includeLost === true} or l.status <> 'LOST')
     order by
       case when f.next_date is null then 1 else 0 end asc,
       f.next_date asc,
@@ -109,6 +117,20 @@ export async function listConvertedLeads(businessId: string): Promise<Lead[]> {
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
     where l.business_id = ${businessId} and l.converted_client_id is not null
+    order by l.updated_at desc
+  `;
+  return rows.map((row) => mapLead(row as Record<string, unknown>));
+}
+
+/** Leads marked LOST — hidden from the main leads list by default, surfaced only via the Lost leads drawer. */
+export async function listLostLeads(businessId: string): Promise<Lead[]> {
+  const rows = await sql`
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name
+    from leads l
+    left join work_types wt on wt.id = l.work_type_id
+    left join lead_sources ls on ls.id = l.source_id
+    left join team_members lo on lo.id = l.lead_owner_team_member_id
+    where l.business_id = ${businessId} and l.status = 'LOST'
     order by l.updated_at desc
   `;
   return rows.map((row) => mapLead(row as Record<string, unknown>));

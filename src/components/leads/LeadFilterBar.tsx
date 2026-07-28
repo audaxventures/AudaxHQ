@@ -75,7 +75,8 @@ export function LeadFilterBar({
           <FilterPill href={buildHref(current, "status", undefined)} active={!status}>
             All
           </FilterPill>
-          {LEAD_STATUS_ORDER.map((s) => (
+          {/* Lost leads are excluded from the main list by default (see listLeads) — accessible only via the Lost drawer, so a status filter for them here would always come up empty. */}
+          {LEAD_STATUS_ORDER.filter((s) => s !== "LOST").map((s) => (
             <FilterPill key={s} href={buildHref(current, "status", s)} active={status === s}>
               {LEAD_STATUS_LABELS[s]}
             </FilterPill>
