@@ -28,6 +28,7 @@ export function LogTimeEntryButton({
   teamMembers,
   workCategories,
   lockedTeamMember,
+  ownerHourlyRate,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
@@ -35,6 +36,8 @@ export function LogTimeEntryButton({
   workCategories: WorkCategory[];
   /** Set for a team-member session: locks the entry to their own name, hides the rate field and the Fixed cost option entirely (they only ever log their own billable-by-the-owner hours). */
   lockedTeamMember?: LockedTeamMember;
+  /** Owner-session only — prefills the rate field when they pick the "Me" option in the team member dropdown. */
+  ownerHourlyRate?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -71,6 +74,7 @@ export function LogTimeEntryButton({
           teamMembers={teamMembers}
           workCategories={workCategories}
           lockedTeamMember={lockedTeamMember}
+          ownerHourlyRate={ownerHourlyRate}
           initialOwner={{ clientId: initialClientId, leadId: initialLeadId }}
           onClose={() => setOpen(false)}
         />
@@ -79,12 +83,19 @@ export function LogTimeEntryButton({
   );
 }
 
+interface PickableTeamMember {
+  id: string;
+  name: string;
+  defaultHourlyRate: string;
+}
+
 export function LogTimeDrawer({
   clients,
   leads,
   teamMembers,
   workCategories,
   lockedTeamMember,
+  ownerHourlyRate,
   entry,
   initialOwner,
   onClose,
@@ -94,6 +105,8 @@ export function LogTimeDrawer({
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
   lockedTeamMember?: LockedTeamMember;
+  /** Owner-session only — prefills the rate field when they pick the "Me" option below. */
+  ownerHourlyRate?: string;
   /** When set, the drawer edits this existing entry instead of creating a new one. */
   entry?: CostEntry;
   /** Pre-selects the owner dropdown for a new entry (e.g. from a client/lead detail page's quick-log link). Ignored when editing. */
@@ -101,10 +114,24 @@ export function LogTimeDrawer({
   onClose: () => void;
 }) {
   const isEdit = Boolean(entry);
+  // The owner never appears in `teamMembers` (see tracker/page.tsx) — "Me" (value "")
+  // stands in for them instead, same convention as assign.ts's "Me"/"Owner" dropdowns.
+  // A null team_member_id (or a legacy entry pointing at the owner's now-hidden row,
+  // which won't be found here) both default to "Me".
+  const pickableTeamMembers: PickableTeamMember[] = lockedTeamMember
+    ? []
+    : [{ id: "", name: "Me", defaultHourlyRate: ownerHourlyRate ?? "0" }, ...teamMembers];
   const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">(entry?.entryType ?? "TIME");
-  const [teamMemberId, setTeamMemberId] = useState(entry?.teamMemberId ?? lockedTeamMember?.id ?? "");
+  const [teamMemberId, setTeamMemberId] = useState(
+    entry?.teamMemberId && teamMembers.some((t) => t.id === entry.teamMemberId)
+      ? entry.teamMemberId
+      : (lockedTeamMember?.id ?? "")
+  );
   const [categoryId, setCategoryId] = useState(entry?.workCategoryId ?? "");
-  const [rate, setRate] = useState(entry?.rate != null ? String(entry.rate) : "");
+  const [rate, setRate] = useState(() => {
+    if (entry?.rate != null) return String(entry.rate);
+    return pickableTeamMembers.find((t) => t.id === teamMemberId)?.defaultHourlyRate ?? "";
+  });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -120,7 +147,7 @@ export function LogTimeDrawer({
 
   function handleTeamMemberChange(id: string) {
     setTeamMemberId(id);
-    const tm = teamMembers.find((t) => t.id === id);
+    const tm = pickableTeamMembers.find((t) => t.id === id);
     if (tm) setRate(tm.defaultHourlyRate);
   }
 
@@ -256,21 +283,17 @@ export function LogTimeDrawer({
               <input type="hidden" name="teamMemberId" value={lockedTeamMember.id} />
             ) : (
               <FieldGroup>
-                <Label htmlFor="entry-team-member" required>
-                  Team member
-                </Label>
+                <Label htmlFor="entry-team-member">Team member</Label>
+                {/* Not `required`: "Me" is value="", and a required <select> treats an
+                    empty-value selection as unfilled even when it's a real, selected option. */}
                 <Select
                   id="entry-team-member"
                   name="teamMemberId"
-                  required
                   value={teamMemberId}
                   onChange={(e) => handleTeamMemberChange(e.target.value)}
                   icon={User}
                 >
-                  <option value="" disabled>
-                    Select team member
-                  </option>
-                  {teamMembers.map((t) => (
+                  {pickableTeamMembers.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
                     </option>

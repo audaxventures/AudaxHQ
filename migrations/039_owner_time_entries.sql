@@ -1,0 +1,21 @@
+-- Verclara — every business already gets exactly one team_members row for
+-- its owner (auto-created and linked via businesses.owner_team_member_id
+-- at signup — see migration 022). That row is kept for identity purposes
+-- (default hourly rate, tag color, being selectable as a Lead Owner), but
+-- until now it also had to be the referenced team_member_id on every time
+-- entry the owner logged — even though every other "who is this for"
+-- column in the app (todos, follow_ups, notes, calendar_feeds) already
+-- treats a null team_member_id as shorthand for "the owner." This was the
+-- one inconsistency, and it's what forced the owner to always have a real
+-- roster row just to log their own hours.
+--
+-- Drops that NOT NULL constraint so new time entries the owner logs can
+-- use NULL like everywhere else. Existing rows that still point at the
+-- owner's linked row are left as-is — they self-heal to NULL the next
+-- time that entry is edited (see LogTimeEntryButton.tsx).
+--
+-- Not breaking, purely additive.
+--
+-- Run once: psql "$DATABASE_URL" -f migrations/039_owner_time_entries.sql
+
+alter table time_entries alter column team_member_id drop not null;

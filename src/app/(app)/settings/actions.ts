@@ -6,10 +6,12 @@ import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
 import * as feedback from "@/lib/data/feedback";
+import * as teamMembers from "@/lib/data/teamMembers";
 import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
 import { requireOwner } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
+import type { EntityColor } from "@/lib/types";
 
 function revalidateWorkTypes() {
   revalidatePath("/settings/work-types");
@@ -116,10 +118,25 @@ export async function updateProfile(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const timezone = String(formData.get("timezone") ?? "").trim() || "UTC";
+  const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   await businesses.updateBusinessOwnerProfile(user.businessId, { ownerName: name, ownerEmail: email, timezone });
+  // Keeps the owner's linked team_members row (rate + name, used when they
+  // log their own time — see migration 039) in sync with the name/rate
+  // just saved here, so it never drifts from what Profile shows.
+  const ownerTeamMember = await teamMembers.ensureOwnerTeamMember(user.businessId);
+  await teamMembers.updateTeamMember(ownerTeamMember.id, user.businessId, { name, defaultHourlyRate });
   // Timezone changes what "today" is computed as almost everywhere in the
   // app, not just this settings page — revalidate the whole (app) section.
   revalidatePath("/", "layout");
+}
+
+/** The owner's tag color (their linked team_members row) — shown wherever they're tagged, e.g. the Lead Owner tag on the Leads page. */
+export async function setOwnerColor(color: EntityColor | null) {
+  const user = await requireOwner();
+  const ownerTeamMember = await teamMembers.ensureOwnerTeamMember(user.businessId);
+  await teamMembers.setTeamMemberColor(ownerTeamMember.id, user.businessId, color);
+  revalidatePath("/settings/profile");
+  revalidatePath("/leads");
 }
 
 export async function uploadBusinessLogo(formData: FormData) {

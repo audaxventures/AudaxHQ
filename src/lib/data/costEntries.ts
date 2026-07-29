@@ -27,6 +27,8 @@ export interface CostEntryFilters {
   clientId?: string;
   leadId?: string;
   teamMemberId?: string;
+  /** Only the business owner's own time entries (team_member_id is null) — mutually exclusive with teamMemberId in practice, since the owner isn't a real team_members row for this purpose. */
+  ownerOnly?: boolean;
   workCategoryId?: string;
   billable?: boolean;
   dateFrom?: string;
@@ -52,11 +54,12 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
         te.id, 'TIME' as entry_type, te.client_id, te.lead_id,
         coalesce(c.company_name, l.company_name) as owner_name,
         te.date, te.description, te.hours, te.rate, te.billable,
-        te.team_member_id, tm.name as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
+        te.team_member_id, coalesce(tm.name, b.owner_name) as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
         null::text as category,
         (te.hours * te.rate) as amount, te.created_at
       from time_entries te
-      join team_members tm on tm.id = te.team_member_id
+      left join team_members tm on tm.id = te.team_member_id
+      left join businesses b on b.id = te.business_id
       left join work_categories wc on wc.id = te.category_id
       left join clients c on c.id = te.client_id
       left join leads l on l.id = te.lead_id
@@ -64,6 +67,7 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
         and (${filters.clientId ?? null}::uuid is null or te.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or te.lead_id = ${filters.leadId ?? null})
         and (${filters.teamMemberId ?? null}::uuid is null or te.team_member_id = ${filters.teamMemberId ?? null})
+        and (not ${filters.ownerOnly === true} or te.team_member_id is null)
         and (${filters.workCategoryId ?? null}::uuid is null or te.category_id = ${filters.workCategoryId ?? null})
         and (${filters.billable ?? null}::boolean is null or te.billable = ${filters.billable ?? null})
         and (${filters.dateFrom ?? null}::date is null or te.date >= ${filters.dateFrom ?? null})
@@ -91,6 +95,7 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
         and (${filters.clientId ?? null}::uuid is null or fc.client_id = ${filters.clientId ?? null})
         and (${filters.leadId ?? null}::uuid is null or fc.lead_id = ${filters.leadId ?? null})
         and ${filters.teamMemberId ?? null}::uuid is null
+        and not ${filters.ownerOnly === true}
         and ${filters.workCategoryId ?? null}::uuid is null
         and ${filters.billable ?? null}::boolean is null
         and (${filters.dateFrom ?? null}::date is null or fc.date >= ${filters.dateFrom ?? null})
@@ -185,7 +190,8 @@ export function buildCostSummary(
 export interface TimeEntryInput {
   clientId: string | null;
   leadId: string | null;
-  teamMemberId: string;
+  /** Null means the business owner logged it themselves — see migration 039. */
+  teamMemberId: string | null;
   categoryId: string | null;
   date: string;
   hours: number;

@@ -93,6 +93,7 @@ export function TrackerFilters({
               icon={User}
             >
               <option value="">Everyone</option>
+              <option value="OWNER">Me (Owner)</option>
               {teamMembers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}

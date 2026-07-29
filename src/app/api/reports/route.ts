@@ -38,7 +38,10 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const clientId = params.get("clientId") || undefined;
   const leadId = params.get("leadId") || undefined;
-  const teamMemberId = params.get("teamMemberId") || undefined;
+  // "OWNER" is the Tracker filter bar's sentinel for "just the business owner's own entries" (team_member_id is null) — see TrackerFilters.tsx.
+  const teamMemberIdParam = params.get("teamMemberId") || undefined;
+  const ownerOnly = teamMemberIdParam === "OWNER";
+  const teamMemberId = ownerOnly ? undefined : teamMemberIdParam;
   const workCategoryId = params.get("workCategoryId") || undefined;
   const billableParam = params.get("billable");
   const billable = billableParam === "true" ? true : billableParam === "false" ? false : undefined;
@@ -46,7 +49,7 @@ export async function GET(request: Request) {
   const dateTo = params.get("dateTo") || undefined;
   const withSummary = params.get("summary") === "1";
 
-  const entries = await listCostEntries(user.businessId, { clientId, leadId, teamMemberId, workCategoryId, billable, dateFrom, dateTo });
+  const entries = await listCostEntries(user.businessId, { clientId, leadId, teamMemberId, ownerOnly, workCategoryId, billable, dateFrom, dateTo });
 
   const lines: string[] = [];
 

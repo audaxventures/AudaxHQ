@@ -282,23 +282,6 @@ export async function createActionItemTask(
   return (rows[0] as Record<string, unknown>).id as string;
 }
 
-/**
- * Re-points any to-do currently assigned to or created by `teamMemberId`
- * back to the owner (null) — used when linking that row as the owner's own
- * identity, so tasks that got stuck on the shadow row before the link
- * existed immediately reappear on the owner's board.
- */
-export async function reassignTasksFromTeamMemberToOwner(businessId: string, teamMemberId: string): Promise<void> {
-  await sql`
-    update todos set assigned_to_team_member_id = null
-    where business_id = ${businessId} and assigned_to_team_member_id = ${teamMemberId}
-  `;
-  await sql`
-    update todos set created_by_team_member_id = null
-    where business_id = ${businessId} and created_by_team_member_id = ${teamMemberId}
-  `;
-}
-
 export async function deleteTask(id: string, businessId: string, callerTeamMemberId: string | null): Promise<void> {
   await sql`
     delete from todos

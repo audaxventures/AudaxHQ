@@ -16,11 +16,9 @@ import {
   disableTeamMemberLogin,
   enableTeamMemberLogin,
   inviteTeamMember,
-  linkOwnerTeamMember,
   resendTeamMemberInvite,
   resetTeamMemberPasscode,
   setTeamMemberColor,
-  unlinkOwnerTeamMember,
   updateClientAccess,
   updateTeamMember,
 } from "@/app/(app)/tracker/actions";
@@ -411,12 +409,10 @@ function TeamMemberRow({
   member,
   clients,
   accessibleClientIds,
-  isLinkedToOwner,
 }: {
   member: TeamMember;
   clients: ClientOption[];
   accessibleClientIds: string[];
-  isLinkedToOwner: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [managingAccess, setManagingAccess] = useState(false);
@@ -447,11 +443,6 @@ function TeamMemberRow({
               <p className={cn("truncate text-sm font-medium", member.active ? "text-navy-900" : "text-navy-400")}>
                 {member.name}
               </p>
-              {isLinkedToOwner && (
-                <span className="shrink-0 rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700">
-                  This is you
-                </span>
-              )}
             </div>
             <p className="text-xs text-navy-400">
               {formatCurrency(member.defaultHourlyRate)}/hr
@@ -460,18 +451,6 @@ function TeamMemberRow({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
-            <button
-              type="button"
-              onClick={() =>
-                startTransition(() => {
-                  void (isLinkedToOwner ? unlinkOwnerTeamMember() : linkOwnerTeamMember(member.id));
-                })
-              }
-              className="rounded-md px-2 py-1 text-xs font-medium text-navy-500 hover:bg-navy-100 cursor-pointer"
-              title="Link this row to your own owner login, so to-dos assigned to it show up on your board too"
-            >
-              {isLinkedToOwner ? "Unlink" : "This is me"}
-            </button>
             <button
               type="button"
               onClick={() => setManagingAccess((v) => !v)}
@@ -502,7 +481,7 @@ function TeamMemberRow({
             >
               {member.active ? "Deactivate" : "Activate"}
             </button>
-            {!member.active && !isLinkedToOwner && (
+            {!member.active && (
               <button
                 type="button"
                 onClick={handleDelete}
@@ -584,12 +563,10 @@ export function TeamMembersPanel({
   teamMembers,
   clients,
   clientAccess,
-  ownerTeamMemberId,
 }: {
   teamMembers: TeamMember[];
   clients: ClientOption[];
   clientAccess: Record<string, string[]>;
-  ownerTeamMemberId: string | null;
 }) {
   return (
     <div>
@@ -598,13 +575,7 @@ export function TeamMembersPanel({
       ) : (
         <div className="mb-3 space-y-2">
           {teamMembers.map((m) => (
-            <TeamMemberRow
-              key={m.id}
-              member={m}
-              clients={clients}
-              accessibleClientIds={clientAccess[m.id] ?? []}
-              isLinkedToOwner={m.id === ownerTeamMemberId}
-            />
+            <TeamMemberRow key={m.id} member={m} clients={clients} accessibleClientIds={clientAccess[m.id] ?? []} />
           ))}
         </div>
       )}
@@ -621,8 +592,8 @@ export function TeamMembersPanel({
             clients they can see.
           </p>
           <p className="mt-2 text-navy-500">
-            If you added a row here to track your own hours, click <strong>This is me</strong> on it — otherwise
-            to-dos assigned to that row won&apos;t show up on your own board.
+            Your own hourly rate and tag color are set from Settings &rarr; Profile instead — you&apos;re not listed
+            here as a team member.
           </p>
         </InfoNote>
       </div>

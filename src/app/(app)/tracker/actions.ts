@@ -2,12 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import * as businesses from "@/lib/data/businesses";
 import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
-import * as followups from "@/lib/data/followups";
 import * as teamMembers from "@/lib/data/teamMembers";
-import * as todos from "@/lib/data/todos";
 import * as workCategories from "@/lib/data/workCategories";
 import { generateResetToken, hashResetToken } from "@/lib/auth";
 import { getCurrentUser, requireOwner } from "@/lib/currentUser";
@@ -42,14 +39,16 @@ export async function createTimeEntry(formData: FormData) {
     throw new Error("Fill in date and hours.");
   }
 
-  let teamMemberId: string;
+  let teamMemberId: string | null;
   let rate: number;
 
   if (user.role === "OWNER") {
-    teamMemberId = String(formData.get("teamMemberId") ?? "");
+    // "" (the "Me" option) means the owner logged it themselves — null,
+    // same as everywhere else null means "the owner" (see migration 039).
+    teamMemberId = String(formData.get("teamMemberId") ?? "") || null;
     rate = Number(formData.get("rate"));
-    if (!teamMemberId || !(rate >= 0)) {
-      throw new Error("Fill in team member and rate.");
+    if (!(rate >= 0)) {
+      throw new Error("Fill in a rate.");
     }
   } else {
     // Team members can only log their own hours, at their own rate — both are
@@ -84,15 +83,15 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
     throw new Error("Fill in date and hours.");
   }
 
-  let teamMemberId: string;
+  let teamMemberId: string | null;
   let rate: number;
   let restrictToTeamMemberId: string | null = null;
 
   if (user.role === "OWNER") {
-    teamMemberId = String(formData.get("teamMemberId") ?? "");
+    teamMemberId = String(formData.get("teamMemberId") ?? "") || null;
     rate = Number(formData.get("rate"));
-    if (!teamMemberId || !(rate >= 0)) {
-      throw new Error("Fill in team member and rate.");
+    if (!(rate >= 0)) {
+      throw new Error("Fill in a rate.");
     }
   } else {
     // Team members can only edit their own entries, at their own rate — both
@@ -219,7 +218,7 @@ export async function setTeamMemberColor(id: string, color: EntityColor | null) 
 export async function deleteTeamMemberPermanently(id: string) {
   const user = await requireOwner();
   if (id === user.business.ownerTeamMemberId) {
-    throw new Error("This row is linked to your own owner login — unlink it before deleting.");
+    throw new Error("This is your own identity row — it can't be deleted.");
   }
   const member = await teamMembers.getTeamMember(id, user.businessId);
   if (!member) return;
@@ -311,30 +310,6 @@ export async function updateClientAccess(teamMemberId: string, formData: FormDat
   const clientIds = formData.getAll("clientId").map((v) => String(v));
   await clientAccess.setClientAccess(teamMemberId, user.businessId, clientIds);
   revalidateTeamMembers();
-}
-
-/**
- * Links a team_members row (e.g. one the owner created to track their own
- * billable hours) as the owner's own identity, so assigning a to-do/follow-up
- * to that row is treated identically to assigning it to the owner. Also
- * repairs anything already stuck on that row from before the link existed.
- */
-export async function linkOwnerTeamMember(teamMemberId: string) {
-  const user = await requireOwner();
-  await businesses.setOwnerTeamMember(user.businessId, teamMemberId);
-  await todos.reassignTasksFromTeamMemberToOwner(user.businessId, teamMemberId);
-  await followups.reassignFollowUpsFromTeamMemberToOwner(user.businessId, teamMemberId);
-  revalidateTeamMembers();
-  revalidatePath("/todos");
-  revalidatePath("/");
-}
-
-export async function unlinkOwnerTeamMember() {
-  const user = await requireOwner();
-  await businesses.setOwnerTeamMember(user.businessId, null);
-  revalidateTeamMembers();
-  revalidatePath("/todos");
-  revalidatePath("/");
 }
 
 export async function createWorkCategory(formData: FormData) {

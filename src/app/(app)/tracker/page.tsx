@@ -8,7 +8,7 @@ import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { LogTimeEntryButton } from "@/components/tracker/LogTimeEntryButton";
 import { Pagination } from "@/components/ui/Pagination";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
-import { listTeamMembers } from "@/lib/data/teamMembers";
+import { getTeamMember, listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
@@ -42,11 +42,16 @@ export default async function TrackerPage({
   const teamMember = user.role === "TEAM_MEMBER" ? user.teamMember : null;
   const accessibleClientIds = await accessibleClientIdsFor(user);
 
+  // Team members only ever see their own log, so the "who" filter is owner-only.
+  // "OWNER" is the filter bar's sentinel for "just my own entries" (team_member_id is null) —
+  // the owner has no real team_members row to filter by (see TrackerFilters.tsx).
+  const rawTeamMemberFilter = isOwner ? sp.teamMemberId || undefined : undefined;
+  const ownerOnlyFilter = rawTeamMemberFilter === "OWNER";
   const filters = {
     clientId: sp.clientId || undefined,
     leadId: sp.leadId || undefined,
-    // Team members only ever see their own log, so the "who" filter is owner-only.
-    teamMemberId: isOwner ? sp.teamMemberId || undefined : undefined,
+    teamMemberId: ownerOnlyFilter ? undefined : rawTeamMemberFilter,
+    ownerOnly: ownerOnlyFilter,
     workCategoryId: sp.workCategoryId || undefined,
     billable: sp.billable === "true" ? true : sp.billable === "false" ? false : undefined,
     dateFrom: sp.dateFrom || undefined,
@@ -58,12 +63,15 @@ export default async function TrackerPage({
   const search = (sp.q ?? "").trim().toLowerCase();
   const page = Math.max(1, Number(sp.page) || 1);
 
-  const [allEntries, teamMembers, workCategories, clients, leads] = await Promise.all([
+  const [allEntries, teamMembers, workCategories, clients, leads, ownerTeamMember] = await Promise.all([
     listCostEntries(user.businessId, filters),
     listTeamMembers(user.businessId, { includeInactive: true }),
     listWorkCategories(user.businessId, { includeInactive: true }),
     listClients(user.businessId, { accessibleClientIds }),
     listLeads(user.businessId),
+    isOwner && user.business.ownerTeamMemberId
+      ? getTeamMember(user.business.ownerTeamMemberId, user.businessId)
+      : Promise.resolve(null),
   ]);
 
   const inactiveTeamMemberIds = new Set(teamMembers.filter((t) => !t.active).map((t) => t.id));
@@ -108,7 +116,7 @@ export default async function TrackerPage({
   const filterParams: Record<string, string | undefined> = {
     clientId: filters.clientId,
     leadId: filters.leadId,
-    teamMemberId: filters.teamMemberId,
+    teamMemberId: rawTeamMemberFilter,
     workCategoryId: filters.workCategoryId,
     billable: sp.billable,
     dateFrom: filters.dateFrom,
@@ -130,7 +138,7 @@ export default async function TrackerPage({
   const reportQuery = new URLSearchParams();
   if (filters.clientId) reportQuery.set("clientId", filters.clientId);
   if (filters.leadId) reportQuery.set("leadId", filters.leadId);
-  if (filters.teamMemberId) reportQuery.set("teamMemberId", filters.teamMemberId);
+  if (rawTeamMemberFilter) reportQuery.set("teamMemberId", rawTeamMemberFilter);
   if (filters.workCategoryId) reportQuery.set("workCategoryId", filters.workCategoryId);
   if (filters.billable !== undefined) reportQuery.set("billable", String(filters.billable));
   if (filters.dateFrom) reportQuery.set("dateFrom", filters.dateFrom);
@@ -139,7 +147,12 @@ export default async function TrackerPage({
   const activeTeamMembers = teamMembers.filter((t) => t.active);
   const activeWorkCategories = workCategories.filter((c) => c.active);
   const filterClients = showArchived ? clients : clients.filter((c) => c.status !== "CHURNED");
-  const filterTeamMembers = showArchived ? teamMembers : activeTeamMembers;
+  // The owner isn't a pickable team member anywhere — "Me" (Log Time) / "Me (Owner)"
+  // (filter) stand in for them instead. See migration 039 + TrackerFilters.tsx.
+  const pickableActiveTeamMembers = activeTeamMembers.filter((t) => t.id !== user.business.ownerTeamMemberId);
+  const filterTeamMembers = (showArchived ? teamMembers : activeTeamMembers).filter(
+    (t) => t.id !== user.business.ownerTeamMemberId
+  );
   const filterWorkCategories = showArchived ? workCategories : activeWorkCategories;
 
   return (
@@ -160,9 +173,10 @@ export default async function TrackerPage({
             <LogTimeEntryButton
               clients={clients}
               leads={leads}
-              teamMembers={activeTeamMembers}
+              teamMembers={pickableActiveTeamMembers}
               workCategories={activeWorkCategories}
               lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
+              ownerHourlyRate={ownerTeamMember?.defaultHourlyRate}
             />
           </div>
         }
@@ -209,9 +223,10 @@ export default async function TrackerPage({
           entries={pageEntries}
           clients={clients}
           leads={leads}
-          teamMembers={activeTeamMembers}
+          teamMembers={pickableActiveTeamMembers}
           workCategories={activeWorkCategories}
           lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
+          ownerHourlyRate={ownerTeamMember?.defaultHourlyRate}
           showOwner
           hideFinancials={!isOwner}
         />

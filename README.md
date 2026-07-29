@@ -68,6 +68,7 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/036_meeting_note_timezone.sql
    psql "$DATABASE_URL" -f migrations/037_lead_owner.sql
    psql "$DATABASE_URL" -f migrations/038_team_member_color.sql
+   psql "$DATABASE_URL" -f migrations/039_owner_time_entries.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -204,6 +205,7 @@ migrations/035_invoice_work_type.sql   adds invoices.work_type_id/work_type_othe
 migrations/036_meeting_note_timezone.sql  adds meeting_notes.timezone — the IANA zone a meeting's start_time is in, purely descriptive (never used for conversion), shown next to the time in the meeting note forms and the branded PDF export
 migrations/037_lead_owner.sql          adds leads.lead_owner_team_member_id — who's responsible for a lead, separate from who a follow-up/to-do on it is assigned to. Nullable ("Unassigned"); set from the Lead Owner field on the new-lead form and the lead detail page's Core Information panel, shown as a tag on every lead list row/card, and filterable (multi-select, plus an "Unassigned" pill) from the Leads page
 migrations/038_team_member_color.sql   adds team_members.color — same optional accent-color palette clients/leads already have (see migration 011), set via the swatch picker next to each row in Settings → Team Members. Used to color the "Lead Owner" tag on the Leads list per-owner instead of every tag rendering identically; falls back to the existing hash-of-name color when unset
+migrations/039_owner_time_entries.sql  drops the NOT NULL constraint on time_entries.team_member_id. Every business still gets one team_members row auto-created and linked as the owner's own identity at signup (businesses.owner_team_member_id — see migration 022), used to hold their default hourly rate and tag color (edited from Settings → Profile, not listed on the Team Members page) and to let them be picked as a Lead Owner — but it's no longer required for the owner to log their own time entries, which now use NULL like every other "who is this for" column in the app (todos, follow_ups, notes, calendar_feeds) already does. See ensureOwnerTeamMember in src/lib/data/teamMembers.ts and the "Me" option in LogTimeEntryButton.tsx
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

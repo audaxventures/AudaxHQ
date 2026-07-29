@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { hashPasscode } from "@/lib/auth";
+import * as businesses from "@/lib/data/businesses";
 import type { EntityColor, TeamMember } from "@/lib/types";
 
 function mapTeamMember(row: Record<string, unknown>): TeamMember {
@@ -25,6 +26,27 @@ export async function listTeamMembers(businessId: string, opts: { includeInactiv
 export async function getTeamMember(id: string, businessId: string): Promise<TeamMember | null> {
   const rows = await sql`select * from team_members where id = ${id} and business_id = ${businessId}`;
   return rows[0] ? mapTeamMember(rows[0] as Record<string, unknown>) : null;
+}
+
+/**
+ * Guarantees the business has a team_members row linked as the owner's own
+ * identity (businesses.owner_team_member_id) — it holds their default
+ * hourly rate and tag color (edited via Settings > Profile) and lets them
+ * be picked as a Lead Owner, even though it's hidden from the Team Members
+ * list and no longer required for the owner to log their own time entries
+ * (see migration 039). Every new business gets one automatically at
+ * signup (see createBusiness); this only does real work for older
+ * businesses that predate that wiring or had their link removed.
+ */
+export async function ensureOwnerTeamMember(businessId: string): Promise<TeamMember> {
+  const business = await businesses.getBusiness(businessId);
+  if (business.ownerTeamMemberId) {
+    const existing = await getTeamMember(business.ownerTeamMemberId, businessId);
+    if (existing) return existing;
+  }
+  const created = await createTeamMember(businessId, { name: business.ownerName, defaultHourlyRate: 0 });
+  await businesses.setOwnerTeamMember(businessId, created.id);
+  return created;
 }
 
 export interface TeamMemberInput {

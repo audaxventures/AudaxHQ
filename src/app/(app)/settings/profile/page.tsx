@@ -2,11 +2,16 @@ import { Card } from "@/components/ui/Card";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { requireOwner } from "@/lib/currentUser";
+import { ensureOwnerTeamMember } from "@/lib/data/teamMembers";
 import { initials } from "@/lib/avatar";
 
 export default async function ProfileSettingsPage() {
   const user = await requireOwner();
   const business = user.business;
+  // Guarantees a linked team_members row exists — every new business gets
+  // one at signup, this only does real work for older businesses that
+  // predate that wiring. It's where the owner's rate and tag color live.
+  const ownerTeamMember = await ensureOwnerTeamMember(user.businessId);
   return (
     <Card className="p-6">
       <SettingsPanelHeader
@@ -23,7 +28,7 @@ export default async function ProfileSettingsPage() {
           </div>
         }
       />
-      <ProfileForm business={business} />
+      <ProfileForm business={business} ownerTeamMember={ownerTeamMember} />
     </Card>
   );
 }

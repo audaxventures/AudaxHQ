@@ -8,11 +8,14 @@ import { requireOwner } from "@/lib/currentUser";
 
 export default async function TeamMembersSettingsPage() {
   const user = await requireOwner();
-  const [teamMembers, clients, clientAccess] = await Promise.all([
+  const [allTeamMembers, clients, clientAccess] = await Promise.all([
     listTeamMembers(user.businessId, { includeInactive: true }),
     listClients(user.businessId),
     listAllClientAccess(user.businessId),
   ]);
+  // The owner has their own hidden team_members row (rate, tag color — edited
+  // from Settings > Profile instead), not a real team member to manage here.
+  const teamMembers = allTeamMembers.filter((t) => t.id !== user.business.ownerTeamMemberId);
   return (
     <Card className="p-6">
       <SettingsPanelHeader
@@ -23,7 +26,6 @@ export default async function TeamMembersSettingsPage() {
         teamMembers={teamMembers}
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         clientAccess={clientAccess}
-        ownerTeamMemberId={user.business.ownerTeamMemberId}
       />
     </Card>
   );
