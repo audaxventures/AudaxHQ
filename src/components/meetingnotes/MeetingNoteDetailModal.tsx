@@ -45,11 +45,12 @@ export function MeetingNoteDetailModal({
   const [pending, startTransition] = useTransition();
   const [, startToggleTransition] = useTransition();
   const [showEmailDrawer, setShowEmailDrawer] = useState(false);
-  const ownerHref = note.clientId ? `/clients/${note.clientId}` : `/leads/${note.leadId}`;
+  const ownerHref = note.clientId ? `/clients/${note.clientId}` : note.leadId ? `/leads/${note.leadId}` : `/partners/${note.partnerId}`;
+  const ownerKindLabel = note.clientId ? "Client" : note.leadId ? "Lead" : "Partner";
 
   function toggleActionItem(taskId: string, completed: boolean) {
     startToggleTransition(async () => {
-      await setTaskStatus(taskId, note.clientId, note.leadId, completed ? "COMPLETED" : "TO_BE_DONE");
+      await setTaskStatus(taskId, note.clientId, note.leadId, completed ? "COMPLETED" : "TO_BE_DONE", note.partnerId);
     });
   }
 
@@ -67,10 +68,10 @@ export function MeetingNoteDetailModal({
           type="button"
           onClick={() => setShowEmailDrawer(true)}
           disabled={!note.ownerEmail}
-          title={note.ownerEmail ? undefined : "Add a contact email on the client/lead record first"}
+          title={note.ownerEmail ? undefined : "Add a contact email on the client/lead/partner record first"}
           className="inline-flex items-center gap-1.5 rounded-lg border border-navy-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-400 hover:bg-navy-100/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-navy-200 disabled:hover:bg-transparent cursor-pointer"
         >
-          <Mail size={14} /> Email to {note.clientId ? "client" : "lead"}
+          <Mail size={14} /> Email to {note.clientId ? "client" : note.leadId ? "lead" : "partner"}
         </button>
         {note.lastEmailedTo && note.lastEmailedAt && (
           <span className="text-xs text-navy-400">
@@ -94,7 +95,7 @@ export function MeetingNoteDetailModal({
               {note.ownerName}
             </Link>
             <div className="mt-0.5">
-              <Badge tone={note.clientId ? "sage" : "violet"}>{note.clientId ? "Client" : "Lead"}</Badge>
+              <Badge tone={note.clientId ? "sage" : note.leadId ? "violet" : "gold"}>{ownerKindLabel}</Badge>
             </div>
           </div>
         </div>
@@ -105,7 +106,7 @@ export function MeetingNoteDetailModal({
           startTransition(async () => {
             await updateMeetingNote(
               note.id,
-              { clientId: note.clientId, leadId: note.leadId },
+              { clientId: note.clientId, leadId: note.leadId, partnerId: note.partnerId },
               formData
             );
             onClose();
@@ -184,7 +185,7 @@ export function MeetingNoteDetailModal({
           <Label>Action items</Label>
           <ActionItemsQuickAdd
             name="actionItems"
-            theirLabel={note.clientId ? "Client" : "Lead"}
+            theirLabel={ownerKindLabel}
             existingTasks={note.actionItemTasks}
             onToggleExisting={toggleActionItem}
           />

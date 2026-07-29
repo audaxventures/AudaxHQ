@@ -5,6 +5,7 @@ interface FollowUpRow {
   id: string;
   client_id: string | null;
   lead_id: string | null;
+  partner_id: string | null;
   label: string;
   date: string;
   status: FollowUpStatus;
@@ -18,6 +19,7 @@ function mapFollowUp(row: FollowUpRow): FollowUp {
     id: row.id,
     clientId: row.client_id,
     leadId: row.lead_id,
+    partnerId: row.partner_id,
     label: row.label,
     date: row.date,
     status: row.status,
@@ -41,6 +43,13 @@ export async function listFollowUpsForLead(leadId: string, businessId: string): 
   return (rows as unknown as FollowUpRow[]).map(mapFollowUp);
 }
 
+export async function listFollowUpsForPartner(partnerId: string, businessId: string): Promise<FollowUp[]> {
+  const rows = await sql`
+    select * from follow_ups where partner_id = ${partnerId} and business_id = ${businessId} order by date asc
+  `;
+  return (rows as unknown as FollowUpRow[]).map(mapFollowUp);
+}
+
 export interface HotFollowUp extends FollowUp {
   ownerName: string;
   ownerKind: "client" | "lead";
@@ -60,7 +69,7 @@ export async function listHotFollowUps(
 ): Promise<HotFollowUp[]> {
   const rows = await sql`
     select
-      f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
+      f.id, f.client_id, f.lead_id, f.partner_id, f.label, f.date, f.status, f.created_at, f.updated_at,
       f.assigned_to_team_member_id,
       coalesce(c.company_name, l.company_name) as owner_name,
       case when f.client_id is not null then 'client' else 'lead' end as owner_kind,
@@ -69,6 +78,7 @@ export async function listHotFollowUps(
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
     where f.business_id = ${businessId}
+      and f.partner_id is null
       and f.status = 'UPCOMING' and f.date <= ${today}::date
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
@@ -103,7 +113,7 @@ export async function listAllFollowUps(
 ): Promise<HotFollowUp[]> {
   const rows = await sql`
     select
-      f.id, f.client_id, f.lead_id, f.label, f.date, f.status, f.created_at, f.updated_at,
+      f.id, f.client_id, f.lead_id, f.partner_id, f.label, f.date, f.status, f.created_at, f.updated_at,
       f.assigned_to_team_member_id,
       coalesce(c.company_name, l.company_name) as owner_name,
       case when f.client_id is not null then 'client' else 'lead' end as owner_kind,
@@ -112,6 +122,7 @@ export async function listAllFollowUps(
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
     where f.business_id = ${businessId}
+      and f.partner_id is null
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
         or f.client_id is null
@@ -134,13 +145,13 @@ export async function listAllFollowUps(
 }
 
 export async function addFollowUp(
-  owner: { clientId?: string; leadId?: string },
+  owner: { clientId?: string; leadId?: string; partnerId?: string },
   businessId: string,
   input: { label: string; date: string; assignedToTeamMemberId?: string | null }
 ): Promise<void> {
   await sql`
-    insert into follow_ups (client_id, lead_id, business_id, label, date, assigned_to_team_member_id)
-    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${businessId}, ${input.label}, ${input.date}, ${input.assignedToTeamMemberId ?? null})
+    insert into follow_ups (client_id, lead_id, partner_id, business_id, label, date, assigned_to_team_member_id)
+    values (${owner.clientId ?? null}, ${owner.leadId ?? null}, ${owner.partnerId ?? null}, ${businessId}, ${input.label}, ${input.date}, ${input.assignedToTeamMemberId ?? null})
   `;
 }
 

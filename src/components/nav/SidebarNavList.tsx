@@ -25,7 +25,9 @@ export function SidebarNavList({
   const links =
     role === "OWNER"
       ? NAV_LINKS
-      : NAV_LINKS.map((link) => (link.href === FINANCE_HREF ? { ...link, href: FINANCE_HREF_FOR_TEAM_MEMBER } : link));
+      : NAV_LINKS.filter((link) => link.href !== "/partners").map((link) =>
+          link.href === FINANCE_HREF ? { ...link, href: FINANCE_HREF_FOR_TEAM_MEMBER } : link
+        );
   return (
     <>
       <nav className="relative flex flex-col gap-1">

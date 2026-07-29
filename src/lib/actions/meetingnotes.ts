@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
 import * as todos from "@/lib/data/todos";
-import { requireClientAccess, requireLeadAccess, requireCurrentUser } from "@/lib/currentUser";
+import { requireClientAccess, requireLeadAccess, requirePartnerAccess, requireCurrentUser } from "@/lib/currentUser";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
 import { sendMeetingNotePdfEmail } from "@/lib/email";
@@ -12,19 +12,25 @@ import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
 import { meetingNotePdfFilename } from "@/lib/pdf/filename";
 import type { CurrentUser, TaskOwner } from "@/lib/types";
 
-function revalidateOwner(clientId?: string | null, leadId?: string | null) {
+function revalidateOwner(clientId?: string | null, leadId?: string | null, partnerId?: string | null) {
   revalidatePath("/meeting-notes");
   // Action items quick-added here land on the to-do board and dashboard too.
   revalidatePath("/todos");
   revalidatePath("/");
   if (clientId) revalidatePath(`/clients/${clientId}`);
   if (leadId) revalidatePath(`/leads/${leadId}`);
+  if (partnerId) revalidatePath(`/partners/${partnerId}`);
 }
 
-/** Resolves + authorizes the owning client/lead, whichever is set. */
-async function resolveOwnerAccess(owner: { clientId?: string | null; leadId?: string | null }): Promise<CurrentUser> {
+/** Resolves + authorizes the owning client/lead/partner, whichever is set. */
+async function resolveOwnerAccess(owner: {
+  clientId?: string | null;
+  leadId?: string | null;
+  partnerId?: string | null;
+}): Promise<CurrentUser> {
   if (owner.clientId) return requireClientAccess(owner.clientId);
   if (owner.leadId) return requireLeadAccess(owner.leadId);
+  if (owner.partnerId) return requirePartnerAccess(owner.partnerId);
   throw new Error("Not authorized.");
 }
 
@@ -91,19 +97,21 @@ function parseActionItems(formData: FormData): QueuedActionItem[] {
 async function createActionItemTasks(
   businessId: string,
   meetingNoteId: string,
-  owner: { clientId?: string | null; leadId?: string | null },
+  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null },
   items: QueuedActionItem[],
   createdByTeamMemberId: string | null
 ): Promise<void> {
+  const type = owner.clientId ? "CLIENT" : owner.leadId ? "LEAD" : "PARTNER";
   for (const item of items) {
     await todos.createActionItemTask(
       businessId,
       {
         title: item.text,
         dueDate: item.dueDate,
-        type: owner.clientId ? "CLIENT" : "LEAD",
+        type,
         clientId: owner.clientId ?? null,
         leadId: owner.leadId ?? null,
+        partnerId: owner.partnerId ?? null,
         meetingNoteId,
         ownedBy: item.ownedBy,
       },
@@ -143,12 +151,16 @@ export async function createMeetingNote(formData: FormData) {
   redirect(clientId ? `/clients/${clientId}` : `/leads/${leadId}`);
 }
 
-export async function createScopedMeetingNote(
-  owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
-  formData: FormData
-) {
-  const user =
-    owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+type ScopedOwner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
+
+async function requireScopedOwnerAccess(owner: ScopedOwner): Promise<CurrentUser> {
+  if (owner.type === "CLIENT") return requireClientAccess(owner.clientId);
+  if (owner.type === "LEAD") return requireLeadAccess(owner.leadId);
+  return requirePartnerAccess(owner.partnerId);
+}
+
+export async function createScopedMeetingNote(owner: ScopedOwner, formData: FormData) {
+  const user = await requireScopedOwnerAccess(owner);
   const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
@@ -158,20 +170,22 @@ export async function createScopedMeetingNote(
 
   const clientId = owner.type === "CLIENT" ? owner.clientId : undefined;
   const leadId = owner.type === "LEAD" ? owner.leadId : undefined;
+  const partnerId = owner.type === "PARTNER" ? owner.partnerId : undefined;
   const scheduling = extractSchedulingFields(formData);
 
   const noteId = await meetingNotes.createMeetingNote(user.businessId, {
     title,
     clientId,
     leadId,
+    partnerId,
     meetingDate,
     ...scheduling,
     attendees,
     agenda: fields?.agenda ?? null,
     notes: fields?.notes ?? null,
   });
-  await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user));
-  revalidateOwner(clientId, leadId);
+  await createActionItemTasks(user.businessId, noteId, { clientId, leadId, partnerId }, actionItems, selfId(user));
+  revalidateOwner(clientId, leadId, partnerId);
 }
 
 /**
@@ -180,17 +194,14 @@ export async function createScopedMeetingNote(
  * demand a full write-up). The same underlying record can be opened later
  * via the full edit modal to add notes once the meeting has happened.
  */
-export async function scheduleMeeting(
-  owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
-  formData: FormData
-) {
-  const user =
-    owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+export async function scheduleMeeting(owner: ScopedOwner, formData: FormData) {
+  const user = await requireScopedOwnerAccess(owner);
   const meetingDate = String(formData.get("meetingDate") ?? "");
   if (!meetingDate) return;
 
   const clientId = owner.type === "CLIENT" ? owner.clientId : undefined;
   const leadId = owner.type === "LEAD" ? owner.leadId : undefined;
+  const partnerId = owner.type === "PARTNER" ? owner.partnerId : undefined;
   const title = (formData.get("title") as string)?.trim() || null;
   const scheduling = extractSchedulingFields(formData);
 
@@ -198,15 +209,16 @@ export async function scheduleMeeting(
     title,
     clientId,
     leadId,
+    partnerId,
     meetingDate,
     ...scheduling,
   });
-  revalidateOwner(clientId, leadId);
+  revalidateOwner(clientId, leadId, partnerId);
 }
 
 export async function updateMeetingNote(
   id: string,
-  owner: { clientId?: string | null; leadId?: string | null },
+  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null },
   formData: FormData
 ) {
   const user = await resolveOwnerAccess(owner);
@@ -230,16 +242,16 @@ export async function updateMeetingNote(
     notes: fields?.notes ?? null,
   });
   await createActionItemTasks(user.businessId, id, owner, actionItems, selfId(user));
-  revalidateOwner(owner.clientId, owner.leadId);
+  revalidateOwner(owner.clientId, owner.leadId, owner.partnerId);
 }
 
 export async function deleteMeetingNote(
   id: string,
-  owner: { clientId?: string | null; leadId?: string | null }
+  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null }
 ) {
   const user = await resolveOwnerAccess(owner);
   await meetingNotes.deleteMeetingNote(id, user.businessId);
-  revalidateOwner(owner.clientId, owner.leadId);
+  revalidateOwner(owner.clientId, owner.leadId, owner.partnerId);
 }
 
 export interface SendMeetingNoteEmailState {
@@ -290,6 +302,6 @@ export async function sendMeetingNoteEmail(
   }
 
   await meetingNotes.recordMeetingNoteEmailSent(noteId, user.businessId, note.ownerEmail);
-  revalidateOwner(note.clientId, note.leadId);
+  revalidateOwner(note.clientId, note.leadId, note.partnerId);
   return { success: true, error: null };
 }

@@ -84,6 +84,35 @@ export async function getConversionBySource(businessId: string): Promise<Convers
   return sortStats(stats);
 }
 
+/** Same shape as getConversionBySource, scoped to leads a referral partner sent in — answers "which partners are actually worth the commission" by showing real won revenue, not just referral counts. Leads with no referring partner are excluded (unlike source/work-type, a "Not set" bucket here would just be "most leads," not a meaningful comparison). */
+export async function getConversionByPartner(businessId: string): Promise<ConversionStat[]> {
+  const rows = await sql`
+    with client_revenue as (
+      select client_id, sum(amount) as revenue
+      from invoices
+      where business_id = ${businessId} and status <> 'NOT_INVOICED'
+      group by client_id
+    )
+    select
+      l.referred_by_partner_id, p.company_name as partner_name,
+      count(*) as total,
+      count(*) filter (where l.status = 'WON') as won,
+      count(*) filter (where l.status = 'LOST') as lost,
+      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
+    from leads l
+    join partners p on p.id = l.referred_by_partner_id
+    left join client_revenue cr on cr.client_id = l.converted_client_id
+    where l.business_id = ${businessId} and l.referred_by_partner_id is not null
+    group by l.referred_by_partner_id, p.company_name
+  `;
+  const stats = rows.map((r) => {
+    const row = r as Record<string, unknown> & GroupRow;
+    return toStat(row.referred_by_partner_id as string, row.partner_name as string, row);
+  });
+  return sortStats(stats);
+}
+
 export async function getConversionByWorkType(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
     with client_revenue as (

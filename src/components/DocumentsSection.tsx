@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/format";
 import { ALLOWED_DOCUMENT_EXTENSIONS, MAX_DOCUMENT_SIZE_BYTES, getFileExtension } from "@/lib/documents";
 import { deleteDocument, getDocumentDownloadUrl, uploadDocument } from "@/lib/actions/documents";
 
-type Owner = { clientId: string } | { leadId: string };
+type Owner = { clientId: string } | { leadId: string } | { partnerId: string };
 
 const EXTENSION_ICONS: Record<string, typeof FileIcon> = {
   png: ImageIcon,

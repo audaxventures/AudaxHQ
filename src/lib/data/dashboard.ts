@@ -187,6 +187,7 @@ export async function getDashboardData(
       todoTypeName: null,
       clientId: row.client_id as string | null,
       leadId: row.lead_id as string | null,
+      partnerId: null,
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
       tags: ((row.tags as string[]) ?? []).filter(Boolean).sort(),

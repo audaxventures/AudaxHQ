@@ -80,8 +80,8 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       break;
     }
     case "tasks": {
-      const tasks = await listTasks(businessId);
-      lines.push(csvRow(["Title", "Description", "Due Date", "Status", "Type", "Client", "Lead", "Tags", "Created At"]));
+      const tasks = await listTasks(businessId, { includePartnerOwned: true });
+      lines.push(csvRow(["Title", "Description", "Due Date", "Status", "Type", "Client", "Lead", "Partner", "Tags", "Created At"]));
       for (const t of tasks) {
         lines.push(
           csvRow([
@@ -92,6 +92,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
             t.type === "CUSTOM" ? t.todoTypeName ?? "" : FIXED_TASK_TYPE_LABELS[t.type],
             t.clientName ?? "",
             t.leadName ?? "",
+            t.partnerName ?? "",
             t.tags.join("; "),
             formatDateInput(t.createdAt),
           ])

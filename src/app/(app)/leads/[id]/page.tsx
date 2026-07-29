@@ -36,6 +36,7 @@ import { SuccessBanner } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
+import { listPartners } from "@/lib/data/partners";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { buildAssignOptions, selfId } from "@/lib/assign";
 import Link from "next/link";
@@ -51,7 +52,7 @@ export default async function LeadDetailPage({
   const { converted, costFrom, costTo } = await searchParams;
   const user = await requireCurrentUser();
   const isOwner = user.role === "OWNER";
-  const [lead, costEntries, workTypes, leadSources, today, teamMembers, allTeamMembers, workCategories, clients, allLeads] =
+  const [lead, costEntries, workTypes, leadSources, today, teamMembers, allTeamMembers, workCategories, clients, allLeads, partners] =
     await Promise.all([
       getLead(id, user.businessId),
       isOwner
@@ -67,6 +68,7 @@ export default async function LeadDetailPage({
       isOwner ? listWorkCategories(user.businessId) : Promise.resolve([]),
       isOwner ? listClients(user.businessId) : Promise.resolve([]),
       isOwner ? listLeads(user.businessId) : Promise.resolve([]),
+      isOwner ? listPartners(user.businessId) : Promise.resolve([]),
     ]);
   if (!lead) notFound();
 
@@ -244,6 +246,7 @@ export default async function LeadDetailPage({
               workTypes={workTypes}
               leadSources={leadSources}
               teamMembers={allTeamMembers}
+              partners={partners}
               submitLabel="Save changes"
               variant="compact"
             />

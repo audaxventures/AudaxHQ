@@ -17,6 +17,7 @@ export const NAV_LINKS = [
     matchPrefixes: ["/invoices", "/tracker"],
   },
   { href: "/todos", label: "To-Dos", icon: "todos" },
+  { href: "/partners", label: "Partners", icon: "partners" },
 ] as const;
 
 export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings" | "admin";

@@ -16,13 +16,14 @@ export type TaskStatus =
   | "COMPLETED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH";
 /**
- * CLIENT/LEAD are fixed system types tied structurally to an actual
- * client_id/lead_id (enforced by a DB check constraint) — not editable
- * or archivable. CUSTOM covers everything else (General, Personal,
- * Audax Ventures, H2MB, Other, and anything added later), whose actual
- * category lives in the editable `todo_types` table — see Task.todoTypeId.
+ * CLIENT/LEAD/PARTNER are fixed system types tied structurally to an
+ * actual client_id/lead_id/partner_id (enforced by a DB check
+ * constraint) — not editable or archivable. CUSTOM covers everything
+ * else (General, Personal, Audax Ventures, H2MB, Other, and anything
+ * added later), whose actual category lives in the editable
+ * `todo_types` table — see Task.todoTypeId.
  */
-export type TaskType = "CLIENT" | "LEAD" | "CUSTOM";
+export type TaskType = "CLIENT" | "LEAD" | "PARTNER" | "CUSTOM";
 export type FollowUpStatus = "UPCOMING" | "COMPLETED";
 export type InvoiceAgeBracket = "UNDER_15" | "DAYS_15_30" | "OVER_30";
 /** An operator-assignable accent color for a client or lead, used for avatars and accent bars across the app. */
@@ -79,6 +80,7 @@ export interface FollowUp {
   id: string;
   clientId: string | null;
   leadId: string | null;
+  partnerId: string | null;
   label: string;
   date: string;
   status: FollowUpStatus;
@@ -115,6 +117,7 @@ export interface MeetingNote {
   title: string | null;
   clientId: string | null;
   leadId: string | null;
+  partnerId: string | null;
   meetingDate: string;
   /** "HH:MM:SS" (24-hour) or null if only a date was set — see migration 029. */
   startTime: string | null;
@@ -162,6 +165,7 @@ export interface Document {
   id: string;
   clientId: string | null;
   leadId: string | null;
+  partnerId: string | null;
   fileName: string;
   filePath: string;
   fileType: string;
@@ -184,14 +188,17 @@ export interface Task {
   todoTypeName: string | null;
   clientId: string | null;
   leadId: string | null;
+  partnerId: string | null;
   createdAt: string;
   updatedAt: string;
   tags: string[];
   // present when returned from a query that joins in the owner's name/color
   clientName?: string;
   leadName?: string;
+  partnerName?: string;
   clientColor?: EntityColor | null;
   leadColor?: EntityColor | null;
+  partnerColor?: EntityColor | null;
   /** Whose board this to-do is currently on — null means the workspace owner. */
   assignedToTeamMemberId: string | null;
   /** Who originally created it — null means the workspace owner. Differs from assignedToTeamMemberId once a to-do has been handed off to someone else. */
@@ -257,6 +264,10 @@ export interface Lead {
   leadOwnerTeamMemberId: string | null;
   leadOwnerName: string | null;
   leadOwnerColor: EntityColor | null;
+  /** The strategic partner who referred this lead in, if any — separate from sourceId (the generic marketing-channel category). */
+  referredByPartnerId: string | null;
+  referredByPartnerName: string | null;
+  referredByPartnerColor: EntityColor | null;
 }
 
 export interface LeadWithRelations extends Lead {
@@ -265,6 +276,52 @@ export interface LeadWithRelations extends Lead {
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];
   documents: Document[];
+}
+
+export type CommissionStatus = "OWED" | "PAID";
+
+/** A strategic referral partner — not a client or a lead. Referrals they send in are tracked as ordinary leads tagged via Lead.referredByPartnerId, reusing the full pipeline. */
+export interface Partner {
+  id: string;
+  companyName: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  /** Free text — commission/fee arrangements vary too much per partner to model as structured rules. */
+  commissionTerms: string | null;
+  active: boolean;
+  color: EntityColor | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartnerWithRelations extends Partner {
+  referredLeads: Lead[];
+  followUps: FollowUp[];
+  meetingNotes: MeetingNote[];
+  documents: Document[];
+  commissions: PartnerCommission[];
+}
+
+/**
+ * Money owed OUT to a partner for a referral or ongoing arrangement — the
+ * mirror image of Invoice (money coming IN from a client). Deliberately not
+ * always tied to one referral: referredLeadId/referredClientId are both
+ * nullable since some commissions (e.g. a flat retainer) aren't tied to a
+ * single lead.
+ */
+export interface PartnerCommission {
+  id: string;
+  partnerId: string;
+  referredLeadId: string | null;
+  referredClientId: string | null;
+  amount: string;
+  status: CommissionStatus;
+  description: string | null;
+  dueDate: string | null;
+  paidDate: string | null;
+  createdAt: string;
 }
 
 export interface TeamMember {
@@ -523,10 +580,11 @@ export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
 
 export const TASK_PRIORITY_ORDER: TaskPriority[] = ["HIGH", "MEDIUM", "LOW"];
 
-/** Labels for the two fixed system types; CUSTOM tasks use their joined todoTypeName instead. */
-export const FIXED_TASK_TYPE_LABELS: Record<"CLIENT" | "LEAD", string> = {
+/** Labels for the three fixed system types; CUSTOM tasks use their joined todoTypeName instead. */
+export const FIXED_TASK_TYPE_LABELS: Record<"CLIENT" | "LEAD" | "PARTNER", string> = {
   CLIENT: "Client",
   LEAD: "Lead",
+  PARTNER: "Partner",
 };
 
 export const FOLLOWUP_STATUS_LABELS: Record<FollowUpStatus, string> = {

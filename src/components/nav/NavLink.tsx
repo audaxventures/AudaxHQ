@@ -14,6 +14,7 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
@@ -28,6 +29,7 @@ const ICONS = {
   followUps: CalendarClock,
   finance: DollarSign,
   todos: CheckSquare,
+  partners: Handshake,
   settings: Settings,
   admin: ShieldCheck,
 } as const satisfies Record<NavIconKey, unknown>;

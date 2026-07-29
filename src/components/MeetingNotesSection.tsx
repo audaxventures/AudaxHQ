@@ -21,7 +21,7 @@ function timeWithZone(startTime: string | null, timezone: string | null, meeting
   return timezone ? `${time} ${timezoneAbbreviation(timezone, meetingDate)}` : time;
 }
 
-type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string };
+type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 
@@ -218,7 +218,7 @@ export function MeetingNotesSection({
           <ActionItemsQuickAdd
             key={`actionItems-${formKey}`}
             name="actionItems"
-            theirLabel={owner.type === "CLIENT" ? "Client" : "Lead"}
+            theirLabel={owner.type === "CLIENT" ? "Client" : owner.type === "LEAD" ? "Lead" : "Partner"}
           />
         </FieldGroup>
         <button

@@ -6,14 +6,17 @@ import { LeadForm } from "@/components/leads/LeadForm";
 import { listWorkTypes } from "@/lib/data/workTypes";
 import { listLeadSources } from "@/lib/data/leadSources";
 import { listTeamMembers } from "@/lib/data/teamMembers";
+import { listPartners } from "@/lib/data/partners";
 import { requireCurrentUser } from "@/lib/currentUser";
 
 export default async function NewLeadPage() {
   const user = await requireCurrentUser();
-  const [workTypes, leadSources, teamMembers] = await Promise.all([
+  const isOwner = user.role === "OWNER";
+  const [workTypes, leadSources, teamMembers, partners] = await Promise.all([
     listWorkTypes(user.businessId, { includeInactive: true }),
     listLeadSources(user.businessId, { includeInactive: true }),
     listTeamMembers(user.businessId),
+    isOwner ? listPartners(user.businessId) : Promise.resolve([]),
   ]);
   return (
     <div>
@@ -34,6 +37,7 @@ export default async function NewLeadPage() {
           workTypes={workTypes}
           leadSources={leadSources}
           teamMembers={teamMembers}
+          partners={partners}
           submitLabel="Create lead"
           cancelHref="/leads"
         />

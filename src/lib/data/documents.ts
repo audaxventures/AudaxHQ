@@ -11,6 +11,7 @@ function mapDocument(row: Record<string, unknown>): Document {
     id: row.id as string,
     clientId: row.client_id as string | null,
     leadId: row.lead_id as string | null,
+    partnerId: row.partner_id as string | null,
     fileName: row.file_name as string,
     filePath: row.file_path as string,
     fileType: row.file_type as string,
@@ -35,6 +36,13 @@ export async function listDocumentsForLead(leadId: string, businessId: string): 
   return rows.map((r) => mapDocument(r as Record<string, unknown>));
 }
 
+export async function listDocumentsForPartner(partnerId: string, businessId: string): Promise<Document[]> {
+  const rows = await sql`
+    select * from documents where partner_id = ${partnerId} and business_id = ${businessId} order by created_at desc
+  `;
+  return rows.map((r) => mapDocument(r as Record<string, unknown>));
+}
+
 export async function getDocument(id: string, businessId: string): Promise<Document | null> {
   const rows = await sql`select * from documents where id = ${id} and business_id = ${businessId}`;
   return rows.length > 0 ? mapDocument(rows[0] as Record<string, unknown>) : null;
@@ -49,16 +57,17 @@ export interface DocumentInput {
 }
 
 export async function createDocument(
-  owner: { clientId: string } | { leadId: string },
+  owner: { clientId: string } | { leadId: string } | { partnerId: string },
   businessId: string,
   input: DocumentInput
 ): Promise<Document> {
   const clientId = "clientId" in owner ? owner.clientId : null;
   const leadId = "leadId" in owner ? owner.leadId : null;
+  const partnerId = "partnerId" in owner ? owner.partnerId : null;
   const rows = await sql`
-    insert into documents (client_id, lead_id, business_id, file_name, file_path, file_type, file_size, label, uploaded_by)
+    insert into documents (client_id, lead_id, partner_id, business_id, file_name, file_path, file_type, file_size, label, uploaded_by)
     values (
-      ${clientId}, ${leadId}, ${businessId}, ${input.fileName}, ${input.filePath}, ${input.fileType},
+      ${clientId}, ${leadId}, ${partnerId}, ${businessId}, ${input.fileName}, ${input.filePath}, ${input.fileType},
       ${input.fileSize}, ${input.label}, ${DEFAULT_UPLOADED_BY}
     )
     returning *

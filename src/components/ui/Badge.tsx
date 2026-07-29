@@ -115,6 +115,7 @@ export function TaskStatusBadge({ status }: { status: TaskStatus }) {
 const TASK_TYPE_TONE: Record<TaskType, Tone> = {
   CLIENT: "sage",
   LEAD: "violet",
+  PARTNER: "gold",
   CUSTOM: "slate",
 };
 

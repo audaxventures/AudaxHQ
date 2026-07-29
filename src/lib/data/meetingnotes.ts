@@ -6,6 +6,7 @@ interface MeetingNoteRow {
   title: string | null;
   client_id: string | null;
   lead_id: string | null;
+  partner_id: string | null;
   meeting_date: string;
   start_time: string | null;
   timezone: string | null;
@@ -31,6 +32,7 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
     title: row.title,
     clientId: row.client_id,
     leadId: row.lead_id,
+    partnerId: row.partner_id,
     meetingDate: row.meeting_date,
     startTime: row.start_time,
     timezone: row.timezone,
@@ -54,6 +56,7 @@ function mapMeetingNote(row: MeetingNoteRow): MeetingNote {
 export interface MeetingNoteFilters {
   clientId?: string;
   leadId?: string;
+  partnerId?: string;
   /** Team-member scoping: restrict client-owned notes to this list — lead-owned notes are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
   accessibleClientIds?: string[] | null;
 }
@@ -61,12 +64,12 @@ export interface MeetingNoteFilters {
 export async function listMeetingNotes(businessId: string, filters: MeetingNoteFilters = {}): Promise<MeetingNote[]> {
   const rows = await sql`
     select
-      m.id, m.title, m.client_id, m.lead_id, m.meeting_date, m.start_time, m.timezone, m.duration_minutes, m.location,
+      m.id, m.title, m.client_id, m.lead_id, m.partner_id, m.meeting_date, m.start_time, m.timezone, m.duration_minutes, m.location,
       m.attendees, m.agenda, m.notes, m.action_items, m.created_at, m.last_emailed_to, m.last_emailed_at,
-      coalesce(c.company_name, l.company_name) as owner_name,
-      coalesce(c.color, l.color) as owner_color,
-      coalesce(c.contact_email, l.contact_email) as owner_email,
-      coalesce(c.contact_name, l.contact_name) as owner_contact_name,
+      coalesce(c.company_name, l.company_name, p.company_name) as owner_name,
+      coalesce(c.color, l.color, p.color) as owner_color,
+      coalesce(c.contact_email, l.contact_email, p.contact_email) as owner_email,
+      coalesce(c.contact_name, l.contact_name, p.contact_name) as owner_contact_name,
       coalesce(
         (
           select json_agg(
@@ -85,10 +88,15 @@ export async function listMeetingNotes(businessId: string, filters: MeetingNoteF
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id
+    left join partners p on p.id = m.partner_id
     left join businesses b on b.id = m.business_id
     where m.business_id = ${businessId}
       and (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or m.lead_id = ${filters.leadId ?? null})
+      and (
+        (${filters.partnerId ?? null}::uuid is not null and m.partner_id = ${filters.partnerId ?? null})
+        or (${filters.partnerId ?? null}::uuid is null and m.partner_id is null)
+      )
       and (
         ${filters.accessibleClientIds ?? null}::uuid[] is null
         or m.client_id is null
@@ -107,12 +115,12 @@ export async function getMeetingNoteById(
 ): Promise<MeetingNote | null> {
   const rows = await sql`
     select
-      m.id, m.title, m.client_id, m.lead_id, m.meeting_date, m.start_time, m.timezone, m.duration_minutes, m.location,
+      m.id, m.title, m.client_id, m.lead_id, m.partner_id, m.meeting_date, m.start_time, m.timezone, m.duration_minutes, m.location,
       m.attendees, m.agenda, m.notes, m.action_items, m.created_at, m.last_emailed_to, m.last_emailed_at,
-      coalesce(c.company_name, l.company_name) as owner_name,
-      coalesce(c.color, l.color) as owner_color,
-      coalesce(c.contact_email, l.contact_email) as owner_email,
-      coalesce(c.contact_name, l.contact_name) as owner_contact_name,
+      coalesce(c.company_name, l.company_name, p.company_name) as owner_name,
+      coalesce(c.color, l.color, p.color) as owner_color,
+      coalesce(c.contact_email, l.contact_email, p.contact_email) as owner_email,
+      coalesce(c.contact_name, l.contact_name, p.contact_name) as owner_contact_name,
       coalesce(
         (
           select json_agg(
@@ -131,6 +139,7 @@ export async function getMeetingNoteById(
     from meeting_notes m
     left join clients c on c.id = m.client_id
     left join leads l on l.id = m.lead_id
+    left join partners p on p.id = m.partner_id
     left join businesses b on b.id = m.business_id
     where m.id = ${id} and m.business_id = ${businessId}
       and (
@@ -156,6 +165,7 @@ export interface CreateMeetingNoteInput {
   title?: string | null;
   clientId?: string;
   leadId?: string;
+  partnerId?: string;
   meetingDate: string;
   startTime?: string | null;
   timezone?: string | null;
@@ -169,10 +179,10 @@ export interface CreateMeetingNoteInput {
 export async function createMeetingNote(businessId: string, input: CreateMeetingNoteInput): Promise<string> {
   const rows = await sql`
     insert into meeting_notes (
-      title, client_id, lead_id, business_id, meeting_date, start_time, timezone, duration_minutes, location, attendees, agenda, notes
+      title, client_id, lead_id, partner_id, business_id, meeting_date, start_time, timezone, duration_minutes, location, attendees, agenda, notes
     )
     values (
-      ${input.title ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${businessId}, ${input.meetingDate},
+      ${input.title ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.partnerId ?? null}, ${businessId}, ${input.meetingDate},
       ${input.startTime ?? null}, ${input.timezone ?? null}, ${input.durationMinutes ?? null}, ${input.location ?? null}, ${input.attendees ?? null},
       ${input.agenda ?? null}, ${input.notes ?? null}
     )

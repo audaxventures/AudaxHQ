@@ -10,17 +10,17 @@ import type { Task, TaskStatus } from "@/lib/types";
 import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
 import { createScopedTask, deleteTask, setTaskStatus } from "@/lib/actions/tasks";
 
-type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string };
+type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
 
 function ownerIds(owner: Owner) {
-  return owner.type === "CLIENT"
-    ? { clientId: owner.clientId, leadId: null }
-    : { clientId: null, leadId: owner.leadId };
+  if (owner.type === "CLIENT") return { clientId: owner.clientId, leadId: null, partnerId: null };
+  if (owner.type === "LEAD") return { clientId: null, leadId: owner.leadId, partnerId: null };
+  return { clientId: null, leadId: null, partnerId: owner.partnerId };
 }
 
 function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: string }) {
   const [, startTransition] = useTransition();
-  const { clientId, leadId } = ownerIds(owner);
+  const { clientId, leadId, partnerId } = ownerIds(owner);
   const overdue = task.status !== "COMPLETED" && isOverdue(task.dueDate, today);
 
   return (
@@ -36,7 +36,7 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
         </p>
         <button
           type="button"
-          onClick={() => startTransition(async () => deleteTask(task.id, clientId, leadId))}
+          onClick={() => startTransition(async () => deleteTask(task.id, clientId, leadId, partnerId))}
           className="opacity-0 group-hover:opacity-100 text-navy-300 hover:text-brick-600 transition-opacity cursor-pointer shrink-0 mt-0.5"
           aria-label="Delete task"
         >
@@ -59,7 +59,7 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
             value={task.status}
             onChange={(e) =>
               startTransition(async () => {
-                await setTaskStatus(task.id, clientId, leadId, e.target.value as TaskStatus);
+                await setTaskStatus(task.id, clientId, leadId, e.target.value as TaskStatus, partnerId);
               })
             }
             className="absolute inset-0 cursor-pointer appearance-none bg-transparent text-transparent focus:outline-none"

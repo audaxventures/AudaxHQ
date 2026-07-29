@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import * as tasks from "@/lib/data/todos";
 import * as notifications from "@/lib/data/notifications";
-import { requireCurrentUser, requireClientAccess, requireLeadAccess } from "@/lib/currentUser";
+import { requireCurrentUser, requireClientAccess, requireLeadAccess, requirePartnerAccess } from "@/lib/currentUser";
 import { actorDisplayName } from "@/lib/assign";
 import type { CurrentUser, TaskPriority, TaskStatus, TaskType } from "@/lib/types";
 
@@ -97,11 +97,12 @@ async function notifyTaskAssignee(
   );
 }
 
-function revalidateForTask(clientId?: string | null, leadId?: string | null) {
+function revalidateForTask(clientId?: string | null, leadId?: string | null, partnerId?: string | null) {
   revalidatePath("/todos");
   revalidatePath("/");
   if (clientId) revalidatePath(`/clients/${clientId}`);
   if (leadId) revalidatePath(`/leads/${leadId}`);
+  if (partnerId) revalidatePath(`/partners/${partnerId}`);
 }
 
 export async function createTask(formData: FormData) {
@@ -116,12 +117,15 @@ export async function createTask(formData: FormData) {
   revalidateForTask(clientId, leadId);
 }
 
-export async function createScopedTask(
-  owner: { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string },
-  formData: FormData
-) {
+type ScopedTaskOwner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
+
+export async function createScopedTask(owner: ScopedTaskOwner, formData: FormData) {
   const user =
-    owner.type === "CLIENT" ? await requireClientAccess(owner.clientId) : await requireLeadAccess(owner.leadId);
+    owner.type === "CLIENT"
+      ? await requireClientAccess(owner.clientId)
+      : owner.type === "LEAD"
+        ? await requireLeadAccess(owner.leadId)
+        : await requirePartnerAccess(owner.partnerId);
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
   const tagsRaw = String(formData.get("tags") ?? "");
@@ -139,13 +143,15 @@ export async function createScopedTask(
       type: owner.type,
       clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
       leadId: owner.type === "LEAD" ? owner.leadId : undefined,
+      partnerId: owner.type === "PARTNER" ? owner.partnerId : undefined,
       assignedToTeamMemberId: selfId(user),
     },
     selfId(user)
   );
   revalidateForTask(
     owner.type === "CLIENT" ? owner.clientId : undefined,
-    owner.type === "LEAD" ? owner.leadId : undefined
+    owner.type === "LEAD" ? owner.leadId : undefined,
+    owner.type === "PARTNER" ? owner.partnerId : undefined
   );
 }
 
@@ -179,15 +185,16 @@ export async function setTaskStatus(
   id: string,
   clientId: string | null,
   leadId: string | null,
-  status: TaskStatus
+  status: TaskStatus,
+  partnerId?: string | null
 ) {
   const user = await requireCurrentUser();
   await tasks.setTaskStatus(id, user.businessId, status, selfId(user));
-  revalidateForTask(clientId, leadId);
+  revalidateForTask(clientId, leadId, partnerId);
 }
 
-export async function deleteTask(id: string, clientId: string | null, leadId: string | null) {
+export async function deleteTask(id: string, clientId: string | null, leadId: string | null, partnerId?: string | null) {
   const user = await requireCurrentUser();
   await tasks.deleteTask(id, user.businessId, selfId(user));
-  revalidateForTask(clientId, leadId);
+  revalidateForTask(clientId, leadId, partnerId);
 }

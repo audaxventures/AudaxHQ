@@ -28,6 +28,9 @@ function mapLead(row: Record<string, unknown>): Lead {
     leadOwnerTeamMemberId: (row.lead_owner_team_member_id as string | null) ?? null,
     leadOwnerName: (row.lead_owner_name as string | null) ?? null,
     leadOwnerColor: (row.lead_owner_color as EntityColor | null) ?? null,
+    referredByPartnerId: (row.referred_by_partner_id as string | null) ?? null,
+    referredByPartnerName: (row.referred_by_partner_name as string | null) ?? null,
+    referredByPartnerColor: (row.referred_by_partner_color as EntityColor | null) ?? null,
   };
 }
 
@@ -77,11 +80,13 @@ export async function listLeads(
   const leadOwnerIds = filters.leadOwnerIds && filters.leadOwnerIds.length > 0 ? filters.leadOwnerIds : null;
   const includeUnassignedOwner = filters.includeUnassignedOwner ?? false;
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color, f.next_date as next_follow_up_date
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color,
+      rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color, f.next_date as next_follow_up_date
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
     left join team_members lo on lo.id = l.lead_owner_team_member_id
+    left join partners rp on rp.id = l.referred_by_partner_id
     left join (
       select lead_id, min(date) as next_date
       from follow_ups
@@ -113,10 +118,12 @@ export async function listLeads(
 
 export async function listConvertedLeads(businessId: string): Promise<Lead[]> {
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name
+    select l.*, wt.name as work_type_name, ls.name as source_name,
+      rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
+    left join partners rp on rp.id = l.referred_by_partner_id
     where l.business_id = ${businessId} and l.converted_client_id is not null
     order by l.updated_at desc
   `;
@@ -126,11 +133,13 @@ export async function listConvertedLeads(businessId: string): Promise<Lead[]> {
 /** Leads marked LOST — hidden from the main leads list by default, surfaced only via the Lost leads drawer. */
 export async function listLostLeads(businessId: string): Promise<Lead[]> {
   const rows = await sql`
-    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color,
+      rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color
     from leads l
     left join work_types wt on wt.id = l.work_type_id
     left join lead_sources ls on ls.id = l.source_id
     left join team_members lo on lo.id = l.lead_owner_team_member_id
+    left join partners rp on rp.id = l.referred_by_partner_id
     where l.business_id = ${businessId} and l.status = 'LOST'
     order by l.updated_at desc
   `;
@@ -180,11 +189,13 @@ export async function leadBelongsToBusiness(leadId: string, businessId: string):
 export async function getLead(id: string, businessId: string): Promise<LeadWithRelations | null> {
   const [leadRows, noteRows, tasks, followUps, meetingNotes, documents] = await Promise.all([
     sql`
-      select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color
+      select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color,
+        rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color
       from leads l
       left join work_types wt on wt.id = l.work_type_id
       left join lead_sources ls on ls.id = l.source_id
       left join team_members lo on lo.id = l.lead_owner_team_member_id
+      left join partners rp on rp.id = l.referred_by_partner_id
       where l.id = ${id} and l.business_id = ${businessId}
     `,
     sql`
@@ -223,15 +234,17 @@ export interface LeadInput {
   sourceOther?: string | null;
   color?: EntityColor | null;
   leadOwnerTeamMemberId?: string | null;
+  referredByPartnerId?: string | null;
 }
 
 export async function createLead(businessId: string, input: LeadInput): Promise<Lead> {
   const rows = await sql`
-    insert into leads (business_id, company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color, lead_owner_team_member_id)
+    insert into leads (business_id, company_name, contact_name, contact_email, contact_phone, status, estimated_value, work_type_id, work_type_other, source_id, source_other, color, lead_owner_team_member_id, referred_by_partner_id)
     values (
       ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
       ${input.status}, ${input.estimatedValue ?? null}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null},
-      ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}, ${input.leadOwnerTeamMemberId ?? null}
+      ${input.sourceId ?? null}, ${input.sourceOther ?? null}, ${input.color ?? null}, ${input.leadOwnerTeamMemberId ?? null},
+      ${input.referredByPartnerId ?? null}
     )
     returning *
   `;
@@ -269,6 +282,7 @@ export async function updateLead(
       source_other = ${input.sourceOther ?? null},
       color = ${input.color ?? null},
       lead_owner_team_member_id = ${input.leadOwnerTeamMemberId ?? null},
+      referred_by_partner_id = ${input.referredByPartnerId ?? null},
       updated_at = now()
     where id = ${id} and business_id = ${businessId}
   `;

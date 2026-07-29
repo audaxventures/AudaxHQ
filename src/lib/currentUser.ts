@@ -5,6 +5,7 @@ import { getClientAccessIds } from "@/lib/data/clientAccess";
 import { getBusiness } from "@/lib/data/businesses";
 import { clientBelongsToBusiness } from "@/lib/data/clients";
 import { leadBelongsToBusiness } from "@/lib/data/leads";
+import { partnerBelongsToBusiness } from "@/lib/data/partners";
 import type { CurrentUser } from "@/lib/types";
 
 /** Resolves the signed session cookie into a full current-user record. Null if unauthenticated, the business has been suspended by a platform admin, or the team member's login was revoked since the cookie was issued. */
@@ -92,6 +93,15 @@ export async function requireLeadAccess(leadId: string): Promise<CurrentUser> {
   if (!user) throw new Error("Not authorized.");
   if (!(await leadBelongsToBusiness(leadId, user.businessId))) {
     throw new Error("You don't have access to that lead.");
+  }
+  return user;
+}
+
+/** Throws unless the current session is the owner of the partner's business — partners are an owner-only feature (referral/commission data), like Invoices. Returns the resolved user so callers can read businessId without a second lookup. */
+export async function requirePartnerAccess(partnerId: string): Promise<CurrentUser & { role: "OWNER" }> {
+  const user = await requireOwner();
+  if (!(await partnerBelongsToBusiness(partnerId, user.businessId))) {
+    throw new Error("You don't have access to that partner.");
   }
   return user;
 }

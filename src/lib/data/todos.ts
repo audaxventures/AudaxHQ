@@ -13,13 +13,16 @@ interface TaskRow {
   todo_type_name: string | null;
   client_id: string | null;
   lead_id: string | null;
+  partner_id: string | null;
   created_at: string;
   updated_at: string;
   tags: string[] | null;
   client_name?: string | null;
   lead_name?: string | null;
+  partner_name?: string | null;
   client_color?: EntityColor | null;
   lead_color?: EntityColor | null;
+  partner_color?: EntityColor | null;
   assigned_to_team_member_id: string | null;
   created_by_team_member_id: string | null;
   created_by_name: string | null;
@@ -40,13 +43,16 @@ function mapTask(row: TaskRow): Task {
     todoTypeName: row.todo_type_name,
     clientId: row.client_id,
     leadId: row.lead_id,
+    partnerId: row.partner_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     tags: (row.tags ?? []).filter(Boolean).sort(),
     clientName: row.client_name ?? undefined,
     leadName: row.lead_name ?? undefined,
+    partnerName: row.partner_name ?? undefined,
     clientColor: row.client_color ?? null,
     leadColor: row.lead_color ?? null,
+    partnerColor: row.partner_color ?? null,
     assignedToTeamMemberId: row.assigned_to_team_member_id,
     createdByTeamMemberId: row.created_by_team_member_id,
     createdByName: row.created_by_name ?? "Owner",
@@ -64,6 +70,14 @@ export interface TaskFilters {
   todoTypeId?: string;
   clientId?: string;
   leadId?: string;
+  partnerId?: string;
+  /**
+   * Partner-owned to-dos are excluded by default (they'd otherwise leak onto
+   * the general team-visible /todos board and dashboard, defeating the
+   * owner-only gating on Partners) — pass true to include them anyway, which
+   * only the owner-only full data export should ever do.
+   */
+  includePartnerOwned?: boolean;
   /** Case-insensitive substring match against title or description. */
   search?: string;
   /**
@@ -84,14 +98,16 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
   const visibleToValue = filters.visibleTo ?? null;
   const rows = (await sql`
     select
-      t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id,
+      t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id, t.partner_id,
       t.created_at, t.updated_at, t.assigned_to_team_member_id, t.created_by_team_member_id, t.meeting_note_id, t.owned_by,
       tt_lookup.name as todo_type_name,
       coalesce(array_agg(tg.name) filter (where tg.name is not null), '{}') as tags,
       c.company_name as client_name,
       l.company_name as lead_name,
+      p.company_name as partner_name,
       c.color as client_color,
       l.color as lead_color,
+      p.color as partner_color,
       creator_tm.name as created_by_name
     from todos t
     left join todo_types tt_lookup on tt_lookup.id = t.todo_type_id
@@ -99,6 +115,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
     left join tags tg on tg.id = tt.tag_id
     left join clients c on c.id = t.client_id
     left join leads l on l.id = t.lead_id
+    left join partners p on p.id = t.partner_id
     left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
     where t.business_id = ${businessId}
       and t.owned_by = 'TEAM'
@@ -108,6 +125,11 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
       and (${filters.todoTypeId ?? null}::uuid is null or t.todo_type_id = ${filters.todoTypeId ?? null})
       and (${filters.clientId ?? null}::uuid is null or t.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or t.lead_id = ${filters.leadId ?? null})
+      and (
+        ${filters.includePartnerOwned ?? false}
+        or (${filters.partnerId ?? null}::uuid is not null and t.partner_id = ${filters.partnerId ?? null})
+        or (${filters.partnerId ?? null}::uuid is null and t.partner_id is null)
+      )
       and (
         ${filters.tag ?? null}::text is null
         or exists (
@@ -126,7 +148,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
         or t.assigned_to_team_member_id is not distinct from ${visibleToValue}::uuid
         or t.created_by_team_member_id is not distinct from ${visibleToValue}::uuid
       )
-    group by t.id, tt_lookup.name, c.company_name, l.company_name, c.color, l.color, creator_tm.name
+    group by t.id, tt_lookup.name, c.company_name, l.company_name, p.company_name, c.color, l.color, p.color, creator_tm.name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc
   `) as unknown as TaskRow[];
   return rows.map(mapTask);
@@ -178,6 +200,7 @@ export interface TaskInput {
   todoTypeId?: string | null;
   clientId?: string | null;
   leadId?: string | null;
+  partnerId?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
   /** Whose board this lands on — null means the workspace owner. */
@@ -192,10 +215,10 @@ export async function getTaskAssignee(id: string, businessId: string): Promise<s
 
 export async function createTask(businessId: string, input: TaskInput, createdByTeamMemberId: string | null): Promise<string> {
   const rows = await sql`
-    insert into todos (business_id, title, description, due_date, type, todo_type_id, client_id, lead_id, status, priority, assigned_to_team_member_id, created_by_team_member_id)
+    insert into todos (business_id, title, description, due_date, type, todo_type_id, client_id, lead_id, partner_id, status, priority, assigned_to_team_member_id, created_by_team_member_id)
     values (
       ${businessId}, ${input.title}, ${input.description ?? null}, ${input.dueDate ?? null},
-      ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null},
+      ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.partnerId ?? null},
       ${input.status ?? "TO_BE_DONE"}, ${input.priority ?? "MEDIUM"},
       ${input.assignedToTeamMemberId ?? null}, ${createdByTeamMemberId}
     )
@@ -224,6 +247,7 @@ export async function updateTask(id: string, businessId: string, input: TaskInpu
       todo_type_id = ${input.todoTypeId ?? null},
       client_id = ${input.clientId ?? null},
       lead_id = ${input.leadId ?? null},
+      partner_id = ${input.partnerId ?? null},
       priority = ${input.priority ?? "MEDIUM"},
       status = ${input.status ?? "TO_BE_DONE"},
       assigned_to_team_member_id = ${input.assignedToTeamMemberId ?? null},
@@ -251,9 +275,10 @@ export async function setTaskStatus(id: string, businessId: string, status: Task
 export interface ActionItemTaskInput {
   title: string;
   dueDate: string | null;
-  type: "CLIENT" | "LEAD";
+  type: "CLIENT" | "LEAD" | "PARTNER";
   clientId?: string | null;
   leadId?: string | null;
+  partnerId?: string | null;
   meetingNoteId: string;
   ownedBy: TaskOwner;
 }
@@ -272,9 +297,9 @@ export async function createActionItemTask(
 ): Promise<string> {
   const assignedTo = input.ownedBy === "EXTERNAL" ? null : createdByTeamMemberId;
   const rows = await sql`
-    insert into todos (business_id, title, due_date, type, client_id, lead_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id, owned_by)
+    insert into todos (business_id, title, due_date, type, client_id, lead_id, partner_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id, owned_by)
     values (
-      ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null},
+      ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.partnerId ?? null},
       ${input.meetingNoteId}, ${assignedTo}, ${createdByTeamMemberId}, ${input.ownedBy}
     )
     returning id

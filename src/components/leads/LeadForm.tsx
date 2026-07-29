@@ -3,12 +3,12 @@
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Building2, User, UserCheck, Mail, Phone, Target, DollarSign, List, Megaphone, ArrowRight } from "lucide-react";
+import { Building2, User, UserCheck, Mail, Phone, Target, DollarSign, List, Megaphone, ArrowRight, Handshake } from "lucide-react";
 import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
 import { ColorPicker } from "@/components/ui/ColorPicker";
 import { Button } from "@/components/ui/Button";
-import type { Lead, LeadSource, TeamMember, WorkType } from "@/lib/types";
+import type { Lead, LeadSource, Partner, TeamMember, WorkType } from "@/lib/types";
 import { createLead, updateLead } from "@/app/(app)/leads/actions";
 
 function SubmitButton({ label, compact }: { label: string; compact: boolean }) {
@@ -26,6 +26,7 @@ export function LeadForm({
   workTypes,
   leadSources,
   teamMembers,
+  partners = [],
   submitLabel = "Save lead",
   cancelHref,
   variant = "full",
@@ -34,6 +35,8 @@ export function LeadForm({
   workTypes: WorkType[];
   leadSources: LeadSource[];
   teamMembers: TeamMember[];
+  /** Active referral partners this lead can be tagged as coming from — omitted (or empty) hides the field entirely. */
+  partners?: Partner[];
   submitLabel?: string;
   cancelHref?: string;
   /** "compact" drops the icons/uppercase labels/required-asterisks for the in-place edit panel on the lead detail page; "full" (default) is the fuller treatment used by the standalone New Lead page. */
@@ -47,6 +50,7 @@ export function LeadForm({
   const sourceOptions = selectableSources.map((s) => ({ value: s.id, label: s.name }));
   const fallbackSourceId = selectableSources.find((s) => s.isFallback)?.id;
   const selectableTeamMembers = teamMembers.filter((t) => t.active || t.id === lead?.leadOwnerTeamMemberId);
+  const selectablePartners = partners.filter((p) => p.active || p.id === lead?.referredByPartnerId);
   const compact = variant === "compact";
   const fieldIcon = (icon: LucideIcon) => (compact ? undefined : icon);
 
@@ -171,6 +175,26 @@ export function LeadForm({
             ))}
           </Select>
         </FieldGroup>
+        {partners.length > 0 && (
+          <FieldGroup>
+            <Label htmlFor="referredByPartnerId" compact={compact}>
+              Referred by
+            </Label>
+            <Select
+              id="referredByPartnerId"
+              name="referredByPartnerId"
+              defaultValue={lead?.referredByPartnerId ?? ""}
+              icon={fieldIcon(Handshake)}
+            >
+              <option value="">Not a referral</option>
+              {selectablePartners.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.companyName}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        )}
         {!compact ? (
           <FieldGroup>
             <Label compact={compact}>Color</Label>
