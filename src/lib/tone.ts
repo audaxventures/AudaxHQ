@@ -4,6 +4,10 @@ export type Tone = "neutral" | "burnt" | "gold" | "sage" | "slate" | "navy" | "b
 // over white. "solid" is the bolder treatment for headline stat cards: a
 // fully saturated tint, reserved for numbers meant to stand out from the
 // panels around them.
+// blue/violet's -100 shades are noticeably lighter/cooler than the others
+// even at matched lightness — cool pastels read as far fainter than warm
+// ones to the eye — so they need a stronger wash to reach the same visible
+// weight as burnt/gold/sage at /40.
 export const CARD_TONE_CLASSES: Record<Tone, string> = {
   neutral: "border-navy-100 bg-white/70",
   burnt: "border-burnt-100 bg-gradient-to-b from-white to-burnt-100/40",
@@ -11,8 +15,8 @@ export const CARD_TONE_CLASSES: Record<Tone, string> = {
   sage: "border-sage-100 bg-gradient-to-b from-white to-sage-100/40",
   slate: "border-slate-100 bg-gradient-to-b from-white to-slate-100/40",
   navy: "border-navy-100 bg-gradient-to-b from-white to-navy-100/40",
-  blue: "border-blue-100 bg-gradient-to-b from-white to-blue-100/40",
-  violet: "border-violet-100 bg-gradient-to-b from-white to-violet-100/40",
+  blue: "border-blue-100 bg-gradient-to-b from-white to-blue-100",
+  violet: "border-violet-100 bg-gradient-to-b from-white to-violet-100",
 };
 
 export type IconTone = Exclude<Tone, "neutral">;
