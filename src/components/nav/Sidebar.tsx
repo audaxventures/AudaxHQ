@@ -57,9 +57,9 @@ export function Sidebar({
         onClick={toggle}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-3 top-8 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-navy-200 bg-cream-50 text-navy-500 shadow-sm transition-all hover:text-navy-800 hover:shadow-md cursor-pointer"
+        className="absolute right-2 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-navy-200 bg-cream-50 text-navy-600 shadow-sm transition-all hover:bg-white hover:text-navy-900 hover:shadow-md cursor-pointer"
       >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
       </button>
       <div className={cn("relative mb-6 border-b border-navy-800/60 pt-4 pb-5", collapsed ? "px-0" : "px-2")}>
         {collapsed ? (
