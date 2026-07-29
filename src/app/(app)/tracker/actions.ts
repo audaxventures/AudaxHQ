@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import * as businesses from "@/lib/data/businesses";
 import * as clientAccess from "@/lib/data/clientAccess";
 import * as costEntries from "@/lib/data/costEntries";
@@ -8,7 +9,9 @@ import * as followups from "@/lib/data/followups";
 import * as teamMembers from "@/lib/data/teamMembers";
 import * as todos from "@/lib/data/todos";
 import * as workCategories from "@/lib/data/workCategories";
+import { generateResetToken, hashResetToken } from "@/lib/auth";
 import { getCurrentUser, requireOwner } from "@/lib/currentUser";
+import { sendTeamMemberInviteEmail } from "@/lib/email";
 import type { EntityColor, FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -242,6 +245,49 @@ export async function enableTeamMemberLogin(id: string, formData: FormData) {
   }
   await teamMembers.setTeamMemberLogin(id, user.businessId, email, passcode);
   revalidateTeamMembers();
+}
+
+const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Generates a fresh reset token and emails it — shared by the initial invite and "resend invite". */
+async function sendTeamMemberInvite(id: string, businessName: string, email: string, memberName: string) {
+  const token = generateResetToken();
+  const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS);
+  await teamMembers.setTeamMemberResetToken(id, hashResetToken(token), expiresAt);
+
+  const host = (await headers()).get("host");
+  const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
+  const inviteUrl = `${protocol}://${host}/login/reset-passcode?token=${token}`;
+
+  await sendTeamMemberInviteEmail(email, memberName, businessName, inviteUrl);
+}
+
+/**
+ * The default way to give a team member access: link their email, then
+ * email them a link to set their own passcode (same token/page/action as
+ * "forgot passcode" — see resetPasscode in login/actions.ts). Leaves
+ * hasLogin false until they complete setup themselves.
+ */
+export async function inviteTeamMember(id: string, formData: FormData) {
+  const user = await requireOwner();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) throw new Error("Enter an email address.");
+
+  await teamMembers.inviteTeamMember(id, user.businessId, email);
+  const member = await teamMembers.getTeamMember(id, user.businessId);
+  if (!member) throw new Error("Team member not found.");
+
+  await sendTeamMemberInvite(id, user.business.name, email, member.name);
+  revalidateTeamMembers();
+}
+
+/** Re-sends the invite email to a team member who was invited but hasn't set up their passcode yet. */
+export async function resendTeamMemberInvite(id: string) {
+  const user = await requireOwner();
+  const member = await teamMembers.getTeamMember(id, user.businessId);
+  if (!member || !member.email) throw new Error("This team member hasn't been invited yet.");
+
+  await sendTeamMemberInvite(id, user.business.name, member.email, member.name);
 }
 
 export async function disableTeamMemberLogin(id: string) {

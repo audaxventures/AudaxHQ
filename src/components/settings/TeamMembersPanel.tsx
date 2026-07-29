@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { Check, KeyRound, MailCheck, Pencil, Plus, RotateCw, Send, ShieldCheck, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { InfoNote } from "@/components/ui/InfoNote";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
@@ -15,7 +15,9 @@ import {
   deleteTeamMemberPermanently,
   disableTeamMemberLogin,
   enableTeamMemberLogin,
+  inviteTeamMember,
   linkOwnerTeamMember,
+  resendTeamMemberInvite,
   resetTeamMemberPasscode,
   setTeamMemberColor,
   unlinkOwnerTeamMember,
@@ -61,7 +63,16 @@ function TeamMemberEditForm({ member, onDone }: { member: TeamMember; onDone: ()
   );
 }
 
-function EnableLoginForm({ member, onDone }: { member: TeamMember; onDone: () => void }) {
+/** Manual fallback for owners without Resend configured — sets an initial passcode themselves instead of the member setting their own via an emailed link. */
+function EnableLoginForm({
+  member,
+  onDone,
+  onBack,
+}: {
+  member: TeamMember;
+  onDone: () => void;
+  onBack?: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   return (
@@ -79,16 +90,64 @@ function EnableLoginForm({ member, onDone }: { member: TeamMember; onDone: () =>
       }}
       className="space-y-2"
     >
-      <Input name="email" type="email" placeholder="Email" required />
+      <Input name="email" type="email" placeholder="Email" required defaultValue={member.email ?? ""} />
       <Input name="passcode" type="password" placeholder="Set an initial passcode" required minLength={4} />
       {error && <p className="text-xs text-brick-600">{error}</p>}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
           disabled={pending}
           className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 cursor-pointer"
         >
-          {pending ? "Saving…" : "Enable login"}
+          {pending ? "Saving…" : "Set passcode"}
+        </button>
+        <button
+          type="button"
+          onClick={onBack ?? onDone}
+          className="rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-600 cursor-pointer"
+        >
+          {onBack ? "Back" : "Cancel"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** Default way to give a team member access — links their email, then emails them a link to set their own passcode. */
+function InviteTeamMemberForm({ member, onDone }: { member: TeamMember; onDone: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [manual, setManual] = useState(false);
+
+  if (manual) {
+    return <EnableLoginForm member={member} onDone={onDone} onBack={() => setManual(false)} />;
+  }
+
+  return (
+    <form
+      action={(formData) => {
+        setError(null);
+        startTransition(async () => {
+          try {
+            await inviteTeamMember(member.id, formData);
+            onDone();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Couldn't send the invite.");
+          }
+        });
+      }}
+      className="space-y-2"
+    >
+      <Input name="email" type="email" placeholder="Email" required defaultValue={member.email ?? ""} />
+      <p className="text-xs text-navy-400">They&apos;ll get an email to set up their own passcode.</p>
+      {error && <p className="text-xs text-brick-600">{error}</p>}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex items-center gap-1 rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 cursor-pointer disabled:opacity-50"
+        >
+          <Send size={12} /> {pending ? "Sending…" : "Send invite"}
         </button>
         <button
           type="button"
@@ -97,8 +156,83 @@ function EnableLoginForm({ member, onDone }: { member: TeamMember; onDone: () =>
         >
           Cancel
         </button>
+        <button
+          type="button"
+          onClick={() => setManual(true)}
+          className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer"
+        >
+          Set a passcode myself instead
+        </button>
       </div>
     </form>
+  );
+}
+
+/** Shown once an invite's been sent but the team member hasn't set their passcode yet. */
+function PendingInvitePanel({ member, onClose }: { member: TeamMember; onClose: () => void }) {
+  const [resent, setResent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [manual, setManual] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  if (manual) {
+    return <EnableLoginForm member={member} onDone={onClose} onBack={() => setManual(false)} />;
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-navy-100 bg-navy-50/50 p-3">
+      <div className="flex items-start gap-1.5">
+        <MailCheck size={14} className="mt-0.5 shrink-0 text-burnt-600" />
+        <p className="text-xs text-navy-600">
+          Invited <span className="font-medium text-navy-800">{member.email}</span> — waiting for them to set a
+          passcode.
+        </p>
+      </div>
+      {resent && <p className="text-xs text-sage-600">Invite resent.</p>}
+      {error && <p className="text-xs text-brick-600">{error}</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            setResent(false);
+            setError(null);
+            startTransition(async () => {
+              try {
+                await resendTeamMemberInvite(member.id);
+                setResent(true);
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Couldn't resend the invite.");
+              }
+            });
+          }}
+          className="flex items-center gap-1 text-xs font-medium text-navy-600 hover:text-navy-900 cursor-pointer disabled:opacity-50"
+        >
+          <RotateCw size={12} /> {pending ? "Resending…" : "Resend invite"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setManual(true)}
+          className="text-xs font-medium text-navy-500 hover:text-navy-700 cursor-pointer"
+        >
+          Set a passcode myself instead
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            startTransition(() => {
+              void disableTeamMemberLogin(member.id);
+            })
+          }
+          className="text-xs font-medium text-brick-600 hover:text-brick-700 cursor-pointer"
+        >
+          Cancel invite
+        </button>
+      </div>
+      <button type="button" onClick={onClose} className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer">
+        Close
+      </button>
+    </div>
   );
 }
 
@@ -218,9 +352,12 @@ function AccessPanel({
   const [, startTransition] = useTransition();
 
   if (!member.hasLogin) {
+    if (member.email) {
+      return <PendingInvitePanel member={member} onClose={onClose} />;
+    }
     return (
       <div className="rounded-lg border border-navy-100 bg-navy-50/50 p-3">
-        <EnableLoginForm member={member} onDone={onClose} />
+        <InviteTeamMemberForm member={member} onDone={onClose} />
       </div>
     );
   }
@@ -319,7 +456,7 @@ function TeamMemberRow({
             <p className="text-xs text-navy-400">
               {formatCurrency(member.defaultHourlyRate)}/hr
               {!member.active && " · Inactive"}
-              {member.hasLogin ? ` · Has login` : " · No login"}
+              {member.hasLogin ? ` · Has login` : member.email ? " · Invite sent" : " · No login"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1 sm:shrink-0">
@@ -479,7 +616,10 @@ export function TeamMembersPanel({
             Click the <ShieldCheck size={13} className="inline -mt-0.5 text-navy-600" /> shield icon next to a team
             member to manage their login and access.
           </p>
-          <p className="text-navy-500">That&apos;s where you turn on sign-in, reset a passcode, and choose which clients they can see.</p>
+          <p className="text-navy-500">
+            That&apos;s where you invite them by email to set up their own passcode, reset one, and choose which
+            clients they can see.
+          </p>
           <p className="mt-2 text-navy-500">
             If you added a row here to track your own hours, click <strong>This is me</strong> on it — otherwise
             to-dos assigned to that row won&apos;t show up on your own board.

@@ -120,9 +120,9 @@ Client and lead file uploads (feature: Documents on a client's or lead's page) a
 5. Go to **Project Settings → API** and copy the **Project URL** and the **`service_role` secret key** (not the `anon` key — the service role key is what lets the server upload/delete/sign URLs). Treat it like a password: it has full admin access to the project.
 6. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to those values wherever `DATABASE_URL` is configured (Vercel env vars, and `.env.local` for local dev).
 
-### 3. Passcode reset emails (Resend)
+### 3. Passcode reset & team member invite emails (Resend)
 
-The "Forgot passcode?" link on the login page emails a time-limited reset link. This step is optional — everything else in the app works without it, the link will just fail to send until it's configured:
+The "Forgot passcode?" link on the login page, and inviting a team member from Settings → Team Members, both email a time-limited link that reuses the same `/login/reset-passcode` page/token (invite links just live longer — 7 days instead of 30 minutes). This step is optional — everything else in the app works without it, the link will just fail to send until it's configured. Without Resend configured, an owner can still fall back to "Set a passcode myself instead" when inviting a team member, which sets an initial passcode directly instead of emailing a setup link:
 
 1. Create a free account at [resend.com](https://resend.com).
 2. Go to **API Keys** and create a key. Set it as `RESEND_API_KEY`.
@@ -207,7 +207,7 @@ migrations/038_team_member_color.sql   adds team_members.color — same optional
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)
-src/lib/email.ts                Resend wrapper for passcode reset emails
+src/lib/email.ts                Resend wrapper for passcode reset + team member invite emails
 src/lib/data/                  query functions, grouped by domain (clients, leads, todos, followups, meetingnotes, documents, costEntries, teamMembers, workCategories, dashboard)
 src/lib/actions/               shared server actions used across the clients/leads/todos pages (tasks, followups, meetingnotes)
 src/app/login/                 passcode gate UI + server action (plus /login/forgot and /login/reset-passcode for passcode reset)

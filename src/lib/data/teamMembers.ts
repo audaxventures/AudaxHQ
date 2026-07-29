@@ -120,6 +120,22 @@ export async function setTeamMemberLogin(id: string, businessId: string, email: 
   ]);
 }
 
+/**
+ * Links a team member's email without setting a passcode — used for the
+ * email-invite flow, where the team member sets their own passcode via the
+ * emailed reset-passcode link rather than the owner setting one directly.
+ * Leaves passcode_hash/salt untouched, so hasLogin stays false until they
+ * complete setup.
+ */
+export async function inviteTeamMember(id: string, businessId: string, email: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+  await sql.transaction([
+    sql`update team_members set email = ${normalizedEmail} where id = ${id}`,
+    sql`delete from account_emails where team_member_id = ${id}`,
+    sql`insert into account_emails (email, business_id, role, team_member_id) values (${normalizedEmail}, ${businessId}, 'TEAM_MEMBER', ${id})`,
+  ]);
+}
+
 export async function removeTeamMemberLogin(id: string, businessId: string): Promise<void> {
   await sql.transaction([
     sql`

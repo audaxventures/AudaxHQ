@@ -192,6 +192,145 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
   }
 }
 
+/**
+ * Sent when an owner invites a team member to set up their own login —
+ * reuses the same reset-passcode link/page/action as "forgot passcode"
+ * (see sendPasscodeResetEmail), just framed as a first-time setup instead
+ * of a reset, with a longer-lived link since an invite may sit unread
+ * longer than a password-reset request would.
+ */
+export async function sendTeamMemberInviteEmail(
+  to: string,
+  memberName: string,
+  businessName: string,
+  inviteUrl: string
+): Promise<void> {
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
+  const firstName = memberName.trim().split(/\s+/)[0] || memberName;
+  const origin = new URL(inviteUrl).origin;
+  const supportEmail = "info@audaxventures.ca";
+  const supportMailto = `mailto:${supportEmail}`;
+
+  const html = `
+    <div style="background: #f8f2e6; padding: 32px 16px; font-family: Helvetica, Arial, sans-serif;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin: 0 auto;">
+        <tr>
+          <td style="background: #ffffff; border-radius: 20px 20px 0 0; padding: 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="vertical-align: middle;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 8px;">
+                        <img src="${origin}/favicon.png" width="24" height="24" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">Verclara</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td style="text-align: right; font-size: 13px; color: #4c5f82;">
+                  Need help? <a href="${supportMailto}" style="color: #be5a1e; text-decoration: none; font-weight: 600;">Contact our team &rarr;</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: linear-gradient(135deg, #dceaf2, #ede9fe); padding: 32px;">
+            <span style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%; background: #ffffff; font-size: 20px; margin-bottom: 16px;">&#128075;</span>
+            <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">You're invited to ${businessName}</h1>
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">Set up your passcode to get into your team's Verclara workspace.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #ffffff; padding: 32px;">
+            <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #101d33;">Hi <span style="font-weight: 700;">${firstName}</span>,</p>
+            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;"><span style="font-weight: 700;">${businessName}</span> has added you as a team member on Verclara. Click below to choose your own passcode and sign in.</p>
+            <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">This link will expire in <span style="font-weight: 700; color: #be5a1e;">7 days</span>.</p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+              <tr>
+                <td style="border-radius: 10px; background: #101d33;">
+                  <a href="${inviteUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Set up my passcode &rarr;</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin: 0 0 4px; font-size: 12px; color: #7c8aa3;">Or copy and paste this link into your browser:</p>
+            <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all;">
+              <a href="${inviteUrl}" style="color: #2f6f9e; text-decoration: underline;">${inviteUrl}</a>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; padding: 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="width: 40px; vertical-align: top;">
+                  <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #101d33; color: #fdfbf6; font-size: 14px;">&#9742;</span>
+                </td>
+                <td style="vertical-align: top; padding-left: 6px;">
+                  <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #101d33;">Need help?</p>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #7c8aa3;">
+                    Our team is here if you have any questions. Email
+                    <a href="${supportMailto}" style="color: #be5a1e; text-decoration: none;">${supportEmail}</a>
+                    and we'll get back to you quickly.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; border-radius: 0 0 20px 20px; padding: 0 32px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #e9ecf2; padding-top: 16px;">
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 6px;">
+                        <img src="${origin}/favicon.png" width="18" height="18" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; color: #101d33;">Verclara</span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 6px 0 0; font-size: 12px; color: #7c8aa3;">The Business Operating System for Service Businesses.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 16px; font-size: 11px; color: #aeb8cb;">&copy; ${new Date().getFullYear()} Audax Ventures Inc. All rights reserved.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: `You're invited to ${businessName} on Verclara`,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to send invite email (${res.status}): ${body || res.statusText}`);
+  }
+}
+
 const WELCOME_STEPS: { title: string; body: string; bg: string; fg: string }[] = [
   {
     title: "Make it yours",
