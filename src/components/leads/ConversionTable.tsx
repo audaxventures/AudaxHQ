@@ -24,7 +24,7 @@ export function ConversionTable({
             <th className="py-2 pr-4">Win rate</th>
             <th className="py-2 pr-4">In progress</th>
             <th className="py-2 pr-4">Total leads</th>
-            {hasWonValue && <th className="py-2 pl-4 text-right">Won value</th>}
+            {hasWonValue && <th className="py-2 pl-4 text-right">Won revenue</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-navy-100">

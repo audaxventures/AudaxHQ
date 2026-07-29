@@ -11,6 +11,11 @@ export interface ConversionStat {
    * group has resolved yet, since a rate isn't meaningful without a
    * denominator. */
   winRate: number | null;
+  /** Lifetime invoiced + paid revenue (everything but NOT_INVOICED) from the
+   * clients that WON leads in this group converted into — not the leads'
+   * original estimated value, which goes stale the moment actual pricing or
+   * invoicing diverges from the guess made at lead-creation time. Grows over
+   * time for recurring clients rather than being fixed at the point of win. */
   wonValue: number;
 }
 
@@ -51,15 +56,22 @@ function sortStats(stats: ConversionStat[]): ConversionStat[] {
 
 export async function getConversionBySource(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
+    with client_revenue as (
+      select client_id, sum(amount) as revenue
+      from invoices
+      where business_id = ${businessId} and status <> 'NOT_INVOICED'
+      group by client_id
+    )
     select
       l.source_id, ls.name as source_name,
       count(*) as total,
       count(*) filter (where l.status = 'WON') as won,
       count(*) filter (where l.status = 'LOST') as lost,
       count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
-      coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
+      coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join lead_sources ls on ls.id = l.source_id
+    left join client_revenue cr on cr.client_id = l.converted_client_id
     where l.business_id = ${businessId}
     group by l.source_id, ls.name
   `;
@@ -74,15 +86,22 @@ export async function getConversionBySource(businessId: string): Promise<Convers
 
 export async function getConversionByWorkType(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
+    with client_revenue as (
+      select client_id, sum(amount) as revenue
+      from invoices
+      where business_id = ${businessId} and status <> 'NOT_INVOICED'
+      group by client_id
+    )
     select
       l.work_type_id, wt.name as work_type_name,
       count(*) as total,
       count(*) filter (where l.status = 'WON') as won,
       count(*) filter (where l.status = 'LOST') as lost,
       count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
-      coalesce(sum(l.estimated_value) filter (where l.status = 'WON'), 0) as won_value
+      coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join work_types wt on wt.id = l.work_type_id
+    left join client_revenue cr on cr.client_id = l.converted_client_id
     where l.business_id = ${businessId}
     group by l.work_type_id, wt.name
   `;
