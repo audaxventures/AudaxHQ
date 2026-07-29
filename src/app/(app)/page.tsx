@@ -153,7 +153,7 @@ export default async function DashboardPage() {
           <PipelineSummaryCard summary={data.pipelineSummary} />
 
           <Card tone="burnt" className="p-5">
-            <PanelHeading icon={Flame} tone="burnt" title="Follow-ups & hot leads" />
+            <PanelHeading icon={Flame} tone="burnt" title="Upcoming Follow-ups" />
             {data.hotFollowUps.length === 0 ? (
               <p className="text-sm text-navy-400 py-2">No follow-ups due today. You&apos;re caught up.</p>
             ) : (

@@ -1,4 +1,4 @@
-export type Tone = "neutral" | "burnt" | "gold" | "sage" | "slate" | "navy";
+export type Tone = "neutral" | "burnt" | "gold" | "sage" | "slate" | "navy" | "blue" | "violet";
 
 // "wash" is the quiet treatment for browsable list panels: a hint of color
 // over white. "solid" is the bolder treatment for headline stat cards: a
@@ -11,6 +11,8 @@ export const CARD_TONE_CLASSES: Record<Tone, string> = {
   sage: "border-sage-100 bg-gradient-to-b from-white to-sage-100/40",
   slate: "border-slate-100 bg-gradient-to-b from-white to-slate-100/40",
   navy: "border-navy-100 bg-gradient-to-b from-white to-navy-100/40",
+  blue: "border-blue-100 bg-gradient-to-b from-white to-blue-100/40",
+  violet: "border-violet-100 bg-gradient-to-b from-white to-violet-100/40",
 };
 
 export type IconTone = Exclude<Tone, "neutral">;
@@ -21,6 +23,8 @@ export const CARD_SOLID_TONE_CLASSES: Record<IconTone, string> = {
   sage: "border-sage-600/20 bg-sage-100",
   slate: "border-slate-600/20 bg-slate-100",
   navy: "border-navy-200 bg-navy-100",
+  blue: "border-blue-600/20 bg-blue-100",
+  violet: "border-violet-600/20 bg-violet-100",
 };
 
 export const ICON_TONE_CLASSES: Record<IconTone, string> = {
@@ -29,4 +33,6 @@ export const ICON_TONE_CLASSES: Record<IconTone, string> = {
   sage: "bg-sage-100 text-sage-600",
   slate: "bg-slate-100 text-slate-600",
   navy: "bg-navy-100 text-navy-700",
+  blue: "bg-blue-100 text-blue-600",
+  violet: "bg-violet-100 text-violet-600",
 };

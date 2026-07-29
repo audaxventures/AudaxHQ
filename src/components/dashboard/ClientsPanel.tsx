@@ -87,10 +87,10 @@ export function ClientsPanel({
   const visibleClients = clients.slice(0, maxVisible);
 
   return (
-    <Card tone="slate" className="flex h-full flex-col p-5">
+    <Card tone="blue" className="flex h-full flex-col p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-slate-100 text-slate-600">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-blue-100 text-blue-600">
             <Users size={14} />
           </div>
           <h3 className="font-heading text-base font-medium text-navy-900">

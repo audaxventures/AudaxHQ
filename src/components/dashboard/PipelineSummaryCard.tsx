@@ -21,9 +21,9 @@ export function PipelineSummaryCard({ summary }: { summary: LeadPipelineSummary 
   const activeTotal = summary.newCount + summary.proposalCount + summary.negotiatingCount;
 
   return (
-    <Card tone="navy" className="p-5">
+    <Card tone="violet" className="p-5">
       <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-navy-100 text-navy-700">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-violet-100 text-violet-600">
           <Target size={14} />
         </div>
         <h3 className="font-heading text-base font-medium text-navy-900">Pipeline Summary</h3>
