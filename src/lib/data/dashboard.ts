@@ -21,12 +21,14 @@ export interface DashboardData {
   lastMonthRevenue: number | null;
   hotFollowUps: HotFollowUp[];
   attentionFlags: AttentionFlag[];
-  /** Up to 5 open to-dos, soonest due date first (regardless of overdue/today/future). */
+  /** Up to 8 open to-dos, sorted overdue-first, then by priority (high to low), then by soonest due date — the extra headroom past the 5 actually shown lets the card's "Overdue" toggle filter without a second round trip. */
   todoSnapshot: Task[];
   pipelineSummary: LeadPipelineSummary;
   /** Every to-do not yet completed, regardless of due date. */
   openTodoCount: number;
   dueTodayCount: number;
+  /** Open to-dos past their due date — may exceed how many appear in `todoSnapshot`, so the card's overdue count/link uses this instead of counting the fetched rows. */
+  overdueTodoCount: number;
   /** "Today" in the operator's configured timezone (see src/lib/timezone.ts) — YYYY-MM-DD. */
   today: string;
 }
@@ -84,6 +86,7 @@ export async function getDashboardData(
     pipelineSummary,
     openTodoCountRows,
     dueTodayCountRows,
+    overdueTodoCountRows,
   ] = await Promise.all([
     sql`
       select * from clients
@@ -122,8 +125,13 @@ export async function getDashboardData(
         and t.status <> 'COMPLETED'
         and t.assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
       group by t.id, creator_tm.name
-      order by (t.due_date is null), t.due_date asc, t.created_at desc
-      limit 5
+      order by
+        (t.due_date is not null and t.due_date < ${today}::date) desc,
+        case t.priority when 'HIGH' then 0 when 'MEDIUM' then 1 else 2 end,
+        (t.due_date is null),
+        t.due_date asc,
+        t.created_at desc
+      limit 8
     `,
     getLeadPipelineSummary(businessId, today),
     sql`
@@ -137,6 +145,13 @@ export async function getDashboardData(
       where business_id = ${businessId}
         and owned_by = 'TEAM'
         and status <> 'COMPLETED' and due_date = ${today}::date
+        and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+    `,
+    sql`
+      select count(*)::int as count from todos
+      where business_id = ${businessId}
+        and owned_by = 'TEAM'
+        and status <> 'COMPLETED' and due_date < ${today}::date
         and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
     `,
   ]);
@@ -200,5 +215,6 @@ export async function getDashboardData(
     pipelineSummary,
     openTodoCount: Number((openTodoCountRows[0] as Record<string, unknown>).count),
     dueTodayCount: Number((dueTodayCountRows[0] as Record<string, unknown>).count),
+    overdueTodoCount: Number((overdueTodoCountRows[0] as Record<string, unknown>).count),
   };
 }

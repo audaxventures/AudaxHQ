@@ -1,18 +1,19 @@
 import Link from "next/link";
-import { AlertTriangle, Flame, ListChecks } from "lucide-react";
+import { AlertTriangle, Flame } from "lucide-react";
 import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Card } from "@/components/ui/Card";
 import { QuickActionsRow } from "@/components/dashboard/QuickActionsRow";
 import { ClientsPanel } from "@/components/dashboard/ClientsPanel";
 import { PipelineSummaryCard } from "@/components/dashboard/PipelineSummaryCard";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { TodoSnapshotCard } from "@/components/dashboard/TodoSnapshotCard";
 import { DashboardItem, DashboardStagger } from "@/components/dashboard/DashboardMotion";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { requireCurrentUser } from "@/lib/currentUser";
 import { currentHourInTimezone } from "@/lib/timezone";
-import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 /** `today` is a YYYY-MM-DD string already resolved in the operator's timezone, so format it as UTC to avoid re-shifting the calendar day. */
@@ -145,51 +146,7 @@ export default async function DashboardPage() {
             hideRate={!isOwner}
           />
 
-          <Card tone="gold" className="p-5">
-            <PanelHeading
-              icon={ListChecks}
-              tone="gold"
-              title="To-do snapshot"
-              action={
-                <Link href="/todos" className="text-xs font-medium text-burnt-600 hover:underline">
-                  View all
-                </Link>
-              }
-            />
-            {data.todoSnapshot.length === 0 ? (
-              <p className="text-sm text-navy-400 py-2">No open to-dos. You&apos;re caught up.</p>
-            ) : (
-              <ul className="divide-y divide-navy-100 -mx-1">
-                {data.todoSnapshot.map((task) => (
-                  <li key={task.id} className="flex items-center gap-3 px-1 py-2.5">
-                    <span
-                      className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full",
-                        !task.dueDate
-                          ? "bg-navy-200"
-                          : isOverdue(task.dueDate, data.today)
-                            ? "bg-brick-600"
-                            : "bg-gold-600"
-                      )}
-                    />
-                    <p className="text-sm font-medium text-navy-900 truncate flex-1 min-w-0">
-                      {task.title}
-                    </p>
-                    {task.dueDate && (
-                      <span
-                        className={cn(
-                          "text-xs font-medium shrink-0",
-                          isOverdue(task.dueDate, data.today) ? "text-brick-600" : "text-navy-500"
-                        )}
-                      >
-                        {formatDate(task.dueDate)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <TodoSnapshotCard tasks={data.todoSnapshot} today={data.today} overdueTodoCount={data.overdueTodoCount} />
         </DashboardItem>
 
         <DashboardItem className="grid grid-cols-1 lg:grid-cols-2 gap-6">
