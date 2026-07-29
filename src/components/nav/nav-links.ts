@@ -1,6 +1,7 @@
 export const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/clients", label: "Clients", icon: "clients" },
+  { href: "/partners", label: "Partners", icon: "partners" },
   { href: "/leads", label: "Leads", icon: "leads" },
   { href: "/lead-analytics", label: "Lead Insights", tabLabel: "Insights", icon: "leadAnalytics" },
   { href: "/meeting-notes", label: "Meeting Notes", tabLabel: "Notes", icon: "meetingNotes" },
@@ -17,7 +18,6 @@ export const NAV_LINKS = [
     matchPrefixes: ["/invoices", "/tracker"],
   },
   { href: "/todos", label: "To-Dos", icon: "todos" },
-  { href: "/partners", label: "Partners", icon: "partners" },
 ] as const;
 
 export type NavIconKey = (typeof NAV_LINKS)[number]["icon"] | "settings" | "admin";
