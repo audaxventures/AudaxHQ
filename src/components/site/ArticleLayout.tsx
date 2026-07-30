@@ -105,15 +105,15 @@ export function ArticleLayout({
             <div className="mt-14 rounded-2xl border border-navy-100 bg-white p-8 text-center sm:p-10">
               <h2 className="font-heading text-2xl font-semibold text-navy-900">Run this from one workspace.</h2>
               <p className="mx-auto mt-2 max-w-md text-base leading-relaxed text-navy-600">
-                Verclara brings clients, pipeline, revenue, meetings, time, and tasks together — free during early
-                access.
+                Verclara brings clients, pipeline, revenue, meetings, time, and tasks together — try it free for 7
+                days.
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href={appPath("/signup")}
                   className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
                 >
-                  Start for free <ArrowRight size={16} />
+                  Start your free trial <ArrowRight size={16} />
                 </Link>
                 <Link
                   href="/resources"

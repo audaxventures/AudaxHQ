@@ -136,7 +136,7 @@ export default function MarketingHomePage() {
                 href={appPath("/signup")}
                 className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
               >
-                Start for free <ArrowRight size={16} />
+                Start your free trial <ArrowRight size={16} />
               </Link>
               <Link
                 href="/contact"
@@ -243,10 +243,10 @@ export default function MarketingHomePage() {
               <p className="mt-2 font-heading text-lg text-navy-700">Start your workspace today.</p>
               <ul className="mt-6 flex flex-col gap-2 text-sm text-navy-700">
                 <li className="flex items-center gap-2">
-                  <Check size={16} className="text-sage-600" /> Free during early access
+                  <Check size={16} className="text-sage-600" /> 7 days free, no charge until it ends
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check size={16} className="text-sage-600" /> No credit card required
+                  <Check size={16} className="text-sage-600" /> Cancel anytime, no questions asked
                 </li>
                 <li className="flex items-center gap-2">
                   <Check size={16} className="text-sage-600" /> Your data, always exportable
@@ -257,7 +257,7 @@ export default function MarketingHomePage() {
                   href={appPath("/signup")}
                   className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
                 >
-                  Start for free <ArrowRight size={16} />
+                  Start your free trial <ArrowRight size={16} />
                 </Link>
                 <BookDemoButton variant="on-light" />
               </div>

@@ -238,7 +238,7 @@ const FAQ_ITEMS = [
   {
     question: "Is there a free trial?",
     answer:
-      "Verclara is free to use during early access — no credit card, no time limit. We'll introduce paid plans later, and we'll give existing workspaces plenty of notice before anything changes.",
+      "Yes — every plan starts with a 7-day free trial. You'll add a card at signup, but you won't be charged until the trial ends, and you can cancel anytime before then at no cost.",
   },
   {
     question: "Can I add my team?",
@@ -487,14 +487,14 @@ export default function AboutPage() {
             Ready to run your business better?
           </h2>
           <p className="mx-auto mt-3 max-w-md text-base text-navy-300">
-            Start your workspace today — free during early access, no credit card required.
+            Start your workspace today — 7 days free, no charge until the trial ends.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={appPath("/signup")}
               className="inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
             >
-              Start for free <ArrowRight size={16} />
+              Start your free trial <ArrowRight size={16} />
             </Link>
             <BookDemoButton variant="on-dark" />
             <Link

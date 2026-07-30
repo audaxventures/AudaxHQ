@@ -63,6 +63,11 @@ export default function PricingPage() {
           </div>
           <PricingTiers tiers={PRICING_TIERS} />
 
+          <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-navy-400">
+            Prices shown are a flat fee for your whole workspace — not per person. Add team members up to your
+            plan&rsquo;s limit at no extra cost.
+          </p>
+
           <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-navy-100 bg-white p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-100 px-3 py-1 text-xs font-semibold text-navy-600">

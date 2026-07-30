@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { GrowthChartCard } from "@/components/admin/GrowthChartCard";
 import { TimeSeriesChart } from "@/components/admin/TimeSeriesChart";
-import { getPlatformStats, getGrowthSeries, getPlatformActivityCounts, listWorkspaces } from "@/lib/data/admin";
+import { getPlatformStats, getGrowthSeries, getPlatformActivityCounts, getRevenueSeries, listWorkspaces } from "@/lib/data/admin";
 import { suspendWorkspace, reactivateWorkspace } from "@/app/(app)/admin/actions";
 import { DeleteWorkspaceButton } from "@/components/admin/DeleteWorkspaceButton";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatCurrency } from "@/lib/format";
 import Link from "next/link";
 import type { Tone } from "@/lib/tone";
 
@@ -37,10 +37,11 @@ function ActivityTile({ icon: Icon, label, value }: { icon: React.ElementType; l
 }
 
 export default async function AdminOverviewPage() {
-  const [stats, growth, activity, workspaces] = await Promise.all([
+  const [stats, growth, activity, revenue, workspaces] = await Promise.all([
     getPlatformStats(),
     getGrowthSeries(),
     getPlatformActivityCounts(),
+    getRevenueSeries(),
     listWorkspaces(),
   ]);
 
@@ -51,8 +52,8 @@ export default async function AdminOverviewPage() {
         <StatTile label="Suspended" value={String(stats.suspendedWorkspaces)} tone="burnt" />
         <StatTile label="Total users" value={String(stats.totalUsers)} tone="navy" />
         <StatTile label="New signups (30d)" value={String(stats.newSignups30d)} tone="slate" />
-        <StatTile label="MRR" value="—" subtext="Billing not yet enabled" tone="gold" />
-        <StatTile label="Free trial" value="—" subtext="No trial period yet" tone="gold" />
+        <StatTile label="MRR" value={formatCurrency(stats.mrr)} subtext="Active & past-due subscriptions" tone="gold" />
+        <StatTile label="On free trial" value={String(stats.trialingCount)} subtext="Not yet counted in MRR" tone="gold" />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -60,11 +61,12 @@ export default async function AdminOverviewPage() {
         <Card className="p-6">
           <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Revenue</h3>
           <TimeSeriesChart
-            data={[]}
+            data={revenue.map((r) => ({ label: r.label, value: r.revenue }))}
             color="#55637a"
             fillColor="#e7eaf0"
-            emptyTitle="No revenue data yet"
-            emptyDescription="This will chart monthly recurring revenue once billing is live."
+            valueFormatter={(v) => formatCurrency(v)}
+            emptyTitle="No revenue collected yet"
+            emptyDescription="Every subscription starts with a 7-day trial — this fills in once the first trial converts to a paid charge."
           />
         </Card>
       </div>

@@ -45,7 +45,8 @@ export function AuthShell({
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="flex flex-1 flex-col md:flex-row">
-        <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-cream-50 px-8 py-16 sm:px-16 md:w-[58%] md:flex-none">
+        {/* Pinned to one viewport tall on desktop and centers its own content within just that — without this, the row stretches to match the right column's height (which varies a lot, e.g. the signup form's plan picker), and centering this column within that taller shared height pushes its content well below the fold on load. */}
+        <div className="relative flex flex-1 flex-col justify-center overflow-hidden bg-cream-50 px-8 py-16 sm:px-16 md:sticky md:top-0 md:h-dvh md:w-[58%] md:flex-none">
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded photo, dimensions unknown */}
           <img
             src="/login.png"

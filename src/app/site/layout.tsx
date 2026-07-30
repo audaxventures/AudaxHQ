@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Script from "next/script";
 import { MarketingNav } from "@/components/site/MarketingNav";
 import { MarketingFooter } from "@/components/site/MarketingFooter";
+import { PRICING_TIERS } from "@/lib/pricing";
 
 // Google Analytics (gtag.js) — marketing site only, never the authenticated
 // app. Measurement ID G-3Z1G5RHLKN, provided directly by the business owner.
@@ -50,9 +51,9 @@ const structuredData = {
       url: `https://${marketingHost}`,
       offers: {
         "@type": "Offer",
-        price: "0",
+        price: String(PRICING_TIERS[0].monthly),
         priceCurrency: "USD",
-        description: "Free during early access",
+        description: `Plans start at $${PRICING_TIERS[0].monthly}/month with a 7-day free trial`,
       },
     },
   ],

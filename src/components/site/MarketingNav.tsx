@@ -45,7 +45,7 @@ export function MarketingNav() {
             href={appPath("/signup")}
             className="rounded-xl bg-burnt-500 px-6 py-3 text-base font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
           >
-            Start for free
+            Start free trial
           </Link>
         </div>
 
@@ -88,7 +88,7 @@ export function MarketingNav() {
               href={appPath("/signup")}
               className="rounded-xl bg-burnt-500 px-3 py-3 text-center text-base font-semibold text-cream-50 hover:bg-burnt-400"
             >
-              Start for free
+              Start free trial
             </Link>
           </div>
         </nav>

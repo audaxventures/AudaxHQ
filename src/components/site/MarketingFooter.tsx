@@ -9,7 +9,7 @@ const PRODUCT_LINKS = [
   { href: "/resources", label: "Resources" },
 ];
 const PRODUCT_APP_LINKS = [
-  { href: "/signup", label: "Start for free" },
+  { href: "/signup", label: "Start free trial" },
   { href: "/login", label: "Sign in" },
 ];
 

@@ -420,7 +420,7 @@ export interface TodoType {
 }
 
 /** A tenant workspace. Safe to pass to client components — never includes the owner passcode hash/salt or reset token. */
-/** See migration 031 + src/lib/entitlements.ts. Every business defaults to 'scale' during early access — nothing is gated on this yet. */
+/** See migration 031 + src/lib/entitlements.ts. Set from the Stripe subscription's price at Checkout (see the webhook handler), or overridden manually from the platform admin portal for comped workspaces. */
 export type BusinessTier = "starter" | "growth" | "scale";
 
 /** Mirrors Stripe's own subscription statuses, narrowed to the ones we actually branch on — see the webhook handler in src/app/api/webhooks/stripe/route.ts. Null means Checkout hasn't completed yet (brand-new signup, or an abandoned one). */

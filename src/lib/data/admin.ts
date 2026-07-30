@@ -6,6 +6,8 @@
 // to a normal OWNER/TEAM_MEMBER request path.
 
 import { sql } from "@/lib/db";
+import { stripe } from "@/lib/stripe";
+import { PRICING_TIERS } from "@/lib/pricing";
 import type { BillingInterval, BusinessTier, Feedback, FeedbackStatus, SessionRole, SubscriptionStatus } from "@/lib/types";
 
 export interface PlatformStats {
@@ -15,10 +17,29 @@ export interface PlatformStats {
   /** Every owner + team member with a login, platform-wide — account_emails is already the global "who can sign in" index. */
   totalUsers: number;
   newSignups30d: number;
+  /**
+   * Monthly recurring revenue, in dollars — derived from businesses.tier/
+   * billing_interval for every workspace with subscription_status 'active'
+   * or 'past_due' (still a live subscription in Stripe's eyes, just mid
+   * payment-retry), using the same per-tier prices src/lib/pricing.ts shows
+   * everywhere else, normalized to a monthly figure for annual plans.
+   * Deliberately excludes 'trialing' — no money has actually been
+   * collected yet, see trialingCount below for that.
+   */
+  mrr: number;
+  /** Workspaces currently mid-trial (subscription_status = 'trialing') — not yet counted in mrr since nothing's been charged. */
+  trialingCount: number;
 }
 
+const MONTHLY_PRICE_BY_TIER: Record<BusinessTier, number> = Object.fromEntries(
+  PRICING_TIERS.map((t) => [t.tier, t.monthly])
+) as Record<BusinessTier, number>;
+const ANNUAL_MONTHLY_PRICE_BY_TIER: Record<BusinessTier, number> = Object.fromEntries(
+  PRICING_TIERS.map((t) => [t.tier, t.annualMonthly])
+) as Record<BusinessTier, number>;
+
 export async function getPlatformStats(): Promise<PlatformStats> {
-  const [workspaceRows, userRows] = await Promise.all([
+  const [workspaceRows, userRows, billingRows, trialRows] = await Promise.all([
     sql`
       select
         count(*)::int as total,
@@ -28,16 +49,83 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       from businesses
     `,
     sql`select count(*)::int as total from account_emails`,
+    sql`
+      select tier, billing_interval, count(*)::int as n
+      from businesses
+      where subscription_status in ('active', 'past_due')
+      group by tier, billing_interval
+    `,
+    sql`select count(*)::int as n from businesses where subscription_status = 'trialing'`,
   ]);
   const w = workspaceRows[0] as Record<string, unknown>;
   const u = userRows[0] as Record<string, unknown>;
+  const t = trialRows[0] as Record<string, unknown>;
+
+  let mrr = 0;
+  for (const row of billingRows as Record<string, unknown>[]) {
+    const tier = row.tier as BusinessTier;
+    const interval = row.billing_interval as BillingInterval | null;
+    const n = row.n as number;
+    const price = interval === "annual" ? ANNUAL_MONTHLY_PRICE_BY_TIER[tier] : MONTHLY_PRICE_BY_TIER[tier];
+    mrr += price * n;
+  }
+
   return {
     totalWorkspaces: w.total as number,
     activeWorkspaces: w.active as number,
     suspendedWorkspaces: w.suspended as number,
     totalUsers: u.total as number,
     newSignups30d: w.new_30d as number,
+    mrr,
+    trialingCount: t.n as number,
   };
+}
+
+export interface RevenuePoint {
+  day: string;
+  label: string;
+  revenue: number;
+}
+
+/**
+ * Cumulative gross revenue collected over time, in dollars — read straight
+ * from Stripe's balance transactions (type 'charge') rather than derived
+ * from our own tables, since we don't keep a payment history and Stripe is
+ * the actual source of truth for money that's moved. Capped at the most
+ * recent 100 charges, which is generous headroom for how young this
+ * business is; revisit with pagination if that ever gets tight. Every
+ * subscription starts with a 7-day trial, so this will legitimately show
+ * no data at all until the first trial converts to a paid charge.
+ */
+export async function getRevenueSeries(): Promise<RevenuePoint[]> {
+  const transactions = await stripe.balanceTransactions.list({ type: "charge", limit: 100 });
+  if (transactions.data.length === 0) return [];
+
+  const byDay = new Map<string, number>();
+  for (const txn of transactions.data) {
+    const day = new Date(txn.created * 1000).toISOString().slice(0, 10);
+    byDay.set(day, (byDay.get(day) ?? 0) + txn.amount / 100);
+  }
+
+  const days = [...byDay.keys()].sort();
+  const start = new Date(days[0]);
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+
+  const points: RevenuePoint[] = [];
+  let cumulative = 0;
+  const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10);
+    cumulative += byDay.get(key) ?? 0;
+    points.push({
+      day: key,
+      label: cursor.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      revenue: Math.round(cumulative * 100) / 100,
+    });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return points;
 }
 
 export interface GrowthPoint {
