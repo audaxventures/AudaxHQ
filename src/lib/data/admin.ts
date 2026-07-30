@@ -21,10 +21,14 @@ export interface PlatformStats {
    * Monthly recurring revenue, in dollars — derived from businesses.tier/
    * billing_interval for every workspace with subscription_status 'active'
    * or 'past_due' (still a live subscription in Stripe's eyes, just mid
-   * payment-retry), using the same per-tier prices src/lib/pricing.ts shows
-   * everywhere else, normalized to a monthly figure for annual plans.
-   * Deliberately excludes 'trialing' — no money has actually been
-   * collected yet, see trialingCount below for that.
+   * payment-retry) AND a real stripe_customer_id, using the same per-tier
+   * prices src/lib/pricing.ts shows everywhere else, normalized to a
+   * monthly figure for annual plans. The stripe_customer_id check matters:
+   * migration 042 backfilled every pre-existing workspace to 'active' with
+   * no Stripe customer at all (grandfathered/comped access, same
+   * isComplimentary check BillingPanel.tsx uses) — those never paid a
+   * cent and must not inflate MRR. Deliberately excludes 'trialing' too —
+   * no money has actually been collected yet, see trialingCount below.
    */
   mrr: number;
   /** Workspaces currently mid-trial (subscription_status = 'trialing') — not yet counted in mrr since nothing's been charged. */
@@ -52,7 +56,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     sql`
       select tier, billing_interval, count(*)::int as n
       from businesses
-      where subscription_status in ('active', 'past_due')
+      where subscription_status in ('active', 'past_due') and stripe_customer_id is not null
       group by tier, billing_interval
     `,
     sql`select count(*)::int as n from businesses where subscription_status = 'trialing'`,
