@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { signup, type SignupState } from "@/app/signup/actions";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { listTimezones, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { PRICING_TIERS, priceForInterval } from "@/lib/pricing";
 import { cn } from "@/lib/cn";
@@ -183,12 +184,11 @@ export function SignupForm({
       </div>
       <div>
         <label htmlFor="passcode" className={labelClasses}>
-          Passcode
+          Password
         </label>
-        <input
+        <PasswordInput
           id="passcode"
           name="passcode"
-          type="password"
           required
           autoComplete="new-password"
           className={inputClasses}
@@ -197,12 +197,11 @@ export function SignupForm({
       </div>
       <div>
         <label htmlFor="confirmPasscode" className={labelClasses}>
-          Confirm passcode
+          Confirm password
         </label>
-        <input
+        <PasswordInput
           id="confirmPasscode"
           name="confirmPasscode"
-          type="password"
           required
           autoComplete="new-password"
           className={inputClasses}

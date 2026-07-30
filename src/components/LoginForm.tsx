@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { login, type LoginState } from "@/app/login/actions";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
 const initialState: LoginState = { error: null };
 
@@ -49,12 +50,11 @@ export function LoginForm({ next }: { next: string }) {
           htmlFor="passcode"
           className="block text-xs font-medium uppercase tracking-wide text-navy-300 mb-2"
         >
-          Passcode
+          Password
         </label>
-        <input
+        <PasswordInput
           id="passcode"
           name="passcode"
-          type="password"
           required
           autoComplete="off"
           className="w-full rounded-xl border border-navy-700 bg-navy-900/60 px-4 py-3 text-cream-50 placeholder:text-navy-500 focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-500/20"
@@ -62,7 +62,7 @@ export function LoginForm({ next }: { next: string }) {
         />
         <div className="mt-2 text-right">
           <Link href="/login/forgot" className="text-xs font-medium text-navy-300 hover:text-burnt-400">
-            Forgot passcode?
+            Forgot password?
           </Link>
         </div>
       </div>
