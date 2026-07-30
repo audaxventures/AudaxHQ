@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { GrowthChartCard } from "@/components/admin/GrowthChartCard";
-import { TimeSeriesChart } from "@/components/admin/TimeSeriesChart";
+import { RevenueChartCard } from "@/components/admin/RevenueChartCard";
 import { getPlatformStats, getGrowthSeries, getPlatformActivityCounts, getRevenueSeries, listWorkspaces } from "@/lib/data/admin";
 import { suspendWorkspace, reactivateWorkspace } from "@/app/(app)/admin/actions";
 import { DeleteWorkspaceButton } from "@/components/admin/DeleteWorkspaceButton";
@@ -106,17 +106,7 @@ export default async function AdminOverviewPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GrowthChartCard data={growth} />
-        <Card className="p-6">
-          <h3 className="mb-4 font-heading text-lg font-medium text-navy-900">Revenue</h3>
-          <TimeSeriesChart
-            data={revenue.map((r) => ({ label: r.label, value: r.revenue }))}
-            color="#55637a"
-            fillColor="#e7eaf0"
-            valueFormatter={(v) => formatCurrency(v)}
-            emptyTitle="No revenue collected yet"
-            emptyDescription="Every subscription starts with a 7-day trial — this fills in once the first trial converts to a paid charge."
-          />
-        </Card>
+        <RevenueChartCard data={revenue.map((r) => ({ label: r.label, value: r.revenue }))} />
       </div>
 
       <Card className="p-6 mb-6">
