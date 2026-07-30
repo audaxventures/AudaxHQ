@@ -95,13 +95,8 @@ export default async function AdminOverviewPage() {
         <StatTile label="Suspended" value={String(stats.suspendedWorkspaces)} tone="burnt" />
         <StatTile label="Total users" value={String(stats.totalUsers)} tone="navy" />
         <StatTile label="New signups (30d)" value={String(stats.newSignups30d)} tone="slate" />
-        <StatTile
-          label="MRR (CAD)"
-          value={formatCurrency(stats.mrr)}
-          subtext="Active & past-due subscriptions"
-          tone="gold"
-        />
-        <StatTile label="On free trial" value={String(stats.trialingCount)} subtext="Not yet counted in MRR" tone="gold" />
+        <StatTile label="MRR" value={formatCurrency(stats.mrr)} tone="gold" />
+        <StatTile label="On free trial" value={String(stats.trialingCount)} tone="gold" />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
