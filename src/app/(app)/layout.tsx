@@ -31,10 +31,37 @@ export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const currentUser = await getCurrentUser();
+  const billingBlocked = currentUser ? isBillingBlocked(currentUser.business.subscriptionStatus) : false;
 
-  if (currentUser && isBillingBlocked(currentUser.business.subscriptionStatus)) {
+  if (billingBlocked) {
     const pathname = (await headers()).get("x-pathname") ?? "";
     if (pathname !== BILLING_GATE_PATH) redirect(BILLING_GATE_PATH);
+
+    // Reachable only on the billing page itself. Render a minimal shell with
+    // no Sidebar, QuickActionsFab, or NotificationBell — those are chrome a
+    // blocked workspace has no business seeing or using, and every action
+    // they could trigger from here is blocked again server-side anyway (see
+    // requireOwner()/requireCurrentUser() in currentUser.ts), but showing
+    // the full app around a "pick a plan" screen reads as "you already have
+    // access", which is exactly the wrong signal to send.
+    return (
+      <div className="flex min-h-dvh flex-col items-center bg-cream-50">
+        <div className="w-full max-w-3xl px-4 py-10 sm:px-8">
+          <div className="mb-8 flex items-center justify-between">
+            <span className="w-16" aria-hidden />
+            {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary uploaded or default logo, dimensions unknown */}
+            <img src={currentUser?.business.logoUrl ?? "/logo.png"} alt="Verclara" className="h-10 w-auto" />
+            <form action="/api/logout" method="post" className="w-16 text-right">
+              <button type="submit" className="text-sm font-medium text-navy-500 hover:text-navy-800 cursor-pointer">
+                Sign out
+              </button>
+            </form>
+          </div>
+          <PageTransition>{children}</PageTransition>
+          <Footer />
+        </div>
+      </div>
+    );
   }
 
   // proxy.ts already guarantees a valid session reaches this layout — a null

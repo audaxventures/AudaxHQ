@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe, tierForPriceId, intervalForPriceId } from "@/lib/stripe";
-import { findBusinessByStripeCustomerId, updateSubscriptionFromStripe } from "@/lib/data/businesses";
+import { findBusinessByStripeCustomerId, getBusiness, updateSubscriptionFromStripe } from "@/lib/data/businesses";
+import { sendWelcomeEmail } from "@/lib/email";
 import type { SubscriptionStatus } from "@/lib/types";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -35,11 +36,12 @@ async function resolveBusinessId(subscription: Stripe.Subscription): Promise<str
   return business?.id ?? null;
 }
 
-async function syncSubscription(subscription: Stripe.Subscription): Promise<void> {
+/** Returns the businessId it synced, or null if it bailed out early (no matching business, unrecognized price) — callers that need to react to a successful sync (e.g. the welcome email) key off that return value instead of duplicating the resolve/validate logic. */
+async function syncSubscription(subscription: Stripe.Subscription): Promise<string | null> {
   const businessId = await resolveBusinessId(subscription);
   if (!businessId) {
     console.error(`Stripe webhook: no business found for subscription ${subscription.id}`);
-    return;
+    return null;
   }
 
   const priceId = subscription.items.data[0]?.price.id;
@@ -47,7 +49,7 @@ async function syncSubscription(subscription: Stripe.Subscription): Promise<void
   const interval = priceId ? intervalForPriceId(priceId) : null;
   if (!tier || !interval) {
     console.error(`Stripe webhook: unrecognized price ${priceId} on subscription ${subscription.id}`);
-    return;
+    return null;
   }
 
   await updateSubscriptionFromStripe(businessId, {
@@ -57,6 +59,7 @@ async function syncSubscription(subscription: Stripe.Subscription): Promise<void
     billingInterval: interval,
     trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
   });
+  return businessId;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -97,7 +100,22 @@ export async function POST(request: Request): Promise<NextResponse> {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription" && typeof session.subscription === "string") {
           const subscription = await stripe.subscriptions.retrieve(session.subscription);
-          await syncSubscription(subscription);
+          const businessId = await syncSubscription(subscription);
+          // Fires exactly here, not at signup — this is the first point a
+          // trial has actually started (card confirmed, Checkout completed),
+          // not just a workspace someone created and then abandoned before
+          // paying. Best-effort: a failed email should never fail the
+          // webhook, which is what actually unlocks the workspace.
+          if (businessId) {
+            try {
+              const business = await getBusiness(businessId);
+              const host = request.headers.get("host");
+              const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
+              await sendWelcomeEmail(business.ownerEmail, business.ownerName, business.name, `${protocol}://${host}/login`);
+            } catch (e) {
+              console.error("Failed to send welcome email:", e);
+            }
+          }
         }
         break;
       }

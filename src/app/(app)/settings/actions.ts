@@ -10,7 +10,7 @@ import * as todoTypes from "@/lib/data/todoTypes";
 import * as feedback from "@/lib/data/feedback";
 import * as teamMembers from "@/lib/data/teamMembers";
 import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
-import { requireOwner } from "@/lib/currentUser";
+import { requireOwner, requireOwnerIgnoringBilling } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
 import { createCheckoutSession, createPortalSession, createStripeCustomer } from "@/lib/stripe";
@@ -268,7 +268,7 @@ function currentOrigin(host: string | null): string {
  * early-access workspaces backfilled by migration 042).
  */
 export async function startSubscriptionCheckout(tier: BusinessTier, interval: BillingInterval) {
-  const user = await requireOwner();
+  const user = await requireOwnerIgnoringBilling();
   const origin = currentOrigin((await headers()).get("host"));
 
   let customerId = user.business.stripeCustomerId;
@@ -290,7 +290,7 @@ export async function startSubscriptionCheckout(tier: BusinessTier, interval: Bi
 
 /** Stripe's hosted self-serve page — upgrade/downgrade tier, switch monthly/annual, update a card, or cancel. */
 export async function openBillingPortal() {
-  const user = await requireOwner();
+  const user = await requireOwnerIgnoringBilling();
   if (!user.business.stripeCustomerId) throw new Error("No billing account yet — start a subscription first.");
   const origin = currentOrigin((await headers()).get("host"));
   const portalUrl = await createPortalSession(user.business.stripeCustomerId, `${origin}/settings/billing`);

@@ -3,7 +3,7 @@ import { listOutstandingInvoices } from "@/lib/data/invoicing";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
 import { formatDateInput } from "@/lib/format";
-import { getCurrentUser } from "@/lib/currentUser";
+import { getCurrentUser, isBillingBlocked } from "@/lib/currentUser";
 import { CLIENT_TYPE_LABELS, invoiceAgeBracket, invoiceAgeBracketLabels } from "@/lib/types";
 import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
 
@@ -13,7 +13,7 @@ import type { ClientType, InvoiceAgeBracket } from "@/lib/types";
 // Settings -> Data Export "all invoices ever" backup CSV.
 export async function GET(request: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "OWNER") {
+  if (!user || user.role !== "OWNER" || isBillingBlocked(user.business.subscriptionStatus)) {
     return new NextResponse("Not authorized", { status: 403 });
   }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMeetingNoteById } from "@/lib/data/meetingnotes";
 import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
-import { getCurrentUser } from "@/lib/currentUser";
+import { getCurrentUser, isBillingBlocked } from "@/lib/currentUser";
 import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
 import { meetingNotePdfFilename } from "@/lib/pdf/filename";
 
@@ -10,7 +10,7 @@ import { meetingNotePdfFilename } from "@/lib/pdf/filename";
 // generates the same buffer server-side for the email, so the two are always identical).
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
-  if (!user) return new NextResponse("Not authorized", { status: 403 });
+  if (!user || isBillingBlocked(user.business.subscriptionStatus)) return new NextResponse("Not authorized", { status: 403 });
 
   const { id } = await params;
   const accessibleClientIds = await accessibleClientIdsFor(user);

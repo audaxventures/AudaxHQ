@@ -4,7 +4,7 @@ import { getClient } from "@/lib/data/clients";
 import { getLead } from "@/lib/data/leads";
 import { formatDateInput, isDateInRange } from "@/lib/format";
 import { csvRow, csvResponseHeaders } from "@/lib/csv";
-import { getCurrentUser } from "@/lib/currentUser";
+import { getCurrentUser, isBillingBlocked } from "@/lib/currentUser";
 import type { CostEntry } from "@/lib/types";
 
 function entryRow(e: CostEntry): string {
@@ -31,7 +31,7 @@ function entryRow(e: CostEntry): string {
 // several owners has no single profitability baseline.
 export async function GET(request: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "OWNER") {
+  if (!user || user.role !== "OWNER" || isBillingBlocked(user.business.subscriptionStatus)) {
     return new NextResponse("Not authorized", { status: 403 });
   }
 

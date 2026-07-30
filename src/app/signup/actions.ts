@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createSessionToken, hashPasscode, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { createBusiness, setStripeCustomerId } from "@/lib/data/businesses";
 import { createCheckoutSession, createStripeCustomer } from "@/lib/stripe";
-import { sendWelcomeEmail } from "@/lib/email";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import type { BillingInterval, BusinessTier } from "@/lib/types";
 
@@ -65,19 +64,12 @@ export async function signup(
     throw e;
   }
 
-  // Best-effort — a welcome email failing (missing API key, Resend hiccup,
-  // etc) should never block a brand-new workspace from being usable.
-  try {
-    const host = (await headers()).get("host");
-    const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
-    await sendWelcomeEmail(ownerEmail, ownerName, businessName, `${protocol}://${host}/login`);
-  } catch (e) {
-    console.error("Failed to send welcome email:", e);
-  }
-
-  // Log them in immediately — the workspace is usable right away, and the
-  // trial/subscription state (still null at this point) is what the (app)
-  // layout gates on once they land back from Checkout, not login itself.
+  // Log them in immediately so /settings/billing (and only that page, per
+  // the (app) layout's billing gate) is reachable right away — but the
+  // welcome email waits for the webhook's checkout.session.completed
+  // handler, since that's the first point a trial has actually started
+  // rather than a workspace someone created and then abandoned before
+  // paying.
   const token = createSessionToken({ role: "OWNER", businessId });
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {

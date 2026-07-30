@@ -4,7 +4,7 @@ import { getClientCompanyName } from "@/lib/data/clients";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { renderInvoiceReportPdf } from "@/lib/pdf/invoiceReportPdf";
 import { formatDate } from "@/lib/format";
-import { getCurrentUser } from "@/lib/currentUser";
+import { getCurrentUser, isBillingBlocked } from "@/lib/currentUser";
 
 function rangeLabel(dateFrom?: string, dateTo?: string): string {
   if (!dateFrom && !dateTo) return "All time";
@@ -19,7 +19,7 @@ function rangeLabel(dateFrom?: string, dateTo?: string): string {
 // report, not whatever the on-screen "this month" default is.
 export async function GET(request: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "OWNER") {
+  if (!user || user.role !== "OWNER" || isBillingBlocked(user.business.subscriptionStatus)) {
     return new NextResponse("Not authorized", { status: 403 });
   }
 

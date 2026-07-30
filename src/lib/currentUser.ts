@@ -23,19 +23,47 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return { role: "TEAM_MEMBER", businessId: claims.businessId, business, teamMember };
 }
 
-/** Resolves the current user, throwing if unauthenticated — proxy.ts already guarantees a valid session reaches every (app) page, so this should only fire in the same rare revoked-mid-session edge case getCurrentUser() itself documents. Use on pages that need businessId unconditionally rather than degrading gracefully. */
-export async function requireCurrentUser(): Promise<CurrentUser> {
+/**
+ * Mirrors the billing gate in (app)/layout.tsx — null (Checkout never
+ * completed) or canceled means no active Stripe subscription. Every other
+ * status (trialing, active, even past_due mid-retry) keeps full access,
+ * matching Stripe's own payment-retry grace period. Exported so the layout
+ * and every require*() guard below share one definition instead of two
+ * that could drift apart.
+ */
+export function isBillingBlocked(status: string | null): boolean {
+  return status === null || status === "canceled";
+}
+
+const BILLING_BLOCKED_MESSAGE = "Your workspace's subscription isn't active — visit Settings → Billing to continue.";
+
+/** Same as requireCurrentUser() but does NOT enforce the billing gate. The only legitimate caller is the Settings > Billing page itself (settings/billing/page.tsx) — it must keep rendering (for both owner and team member) precisely when billing is blocked, since that's the one page the layout's gate lets a blocked workspace reach at all. Every other caller should use requireCurrentUser(). */
+export async function requireCurrentUserIgnoringBilling(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
   return user;
 }
 
-/** Throws if the current session isn't the owner — use at the top of server actions that must never run for a team member, even if they call the action endpoint directly. Returns the resolved user so callers can read businessId without a second lookup. */
-export async function requireOwner(): Promise<CurrentUser & { role: "OWNER" }> {
+/** Resolves the current user, throwing if unauthenticated — proxy.ts already guarantees a valid session reaches every (app) page, so this should only fire in the same rare revoked-mid-session edge case getCurrentUser() itself documents. Also throws if the workspace's billing is blocked (see isBillingBlocked) — this is what actually stops a team member or owner from using any data-mutating action while a subscription never started or was canceled, since the layout's redirect only ever covers full page navigations, not server actions invoked directly from already-rendered UI. Use on pages/actions that need businessId unconditionally rather than degrading gracefully. */
+export async function requireCurrentUser(): Promise<CurrentUser> {
+  const user = await requireCurrentUserIgnoringBilling();
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
+  return user;
+}
+
+/** Same as requireOwner() but does NOT enforce the billing gate. The only legitimate callers are startSubscriptionCheckout/openBillingPortal (settings/actions.ts) — they must keep working precisely when billing is blocked, since that's the owner's only way to fix it. Every other caller should use requireOwner(). */
+export async function requireOwnerIgnoringBilling(): Promise<CurrentUser & { role: "OWNER" }> {
   const user = await getCurrentUser();
   if (!user || user.role !== "OWNER") {
     throw new Error("Not authorized.");
   }
+  return user;
+}
+
+/** Throws if the current session isn't the owner, or if the workspace's billing is blocked (see isBillingBlocked on requireCurrentUser) — use at the top of server actions that must never run for a team member, even if they call the action endpoint directly. Returns the resolved user so callers can read businessId without a second lookup. */
+export async function requireOwner(): Promise<CurrentUser & { role: "OWNER" }> {
+  const user = await requireOwnerIgnoringBilling();
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
   return user;
 }
 
@@ -78,6 +106,7 @@ export async function requirePlatformAdmin(): Promise<CurrentUser & { role: "OWN
 export async function requireClientAccess(clientId: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
   if (!(await clientBelongsToBusiness(clientId, user.businessId))) {
     throw new Error("You don't have access to that client.");
   }
@@ -91,6 +120,7 @@ export async function requireClientAccess(clientId: string): Promise<CurrentUser
 export async function requireLeadAccess(leadId: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Not authorized.");
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
   if (!(await leadBelongsToBusiness(leadId, user.businessId))) {
     throw new Error("You don't have access to that lead.");
   }

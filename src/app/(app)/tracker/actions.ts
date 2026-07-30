@@ -7,7 +7,7 @@ import * as costEntries from "@/lib/data/costEntries";
 import * as teamMembers from "@/lib/data/teamMembers";
 import * as workCategories from "@/lib/data/workCategories";
 import { generateResetToken, hashResetToken } from "@/lib/auth";
-import { getCurrentUser, requireOwner } from "@/lib/currentUser";
+import { requireCurrentUser, requireOwner } from "@/lib/currentUser";
 import { sendTeamMemberInviteEmail } from "@/lib/email";
 import { hasFeature, TEAM_MEMBER_SEAT_CAP, TIER_LABELS } from "@/lib/entitlements";
 import type { EntityColor, FixedCostCategory } from "@/lib/types";
@@ -26,8 +26,7 @@ function parseOwner(raw: string): { clientId: string | null; leadId: string | nu
 }
 
 export async function createTimeEntry(formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Not authorized.");
+  const user = await requireCurrentUser();
 
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
@@ -70,8 +69,7 @@ export async function createTimeEntry(formData: FormData) {
 }
 
 export async function updateTimeEntry(id: string, previousClientId: string | null, previousLeadId: string | null, formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Not authorized.");
+  const user = await requireCurrentUser();
 
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
@@ -119,8 +117,7 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
 }
 
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Not authorized.");
+  const user = await requireCurrentUser();
   await costEntries.deleteTimeEntry(id, user.businessId, user.role === "TEAM_MEMBER" ? user.teamMember.id : null);
   revalidateOwner(clientId, leadId);
 }

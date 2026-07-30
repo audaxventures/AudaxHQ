@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { SettingsPanelHeader } from "@/components/settings/SettingsPanelHeader";
 import { BillingPanel } from "@/components/settings/BillingPanel";
-import { requireCurrentUser } from "@/lib/currentUser";
+import { requireCurrentUserIgnoringBilling } from "@/lib/currentUser";
 
 export default async function BillingSettingsPage({
   searchParams,
@@ -12,7 +12,7 @@ export default async function BillingSettingsPage({
   // subscription redirects the whole workspace here (see (app)/layout.tsx),
   // and proxy.ts's OWNER_ONLY_PATH_PREFIXES carries a matching exception so
   // team members can actually land on it instead of bouncing to /.
-  const user = await requireCurrentUser();
+  const user = await requireCurrentUserIgnoringBilling();
   const { checkout } = await searchParams;
   return (
     <Card className="p-6">
