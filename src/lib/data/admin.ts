@@ -98,7 +98,17 @@ export interface RevenuePoint {
  * no data at all until the first trial converts to a paid charge.
  */
 export async function getRevenueSeries(): Promise<RevenuePoint[]> {
-  const transactions = await stripe.balanceTransactions.list({ type: "charge", limit: 100 });
+  // Unlike every other query on this page, this one is a live call to Stripe
+  // rather than our own database — a transient network blip or API hiccup
+  // here shouldn't take down the whole admin dashboard. Degrade to the
+  // existing empty-state ("No revenue collected yet") instead of throwing.
+  let transactions: Awaited<ReturnType<typeof stripe.balanceTransactions.list>>;
+  try {
+    transactions = await stripe.balanceTransactions.list({ type: "charge", limit: 100 });
+  } catch (err) {
+    console.error("Failed to fetch Stripe balance transactions for revenue chart:", err);
+    return [];
+  }
   if (transactions.data.length === 0) return [];
 
   const byDay = new Map<string, number>();
