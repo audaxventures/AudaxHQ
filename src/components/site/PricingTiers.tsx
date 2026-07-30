@@ -64,9 +64,11 @@ export function PricingTiers({ tiers }: { tiers: PricingTierInfo[] }) {
 
               <div className="mt-6 flex items-baseline gap-2">
                 <span className="font-heading text-5xl font-semibold text-navy-900">${price}</span>
-                <span className="text-base text-navy-400">/mo</span>
+                <span className="text-base text-navy-400">CAD/mo</span>
               </div>
-              {annual && <p className="mt-1.5 text-sm text-navy-400">Billed annually at ${tier.annualTotal}/yr</p>}
+              {annual && (
+                <p className="mt-1.5 text-sm text-navy-400">Billed annually at ${tier.annualTotal} CAD/yr</p>
+              )}
               <p className="mt-1.5 text-sm font-medium text-sage-700">Free for your first 7 days</p>
 
               <ul className="mt-8 space-y-4">

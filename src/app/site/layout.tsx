@@ -52,8 +52,8 @@ const structuredData = {
       offers: {
         "@type": "Offer",
         price: String(PRICING_TIERS[0].monthly),
-        priceCurrency: "USD",
-        description: `Plans start at $${PRICING_TIERS[0].monthly}/month with a 7-day free trial`,
+        priceCurrency: "CAD",
+        description: `Plans start at $${PRICING_TIERS[0].monthly} CAD/month with a 7-day free trial`,
       },
     },
   ],

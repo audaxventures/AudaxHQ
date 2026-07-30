@@ -101,7 +101,7 @@ function PlanPicker({
               </div>
               <p className="shrink-0 text-sm font-semibold text-cream-50">
                 ${priceForInterval(info, interval)}
-                <span className="text-xs font-normal text-navy-400">/mo</span>
+                <span className="text-xs font-normal text-navy-400">CAD/mo</span>
               </p>
             </button>
           );

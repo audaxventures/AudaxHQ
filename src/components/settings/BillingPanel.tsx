@@ -84,7 +84,7 @@ function PlanPicker({ onStart, pending }: { onStart: (tier: BusinessTier, interv
               </div>
               <p className="shrink-0 text-sm font-semibold text-navy-900">
                 ${priceForInterval(info, interval)}
-                <span className="text-xs font-normal text-navy-400">/mo</span>
+                <span className="text-xs font-normal text-navy-400">CAD/mo</span>
               </p>
             </button>
           );
@@ -160,7 +160,7 @@ export function BillingPanel({ business, checkoutParam }: { business: Business; 
             {isComplimentary
               ? "Complimentary access — no payment required"
               : `${business.billingInterval === "annual" ? "Billed annually" : "Billed monthly"}${
-                  tierInfo ? ` · $${priceForInterval(tierInfo, business.billingInterval ?? "monthly")}/mo` : ""
+                  tierInfo ? ` · $${priceForInterval(tierInfo, business.billingInterval ?? "monthly")} CAD/mo` : ""
                 }`}
           </p>
         </div>
