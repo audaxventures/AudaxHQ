@@ -28,10 +28,10 @@ export async function login(
   const next = String(formData.get("next") ?? "/");
 
   if (!email || !passcode) {
-    return { error: "That email or passcode isn't right. Try again." };
+    return { error: "That email or password isn't right. Try again." };
   }
 
-  const genericError = { error: "That email or passcode isn't right. Try again." };
+  const genericError = { error: "That email or password isn't right. Try again." };
   const lookup = await lookupAccountEmail(email);
   if (!lookup) return genericError;
 
@@ -91,7 +91,7 @@ export async function requestPasscodeReset(
 ): Promise<ForgotPasscodeState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const generic: ForgotPasscodeState = {
-    message: "If that email is on file, we've sent a link to reset your passcode.",
+    message: "If that email is on file, we've sent a link to reset your password.",
     error: null,
   };
   if (!email) return generic;
@@ -137,10 +137,10 @@ export async function resetPasscode(
   const confirmPasscode = String(formData.get("confirmPasscode") ?? "");
 
   if (newPasscode.length < 4) {
-    return { error: "New passcode must be at least 4 characters." };
+    return { error: "New password must be at least 4 characters." };
   }
   if (newPasscode !== confirmPasscode) {
-    return { error: "New passcode and confirmation don't match." };
+    return { error: "New password and confirmation don't match." };
   }
 
   const invalid = { error: "This reset link is invalid or has expired. Request a new one." };

@@ -214,13 +214,13 @@ export async function changePasscode(formData: FormData): Promise<ActionResult> 
 
   const creds = await businesses.getPasscodeCredentials(user.businessId);
   if (!isCorrectPasscodeHash(currentPasscode, creds.hash, creds.salt)) {
-    return { error: "Current passcode is incorrect." };
+    return { error: "Current password is incorrect." };
   }
   if (newPasscode.length < 4) {
-    return { error: "New passcode must be at least 4 characters." };
+    return { error: "New password must be at least 4 characters." };
   }
   if (newPasscode !== confirmPasscode) {
-    return { error: "New passcode and confirmation don't match." };
+    return { error: "New password and confirmation don't match." };
   }
 
   const { hash, salt } = hashPasscode(newPasscode);

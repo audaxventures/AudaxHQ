@@ -39,7 +39,7 @@ export function ProfileForm({ business, ownerTeamMember }: { business: Business;
       <FieldGroup>
         <Label htmlFor="email" required>Email</Label>
         <Input id="email" name="email" type="email" required defaultValue={business.ownerEmail} placeholder="jane@audaxventures.ca" />
-        <p className="mt-1.5 text-xs text-navy-400">Required to sign in, along with your passcode.</p>
+        <p className="mt-1.5 text-xs text-navy-400">Required to sign in, along with your password.</p>
       </FieldGroup>
       <FieldGroup>
         <Label htmlFor="defaultHourlyRate">Default hourly rate ($/hr)</Label>

@@ -7,7 +7,7 @@ export default function PasscodeSettingsPage() {
     <Card className="p-6">
       <SettingsPanelHeader
         title="Access"
-        description="This app's passcode is managed here in Settings. Changing it only affects future logins — anyone already signed in stays signed in."
+        description="This app's password is managed here in Settings. Changing it only affects future logins — anyone already signed in stays signed in."
       />
       <PasscodeForm />
     </Card>

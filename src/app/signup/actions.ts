@@ -33,10 +33,10 @@ export async function signup(
     return { error: "Fill in your business name, name, and email." };
   }
   if (passcode.length < 4) {
-    return { error: "Passcode must be at least 4 characters." };
+    return { error: "Password must be at least 4 characters." };
   }
   if (passcode !== confirmPasscode) {
-    return { error: "Passcode and confirmation don't match." };
+    return { error: "Password and confirmation don't match." };
   }
   if (!VALID_TIERS.includes(tierRaw as BusinessTier) || !VALID_INTERVALS.includes(intervalRaw as BillingInterval)) {
     return { error: "Choose a plan before continuing." };

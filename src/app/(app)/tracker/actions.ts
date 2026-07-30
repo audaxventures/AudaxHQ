@@ -250,7 +250,7 @@ export async function enableTeamMemberLogin(id: string, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const passcode = String(formData.get("passcode") ?? "");
   if (!email || passcode.length < 4) {
-    throw new Error("Enter an email and a passcode of at least 4 characters.");
+    throw new Error("Enter an email and a password of at least 4 characters.");
   }
   await teamMembers.setTeamMemberLogin(id, user.businessId, email, passcode);
   revalidateTeamMembers();
@@ -309,7 +309,7 @@ export async function resetTeamMemberPasscode(id: string, formData: FormData) {
   await requireOwner();
   const passcode = String(formData.get("passcode") ?? "");
   if (passcode.length < 4) {
-    throw new Error("Passcode must be at least 4 characters.");
+    throw new Error("Password must be at least 4 characters.");
   }
   await teamMembers.setTeamMemberPasscode(id, passcode);
   revalidateTeamMembers();

@@ -67,8 +67,8 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
               <tr>
                 <td style="vertical-align: top; width: 60%;">
                   <span style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%; background: #ffffff; font-size: 20px; margin-bottom: 16px;">&#128274;</span>
-                  <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">Reset your Verclara passcode</h1>
-                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">We received a request to reset the passcode for your workspace.</p>
+                  <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">Reset your Verclara password</h1>
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">We received a request to reset the password for your workspace.</p>
                 </td>
                 <td style="vertical-align: middle; width: 40%; text-align: right;">
                   <table role="presentation" cellpadding="0" cellspacing="0" style="display: inline-table; background: #ffffff; border-radius: 14px; box-shadow: 0 12px 28px -12px rgba(16,29,51,0.3);">
@@ -88,13 +88,13 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
         <tr>
           <td style="background: #ffffff; padding: 32px;">
             <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #101d33;">Hi <span style="font-weight: 700;">${firstName}</span>,</p>
-            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;">You can reset your passcode by clicking the button below.</p>
+            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;">You can reset your password by clicking the button below.</p>
             <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">This link will expire in <span style="font-weight: 700; color: #be5a1e;">30 minutes</span> for your security.</p>
 
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
               <tr>
                 <td style="border-radius: 10px; background: #101d33;">
-                  <a href="${resetUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Reset my passcode &rarr;</a>
+                  <a href="${resetUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Reset my password &rarr;</a>
                 </td>
               </tr>
             </table>
@@ -115,7 +115,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
                       <td style="vertical-align: top; padding-left: 6px;">
                         <p style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #101d33;">Didn't request this?</p>
                         <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #7a3512;">
-                          If you didn't request a passcode reset, you can safely ignore this email. Your passcode won't change unless you use the link above.
+                          If you didn't request a password reset, you can safely ignore this email. Your password won't change unless you use the link above.
                         </p>
                       </td>
                     </tr>
@@ -181,7 +181,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
     body: JSON.stringify({
       from,
       to,
-      subject: "Reset your Verclara passcode",
+      subject: "Reset your Verclara password",
       html,
     }),
   });
@@ -241,19 +241,19 @@ export async function sendTeamMemberInviteEmail(
           <td style="background: linear-gradient(135deg, #dceaf2, #ede9fe); padding: 32px;">
             <span style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%; background: #ffffff; font-size: 20px; margin-bottom: 16px;">&#128075;</span>
             <h1 style="margin: 0 0 12px; font-family: Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 600; color: #101d33; line-height: 1.2;">You're invited to ${businessName}</h1>
-            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">Set up your passcode to get into your team's Verclara workspace.</p>
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4c5f82;">Set up your password to get into your team's Verclara workspace.</p>
           </td>
         </tr>
         <tr>
           <td style="background: #ffffff; padding: 32px;">
             <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6; color: #101d33;">Hi <span style="font-weight: 700;">${firstName}</span>,</p>
-            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;"><span style="font-weight: 700;">${businessName}</span> has added you as a team member on Verclara. Click below to choose your own passcode and sign in.</p>
+            <p style="margin: 0 0 8px; font-size: 15px; line-height: 1.6; color: #4c5f82;"><span style="font-weight: 700;">${businessName}</span> has added you as a team member on Verclara. Click below to choose your own password and sign in.</p>
             <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #4c5f82;">This link will expire in <span style="font-weight: 700; color: #be5a1e;">7 days</span>.</p>
 
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
               <tr>
                 <td style="border-radius: 10px; background: #101d33;">
-                  <a href="${inviteUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Set up my passcode &rarr;</a>
+                  <a href="${inviteUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Set up my password &rarr;</a>
                 </td>
               </tr>
             </table>

@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { fieldBase, Label, FieldGroup } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { changePasscode } from "@/app/(app)/settings/actions";
+
+const passwordIconClassName = "text-navy-400 hover:text-navy-600";
 
 export function PasscodeForm() {
   const [pending, startTransition] = useTransition();
@@ -30,30 +33,46 @@ export function PasscodeForm() {
       className="max-w-sm space-y-4"
     >
       <FieldGroup>
-        <Label htmlFor="currentPasscode">Current passcode</Label>
-        <Input id="currentPasscode" name="currentPasscode" type="password" required autoComplete="current-password" />
+        <Label htmlFor="currentPasscode">Current password</Label>
+        <PasswordInput
+          id="currentPasscode"
+          name="currentPasscode"
+          required
+          autoComplete="current-password"
+          className={fieldBase}
+          iconClassName={passwordIconClassName}
+        />
       </FieldGroup>
       <FieldGroup>
-        <Label htmlFor="newPasscode">New passcode</Label>
-        <Input id="newPasscode" name="newPasscode" type="password" required autoComplete="new-password" minLength={4} />
-      </FieldGroup>
-      <FieldGroup>
-        <Label htmlFor="confirmPasscode">Confirm new passcode</Label>
-        <Input
-          id="confirmPasscode"
-          name="confirmPasscode"
-          type="password"
+        <Label htmlFor="newPasscode">New password</Label>
+        <PasswordInput
+          id="newPasscode"
+          name="newPasscode"
           required
           autoComplete="new-password"
           minLength={4}
+          className={fieldBase}
+          iconClassName={passwordIconClassName}
+        />
+      </FieldGroup>
+      <FieldGroup>
+        <Label htmlFor="confirmPasscode">Confirm new password</Label>
+        <PasswordInput
+          id="confirmPasscode"
+          name="confirmPasscode"
+          required
+          autoComplete="new-password"
+          minLength={4}
+          className={fieldBase}
+          iconClassName={passwordIconClassName}
         />
       </FieldGroup>
       {error && <p className="text-sm text-brick-600">{error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Updating…" : "Update passcode"}
+          {pending ? "Updating…" : "Update password"}
         </Button>
-        {saved && !pending && <p className="text-sm text-sage-600">Passcode updated.</p>}
+        {saved && !pending && <p className="text-sm text-sage-600">Password updated.</p>}
       </div>
     </form>
   );

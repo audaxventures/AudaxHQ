@@ -11,7 +11,7 @@ export default async function ResetPasscodePage({
   const { token } = await searchParams;
 
   return (
-    <AuthShell icon={KeyRound} title="Set a new passcode" description="Choose a new passcode for your Verclara workspace.">
+    <AuthShell icon={KeyRound} title="Set a new password" description="Choose a new password for your Verclara workspace.">
       {token ? (
         <ResetPasscodeForm token={token} />
       ) : (

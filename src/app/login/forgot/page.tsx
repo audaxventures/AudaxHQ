@@ -6,8 +6,8 @@ export default function ForgotPasscodePage() {
   return (
     <AuthShell
       icon={Mail}
-      title="Forgot your passcode?"
-      description="Enter the email on your profile and we'll send you a link to set a new passcode."
+      title="Forgot your password?"
+      description="Enter the email on your profile and we'll send you a link to set a new password."
     >
       <ForgotPasscodeForm />
     </AuthShell>

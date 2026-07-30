@@ -2,10 +2,13 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Check, KeyRound, MailCheck, Pencil, Plus, RotateCw, Send, ShieldCheck, Trash2, X } from "lucide-react";
-import { Input } from "@/components/ui/Field";
+import { Input, fieldBase } from "@/components/ui/Field";
 import { InfoNote } from "@/components/ui/InfoNote";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { cn } from "@/lib/cn";
+
+const passwordIconClassName = "text-navy-400 hover:text-navy-600";
 import { formatCurrency } from "@/lib/format";
 import { hasFeature, TEAM_MEMBER_SEAT_CAP, TIER_LABELS } from "@/lib/entitlements";
 import type { BusinessTier, TeamMember } from "@/lib/types";
@@ -90,7 +93,15 @@ function EnableLoginForm({
       className="space-y-2"
     >
       <Input name="email" type="email" placeholder="Email" required defaultValue={member.email ?? ""} />
-      <Input name="passcode" type="password" placeholder="Set an initial passcode" required minLength={4} />
+      <PasswordInput
+        id={`initial-passcode-${member.id}`}
+        name="passcode"
+        placeholder="Set an initial password"
+        required
+        minLength={4}
+        className={fieldBase}
+        iconClassName={passwordIconClassName}
+      />
       {error && <p className="text-xs text-brick-600">{error}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -98,7 +109,7 @@ function EnableLoginForm({
           disabled={pending}
           className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 cursor-pointer"
         >
-          {pending ? "Saving…" : "Set passcode"}
+          {pending ? "Saving…" : "Set password"}
         </button>
         <button
           type="button"
@@ -138,7 +149,7 @@ function InviteTeamMemberForm({ member, onDone }: { member: TeamMember; onDone: 
       className="space-y-2"
     >
       <Input name="email" type="email" placeholder="Email" required defaultValue={member.email ?? ""} />
-      <p className="text-xs text-navy-400">They&apos;ll get an email to set up their own passcode.</p>
+      <p className="text-xs text-navy-400">They&apos;ll get an email to set up their own password.</p>
       {error && <p className="text-xs text-brick-600">{error}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -160,7 +171,7 @@ function InviteTeamMemberForm({ member, onDone }: { member: TeamMember; onDone: 
           onClick={() => setManual(true)}
           className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer"
         >
-          Set a passcode myself instead
+          Set a password myself instead
         </button>
       </div>
     </form>
@@ -184,7 +195,7 @@ function PendingInvitePanel({ member, onClose }: { member: TeamMember; onClose: 
         <MailCheck size={14} className="mt-0.5 shrink-0 text-burnt-600" />
         <p className="text-xs text-navy-600">
           Invited <span className="font-medium text-navy-800">{member.email}</span> — waiting for them to set a
-          passcode.
+          password.
         </p>
       </div>
       {resent && <p className="text-xs text-sage-600">Invite resent.</p>}
@@ -214,7 +225,7 @@ function PendingInvitePanel({ member, onClose }: { member: TeamMember; onClose: 
           onClick={() => setManual(true)}
           className="text-xs font-medium text-navy-500 hover:text-navy-700 cursor-pointer"
         >
-          Set a passcode myself instead
+          Set a password myself instead
         </button>
         <button
           type="button"
@@ -247,13 +258,21 @@ function ResetPasscodeForm({ member, onDone }: { member: TeamMember; onDone: () 
             await resetTeamMemberPasscode(member.id, formData);
             onDone();
           } catch (e) {
-            setError(e instanceof Error ? e.message : "Couldn't reset passcode.");
+            setError(e instanceof Error ? e.message : "Couldn't reset password.");
           }
         });
       }}
       className="flex items-start gap-2"
     >
-      <Input name="passcode" type="password" placeholder="New passcode" required minLength={4} className="max-w-[180px]" />
+      <PasswordInput
+        id={`reset-passcode-${member.id}`}
+        name="passcode"
+        placeholder="New password"
+        required
+        minLength={4}
+        className={cn(fieldBase, "max-w-[180px]")}
+        iconClassName={passwordIconClassName}
+      />
       <button
         type="submit"
         disabled={pending}
@@ -403,7 +422,7 @@ function AccessPanel({
           onClick={() => setResettingPasscode(true)}
           className="flex items-center gap-1.5 text-xs font-medium text-navy-600 hover:text-navy-900 cursor-pointer"
         >
-          <KeyRound size={12} /> Reset passcode
+          <KeyRound size={12} /> Reset password
         </button>
       )}
 
@@ -639,7 +658,7 @@ export function TeamMembersPanel({
             member to manage their login and access.
           </p>
           <p className="text-navy-500">
-            That&apos;s where you invite them by email to set up their own passcode, reset one, and choose which
+            That&apos;s where you invite them by email to set up their own password, reset one, and choose which
             clients they can see.
           </p>
           <p className="mt-2 text-navy-500">
