@@ -137,6 +137,11 @@ export function BillingPanel({ business, checkoutParam }: { business: Business; 
 
   const tierInfo = PRICING_TIERS.find((t) => t.tier === business.tier);
   const status = business.subscriptionStatus;
+  // Backfilled by migration 042 (existing/early-access workspaces set to
+  // 'active' with no Stripe customer) or a workspace comped by a platform
+  // admin — either way there's no Stripe subscription to open a portal
+  // session for, so "Manage billing" would just error.
+  const isComplimentary = !business.stripeCustomerId;
 
   return (
     <div className="space-y-5">
@@ -152,8 +157,11 @@ export function BillingPanel({ business, checkoutParam }: { business: Business; 
             <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
           </div>
           <p className="mt-1 text-sm text-navy-500">
-            {business.billingInterval === "annual" ? "Billed annually" : "Billed monthly"}
-            {tierInfo && ` · $${priceForInterval(tierInfo, business.billingInterval ?? "monthly")}/mo`}
+            {isComplimentary
+              ? "Complimentary access — no payment required"
+              : `${business.billingInterval === "annual" ? "Billed annually" : "Billed monthly"}${
+                  tierInfo ? ` · $${priceForInterval(tierInfo, business.billingInterval ?? "monthly")}/mo` : ""
+                }`}
           </p>
         </div>
         {status === "trialing" && business.trialEndsAt && (
@@ -167,17 +175,26 @@ export function BillingPanel({ business, checkoutParam }: { business: Business; 
         )}
       </div>
 
-      <button
-        type="button"
-        disabled={pending}
-        onClick={handlePortal}
-        className="flex items-center justify-center gap-2 rounded-xl border border-navy-200 px-4 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-400 hover:bg-navy-100/50 disabled:opacity-50"
-      >
-        <CreditCard size={16} /> {pending ? "Redirecting…" : "Manage billing"}
-      </button>
-      <p className="text-xs text-navy-400">
-        Manage billing opens Stripe&rsquo;s secure portal — update your card, switch plans, or cancel.
-      </p>
+      {isComplimentary ? (
+        <p className="text-xs text-navy-400">
+          Your workspace has complimentary access set up by Verclara — there&rsquo;s no card on file and nothing to
+          manage here.
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handlePortal}
+            className="flex items-center justify-center gap-2 rounded-xl border border-navy-200 px-4 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:border-navy-400 hover:bg-navy-100/50 disabled:opacity-50"
+          >
+            <CreditCard size={16} /> {pending ? "Redirecting…" : "Manage billing"}
+          </button>
+          <p className="text-xs text-navy-400">
+            Manage billing opens Stripe&rsquo;s secure portal — update your card, switch plans, or cancel.
+          </p>
+        </>
+      )}
     </div>
   );
 }
