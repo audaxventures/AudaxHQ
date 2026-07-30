@@ -27,6 +27,15 @@ export default function AdminError({
       <p className="max-w-sm text-sm text-navy-500">
         Something went wrong loading the admin dashboard. This is often a temporary hiccup fetching platform data.
       </p>
+      {/* This route is platform-admin-only (requirePlatformAdmin), so it's
+          safe to show the raw error here — it's for diagnosing production
+          issues on the spot rather than digging through Vercel logs. */}
+      {(error.message || error.digest) && (
+        <div className="mt-1 max-w-md rounded-lg bg-navy-50 px-3 py-2 text-left font-mono text-xs text-navy-600">
+          {error.message && <p className="break-words">{error.message}</p>}
+          {error.digest && <p className="mt-1 text-navy-400">Digest: {error.digest}</p>}
+        </div>
+      )}
       <div className="mt-2 flex gap-2">
         <Button onClick={() => unstable_retry()}>Try again</Button>
         <LinkButton href="/" variant="secondary">
