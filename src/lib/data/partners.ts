@@ -38,20 +38,32 @@ function mapCommission(row: Record<string, unknown>): PartnerCommission {
 export interface PartnerSummary extends Partner {
   referralCount: number;
   amountOwed: number;
+  /** Lifetime invoiced + paid revenue from clients this partner's WON referrals converted into — see PartnerWithRelations.revenueGenerated for why this is tracked separately from commissions owed. */
+  revenueGenerated: number;
 }
 
-/** All partners with their referral count + total amount currently owed, for the list page. */
+/** All partners with their referral count, total amount currently owed, and revenue generated, for the list page. Revenue is pre-aggregated in its own CTE rather than joined directly — joining invoices alongside the leads/commissions joins already in this query would fan out and double-count. */
 export async function listPartners(businessId: string, opts: { includeInactive?: boolean } = {}): Promise<PartnerSummary[]> {
   const rows = await sql`
+    with revenue_by_partner as (
+      select l.referred_by_partner_id as partner_id, coalesce(sum(i.amount), 0) as revenue
+      from leads l
+      join invoices i on i.client_id = l.converted_client_id
+      where l.business_id = ${businessId} and l.referred_by_partner_id is not null
+        and l.status = 'WON' and i.status <> 'NOT_INVOICED'
+      group by l.referred_by_partner_id
+    )
     select p.*,
       count(distinct l.id) as referral_count,
-      coalesce(sum(pc.amount) filter (where pc.status = 'OWED'), 0) as amount_owed
+      coalesce(sum(pc.amount) filter (where pc.status = 'OWED'), 0) as amount_owed,
+      coalesce(rbp.revenue, 0) as revenue_generated
     from partners p
     left join leads l on l.referred_by_partner_id = p.id
     left join partner_commissions pc on pc.partner_id = p.id
+    left join revenue_by_partner rbp on rbp.partner_id = p.id
     where p.business_id = ${businessId}
       and (${opts.includeInactive ?? false} or p.active)
-    group by p.id
+    group by p.id, rbp.revenue
     order by p.active desc, p.company_name asc
   `;
   return rows.map((r) => {
@@ -60,18 +72,26 @@ export async function listPartners(businessId: string, opts: { includeInactive?:
       ...mapPartner(row),
       referralCount: Number(row.referral_count),
       amountOwed: Number(row.amount_owed),
+      revenueGenerated: Number(row.revenue_generated),
     };
   });
 }
 
 export async function getPartner(id: string, businessId: string): Promise<PartnerWithRelations | null> {
-  const [partnerRows, referredLeads, followUps, meetingNotes, documents, commissionRows] = await Promise.all([
+  const [partnerRows, referredLeads, followUps, meetingNotes, documents, commissionRows, revenueRows] = await Promise.all([
     sql`select * from partners where id = ${id} and business_id = ${businessId}`,
     listReferredLeads(id, businessId),
     listFollowUpsForPartner(id, businessId),
     listMeetingNotes(businessId, { partnerId: id }),
     listDocumentsForPartner(id, businessId),
     sql`select * from partner_commissions where partner_id = ${id} and business_id = ${businessId} order by created_at desc`,
+    sql`
+      select coalesce(sum(i.amount), 0) as revenue
+      from leads l
+      join invoices i on i.client_id = l.converted_client_id
+      where l.referred_by_partner_id = ${id} and l.business_id = ${businessId}
+        and l.status = 'WON' and i.status <> 'NOT_INVOICED'
+    `,
   ]);
   if (partnerRows.length === 0) return null;
   return {
@@ -81,6 +101,7 @@ export async function getPartner(id: string, businessId: string): Promise<Partne
     meetingNotes,
     documents,
     commissions: commissionRows.map((r) => mapCommission(r as Record<string, unknown>)),
+    revenueGenerated: Number((revenueRows[0] as Record<string, unknown>).revenue),
   };
 }
 

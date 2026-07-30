@@ -31,9 +31,15 @@ export function PartnerListRow({ partner }: { partner: PartnerSummary }) {
             {partner.referralCount} referral{partner.referralCount === 1 ? "" : "s"}
           </Badge>
         </div>
-        <div className="text-right shrink-0">
-          <p className="font-heading text-base text-navy-900">{formatCurrency(partner.amountOwed)}</p>
-          <p className="text-xs text-navy-400">owed</p>
+        <div className="flex gap-4">
+          <div className="text-right shrink-0">
+            <p className="font-heading text-base text-sage-700">{formatCurrency(partner.revenueGenerated)}</p>
+            <p className="text-xs text-navy-400">revenue</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="font-heading text-base text-navy-900">{formatCurrency(partner.amountOwed)}</p>
+            <p className="text-xs text-navy-400">owed</p>
+          </div>
         </div>
       </div>
       <ChevronRight

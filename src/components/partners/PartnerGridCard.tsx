@@ -30,9 +30,15 @@ export function PartnerGridCard({ partner }: { partner: PartnerSummary }) {
         </Badge>
       </div>
       <div className="flex items-end justify-between border-t border-navy-100 pt-3">
-        <div>
-          <p className="font-heading text-lg text-navy-900">{formatCurrency(partner.amountOwed)}</p>
-          <p className="text-xs text-navy-400">owed</p>
+        <div className="flex gap-5">
+          <div>
+            <p className="font-heading text-lg text-sage-700">{formatCurrency(partner.revenueGenerated)}</p>
+            <p className="text-xs text-navy-400">revenue</p>
+          </div>
+          <div>
+            <p className="font-heading text-lg text-navy-900">{formatCurrency(partner.amountOwed)}</p>
+            <p className="text-xs text-navy-400">owed</p>
+          </div>
         </div>
         <ChevronRight size={18} className="text-navy-300 group-hover:text-navy-500 transition-colors shrink-0" />
       </div>

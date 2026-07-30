@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { IdCard, CalendarClock, NotebookPen, FileText, Receipt, Target, BarChart3 } from "lucide-react";
+import { IdCard, CalendarClock, NotebookPen, FileText, DollarSign, Target, BarChart3 } from "lucide-react";
 import { getPartner } from "@/lib/data/partners";
 import { listTasks } from "@/lib/data/todos";
 import { getBusinessToday } from "@/lib/data/businesses";
@@ -20,7 +20,7 @@ import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { DocumentsSection } from "@/components/DocumentsSection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { Button } from "@/components/ui/Button";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatCurrency } from "@/lib/format";
 import { buildAssignOptions, selfId } from "@/lib/assign";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 
@@ -92,9 +92,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
       ),
     },
     {
-      key: "commissions",
-      label: "Commissions",
-      icon: <Receipt size={15} />,
+      key: "finance",
+      label: "Finance",
+      icon: <DollarSign size={15} />,
       color: "gold",
       count: partner.commissions.length,
       content: (
@@ -102,6 +102,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           partnerId={id}
           commissions={partner.commissions}
           referredLeads={partner.referredLeads}
+          revenueGenerated={partner.revenueGenerated}
           today={today}
         />
       ),
@@ -157,6 +158,12 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           <Card className="p-6">
             <PanelHeading icon={BarChart3} tone="slate" title="At a glance" />
             <dl className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-navy-500">Revenue generated</dt>
+                <dd className="font-heading text-base font-medium text-sage-700">
+                  {formatCurrency(partner.revenueGenerated)}
+                </dd>
+              </div>
               <div className="flex justify-between">
                 <dt className="text-navy-500">Referrals sent</dt>
                 <dd className="text-navy-800 font-medium">{partner.referredLeads.length}</dd>

@@ -302,6 +302,8 @@ export interface PartnerWithRelations extends Partner {
   meetingNotes: MeetingNote[];
   documents: Document[];
   commissions: PartnerCommission[];
+  /** Lifetime invoiced + paid revenue from clients this partner's WON referrals converted into — not tied to commission arrangements, since some partnerships send valuable referrals with no fee owed at all. Same formula as getConversionByPartner in leadAnalytics.ts. */
+  revenueGenerated: number;
 }
 
 /**

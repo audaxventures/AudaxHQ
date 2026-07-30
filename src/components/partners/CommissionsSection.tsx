@@ -69,11 +69,14 @@ export function CommissionsSection({
   partnerId,
   commissions,
   referredLeads,
+  revenueGenerated,
   today,
 }: {
   partnerId: string;
   commissions: PartnerCommission[];
   referredLeads: Lead[];
+  /** Lifetime invoiced + paid revenue from clients this partner's WON referrals converted into — independent of commissions, since some partnerships send valuable referrals with no fee owed at all. */
+  revenueGenerated: number;
   today: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -86,15 +89,22 @@ export function CommissionsSection({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-4 text-sm">
-        <span className="text-navy-600">
-          <span className="font-heading text-base font-medium text-gold-600">{formatCurrency(owed)}</span> owed
-        </span>
-        <span className="text-navy-600">
-          <span className="font-heading text-base font-medium text-sage-600">{formatCurrency(paid)}</span> paid
-        </span>
+      <div className="mb-5 grid grid-cols-3 gap-3 rounded-xl border border-navy-100 bg-cream-50 px-4 py-3">
+        <div>
+          <p className="font-heading text-xl font-medium text-sage-700">{formatCurrency(revenueGenerated)}</p>
+          <p className="text-xs text-navy-500">Revenue generated</p>
+        </div>
+        <div>
+          <p className="font-heading text-xl font-medium text-gold-600">{formatCurrency(owed)}</p>
+          <p className="text-xs text-navy-500">Commission owed</p>
+        </div>
+        <div>
+          <p className="font-heading text-xl font-medium text-navy-700">{formatCurrency(paid)}</p>
+          <p className="text-xs text-navy-500">Commission paid</p>
+        </div>
       </div>
 
+      <h4 className="mb-2 font-heading text-base font-bold text-navy-900">Commission log</h4>
       {commissions.length === 0 ? (
         <p className="text-sm text-navy-400 mb-4">No commissions logged yet.</p>
       ) : (
