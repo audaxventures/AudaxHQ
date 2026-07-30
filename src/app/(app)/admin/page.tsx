@@ -1,4 +1,4 @@
-import { Building2, Users, Target, CheckSquare, CalendarClock, NotebookPen } from "lucide-react";
+import { Building2, Users, Target, CheckSquare, CalendarClock, NotebookPen, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -11,6 +11,30 @@ import { DeleteWorkspaceButton } from "@/components/admin/DeleteWorkspaceButton"
 import { formatDate, formatCurrency } from "@/lib/format";
 import Link from "next/link";
 import type { Tone } from "@/lib/tone";
+
+/**
+ * Isolates one data-fetching failure from taking down the whole page —
+ * production sanitizes any error that bubbles up through the framework's
+ * own error boundary (see admin/error.tsx), so the only way to see the
+ * real message is to catch it here ourselves and render it directly as
+ * page content, before Next ever gets a chance to scrub it.
+ */
+async function settle<T>(promise: Promise<T>, fallback: T): Promise<{ data: T; error: string | null }> {
+  try {
+    return { data: await promise, error: null };
+  } catch (err) {
+    return { data: fallback, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+function SectionError({ message }: { message: string }) {
+  return (
+    <div className="mb-4 flex items-start gap-2 rounded-xl border border-burnt-200 bg-burnt-50 px-4 py-3 text-sm text-burnt-700">
+      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+      <p className="break-words font-mono text-xs">{message}</p>
+    </div>
+  );
+}
 
 function StatTile({ label, value, subtext, tone }: { label: string; value: string; subtext?: string; tone: Tone }) {
   return (
@@ -37,16 +61,35 @@ function ActivityTile({ icon: Icon, label, value }: { icon: React.ElementType; l
 }
 
 export default async function AdminOverviewPage() {
-  const [stats, growth, activity, revenue, workspaces] = await Promise.all([
-    getPlatformStats(),
-    getGrowthSeries(),
-    getPlatformActivityCounts(),
-    getRevenueSeries(),
-    listWorkspaces(),
+  const [statsResult, growthResult, activityResult, revenueResult, workspacesResult] = await Promise.all([
+    settle(getPlatformStats(), {
+      totalWorkspaces: 0,
+      activeWorkspaces: 0,
+      suspendedWorkspaces: 0,
+      totalUsers: 0,
+      newSignups30d: 0,
+      mrr: 0,
+      trialingCount: 0,
+    }),
+    settle(getGrowthSeries(), []),
+    settle(getPlatformActivityCounts(), { clients: 0, leads: 0, tasks: 0, followUps: 0, meetingNotes: 0 }),
+    settle(getRevenueSeries(), []),
+    settle(listWorkspaces(), []),
   ]);
+  const stats = statsResult.data;
+  const growth = growthResult.data;
+  const activity = activityResult.data;
+  const revenue = revenueResult.data;
+  const workspaces = workspacesResult.data;
 
   return (
     <div>
+      {statsResult.error && <SectionError message={`Platform stats: ${statsResult.error}`} />}
+      {growthResult.error && <SectionError message={`Growth chart: ${growthResult.error}`} />}
+      {activityResult.error && <SectionError message={`Platform activity: ${activityResult.error}`} />}
+      {revenueResult.error && <SectionError message={`Revenue chart: ${revenueResult.error}`} />}
+      {workspacesResult.error && <SectionError message={`Workspace list: ${workspacesResult.error}`} />}
+
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile label="Active workspaces" value={String(stats.activeWorkspaces)} tone="sage" />
         <StatTile label="Suspended" value={String(stats.suspendedWorkspaces)} tone="burnt" />
