@@ -83,32 +83,44 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      if (session.mode === "subscription" && typeof session.subscription === "string") {
-        const subscription = await stripe.subscriptions.retrieve(session.subscription);
-        await syncSubscription(subscription);
+  // Always acknowledge with 200 once the signature checks out, even if
+  // something below throws (a Stripe API hiccup, a synthetic test event
+  // referencing an id that doesn't really exist, an unrecognized price).
+  // Returning a non-2xx here makes Stripe retry the same event for up to 3
+  // days — appropriate for a transient failure, but not for a bug, which a
+  // retry storm won't fix. Log and move on; the next real event for this
+  // subscription (there's always another one along soon — created, then
+  // updated on renewal, etc.) will reconcile state either way.
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "subscription" && typeof session.subscription === "string") {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          await syncSubscription(subscription);
+        }
+        break;
       }
-      break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await syncSubscription(subscription);
+        break;
+      }
+      case "invoice.payment_failed": {
+        // Stripe already flips the Subscription's own status to past_due (or
+        // unpaid, after its retry schedule is exhausted) and fires
+        // customer.subscription.updated for that — which is what actually
+        // syncs our subscription_status. Nothing else to do here yet; this
+        // case exists as a hook for a future "your payment failed" email.
+        break;
+      }
+      default:
+        break;
     }
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
-      await syncSubscription(subscription);
-      break;
-    }
-    case "invoice.payment_failed": {
-      // Stripe already flips the Subscription's own status to past_due (or
-      // unpaid, after its retry schedule is exhausted) and fires
-      // customer.subscription.updated for that — which is what actually
-      // syncs our subscription_status. Nothing else to do here yet; this
-      // case exists as a hook for a future "your payment failed" email.
-      break;
-    }
-    default:
-      break;
+  } catch (e) {
+    console.error(`Stripe webhook: error handling ${event.type} (${event.id}):`, e);
   }
 
   return NextResponse.json({ received: true });
