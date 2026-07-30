@@ -423,6 +423,11 @@ export interface TodoType {
 /** See migration 031 + src/lib/entitlements.ts. Every business defaults to 'scale' during early access — nothing is gated on this yet. */
 export type BusinessTier = "starter" | "growth" | "scale";
 
+/** Mirrors Stripe's own subscription statuses, narrowed to the ones we actually branch on — see the webhook handler in src/app/api/webhooks/stripe/route.ts. Null means Checkout hasn't completed yet (brand-new signup, or an abandoned one). */
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
+
+export type BillingInterval = "monthly" | "annual";
+
 export interface Business {
   id: string;
   /** Workspace/company display name — set at signup, distinct from the owner's personal name. */
@@ -441,6 +446,14 @@ export interface Business {
   /** Set once the owner dismisses the first-login welcome popup — null means it hasn't been shown/dismissed yet. */
   onboardingDismissedAt: string | null;
   tier: BusinessTier;
+  /** Null until Stripe Checkout completes (see createStripeCustomer in signup) — populated eagerly right after signup so the billing page/webhook always have something to key off of. */
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  /** Null means no subscription has ever been created (Checkout not completed) — written only by the Stripe webhook handler, never trusted from the client. */
+  subscriptionStatus: SubscriptionStatus | null;
+  /** When the 7-day trial ends — set from the Subscription object by the webhook, purely informational (Stripe itself transitions status out of 'trialing' when it passes, we don't compute this locally). */
+  trialEndsAt: string | null;
+  billingInterval: BillingInterval | null;
   createdAt: string;
   updatedAt: string;
 }

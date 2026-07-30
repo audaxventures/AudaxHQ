@@ -5,18 +5,9 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { appPath } from "@/lib/site";
+import type { PricingTierInfo } from "@/lib/pricing";
 
-export type PricingTier = {
-  name: string;
-  audience: string;
-  highlight: boolean;
-  monthly: number;
-  annualMonthly: number;
-  annualTotal: number;
-  features: string[];
-};
-
-export function PricingTiers({ tiers }: { tiers: PricingTier[] }) {
+export function PricingTiers({ tiers }: { tiers: PricingTierInfo[] }) {
   const [annual, setAnnual] = useState(false);
 
   return (
@@ -76,7 +67,7 @@ export function PricingTiers({ tiers }: { tiers: PricingTier[] }) {
                 <span className="text-base text-navy-400">/mo</span>
               </div>
               {annual && <p className="mt-1.5 text-sm text-navy-400">Billed annually at ${tier.annualTotal}/yr</p>}
-              <p className="mt-1.5 text-sm font-medium text-sage-700">Future price — free during early access</p>
+              <p className="mt-1.5 text-sm font-medium text-sage-700">Free for your first 7 days</p>
 
               <ul className="mt-8 space-y-4">
                 {tier.features.map((f) => (
@@ -88,7 +79,7 @@ export function PricingTiers({ tiers }: { tiers: PricingTier[] }) {
               </ul>
 
               <Link
-                href={appPath("/signup")}
+                href={appPath(`/signup?tier=${tier.tier}&interval=${annual ? "annual" : "monthly"}`)}
                 className={cn(
                   "mt-9 flex items-center justify-center rounded-xl px-5 py-3.5 text-base font-semibold transition-colors",
                   tier.highlight
@@ -96,7 +87,7 @@ export function PricingTiers({ tiers }: { tiers: PricingTier[] }) {
                     : "border border-navy-200 text-navy-800 hover:border-navy-400 hover:bg-navy-100/50"
                 )}
               >
-                Start for free
+                Start free trial
               </Link>
             </div>
           );

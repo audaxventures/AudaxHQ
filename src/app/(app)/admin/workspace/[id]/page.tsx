@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, Building2, Target, CheckSquare, CalendarClock, NotebookPen } from "lucide-react";
+import { ArrowLeft, Users, Building2, Target, CheckSquare, CalendarClock, NotebookPen, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,6 +9,26 @@ import { WorkspaceTierSelect } from "@/components/admin/WorkspaceTierSelect";
 import { getWorkspaceDetail } from "@/lib/data/admin";
 import { listFeedbackForBusiness } from "@/lib/data/feedback";
 import { formatDate } from "@/lib/format";
+import type { SubscriptionStatus } from "@/lib/types";
+
+const SUBSCRIPTION_STATUS_TONE = {
+  trialing: "gold",
+  active: "sage",
+  past_due: "brick",
+  canceled: "slate",
+} as const;
+
+const SUBSCRIPTION_STATUS_LABEL = {
+  trialing: "Trial",
+  active: "Active",
+  past_due: "Payment failed",
+  canceled: "Canceled",
+} as const;
+
+function SubscriptionStatusBadge({ status }: { status: SubscriptionStatus | null }) {
+  if (!status) return <Badge tone="slate">No subscription</Badge>;
+  return <Badge tone={SUBSCRIPTION_STATUS_TONE[status]}>{SUBSCRIPTION_STATUS_LABEL[status]}</Badge>;
+}
 
 function StatTile({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
   return (
@@ -48,6 +68,28 @@ export default async function AdminWorkspaceDetailPage({ params }: { params: Pro
             <WorkspaceTierSelect businessId={workspace.id} tier={workspace.tier} />
             <Badge tone={isSuspended ? "brick" : "sage"}>{isSuspended ? "Suspended" : "Active"}</Badge>
           </div>
+        </div>
+
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-navy-100 bg-cream-50 px-4 py-3">
+          <SubscriptionStatusBadge status={workspace.subscriptionStatus} />
+          {workspace.billingInterval && (
+            <span className="text-xs text-navy-500">{workspace.billingInterval === "annual" ? "Billed annually" : "Billed monthly"}</span>
+          )}
+          {workspace.subscriptionStatus === "trialing" && workspace.trialEndsAt && (
+            <span className="text-xs text-navy-500">Trial ends {formatDate(workspace.trialEndsAt)}</span>
+          )}
+          {workspace.stripeCustomerId ? (
+            <a
+              href={`https://dashboard.stripe.com/customers/${workspace.stripeCustomerId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-burnt-600 hover:text-burnt-700"
+            >
+              View in Stripe <ExternalLink size={12} />
+            </a>
+          ) : (
+            <span className="ml-auto text-xs text-navy-400">No Stripe customer</span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

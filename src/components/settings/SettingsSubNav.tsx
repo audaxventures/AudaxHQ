@@ -11,6 +11,7 @@ import {
   Target,
   CheckSquare,
   DollarSign,
+  CreditCard,
   Shield,
   Upload,
   MessageSquare,
@@ -23,6 +24,7 @@ import { Card } from "@/components/ui/Card";
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/profile", label: "Profile", icon: User },
   { href: "/settings/business", label: "Business Info", icon: Building2 },
+  { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/team-members", label: "Team Members", icon: Users },
   { href: "/settings/work-categories", label: "Work Categories", icon: Folder },
   { href: "/settings/work-types", label: "Work Types", icon: Tag },

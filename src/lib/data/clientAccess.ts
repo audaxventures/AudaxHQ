@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { hasFeature } from "@/lib/entitlements";
 import type { CurrentUser } from "@/lib/types";
 
 export async function getClientAccessIds(teamMemberId: string, businessId: string): Promise<string[]> {
@@ -6,9 +7,17 @@ export async function getClientAccessIds(teamMemberId: string, businessId: strin
   return rows.map((r) => (r as Record<string, unknown>).client_id as string);
 }
 
-/** Null = no restriction (owner sees everything). Non-null = the exact client IDs a team member may see. */
+/**
+ * Null = no restriction (sees every client). Non-null = the exact client IDs
+ * a team member may see. Always null for the owner, and also null for a
+ * team member on a tier below Growth — per-client access control is a
+ * Growth+ feature (see entitlements.ts), so a Starter workspace's team
+ * members see every client regardless of any client_access rows left over
+ * from before a downgrade.
+ */
 export async function accessibleClientIdsFor(user: CurrentUser): Promise<string[] | null> {
   if (user.role === "OWNER") return null;
+  if (!hasFeature(user.business.tier, "perClientAccessControl")) return null;
   return getClientAccessIds(user.teamMember.id, user.businessId);
 }
 

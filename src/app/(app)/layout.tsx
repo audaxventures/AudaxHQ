@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { MobileTopBar, MobileTabBar } from "@/components/nav/MobileNav";
 import { QuickActionsFab } from "@/components/nav/QuickActionsFab";
@@ -12,6 +14,16 @@ import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { selfId } from "@/lib/assign";
 
+// A workspace that never finished Checkout (subscriptionStatus null) or whose
+// subscription was fully canceled has no active Stripe subscription — every
+// other status (trialing, active, even past_due mid-retry) keeps full access,
+// matching how Stripe's own Smart Retries give a payment grace period before
+// a subscription actually moves to canceled.
+const BILLING_GATE_PATH = "/settings/billing";
+function isBillingBlocked(status: string | null): boolean {
+  return status === null || status === "canceled";
+}
+
 // This app is a live daily-use tool backed by Postgres — every page here
 // needs fresh data on every request, so opt the whole section out of static
 // prerendering rather than annotating each page individually.
@@ -19,6 +31,12 @@ export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const currentUser = await getCurrentUser();
+
+  if (currentUser && isBillingBlocked(currentUser.business.subscriptionStatus)) {
+    const pathname = (await headers()).get("x-pathname") ?? "";
+    if (pathname !== BILLING_GATE_PATH) redirect(BILLING_GATE_PATH);
+  }
+
   // proxy.ts already guarantees a valid session reaches this layout — a null
   // user here only means the team member's login was revoked mid-session,
   // so fail closed to the more restrictive role rather than crashing.

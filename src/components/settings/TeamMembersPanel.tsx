@@ -7,7 +7,8 @@ import { InfoNote } from "@/components/ui/InfoNote";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
-import type { TeamMember } from "@/lib/types";
+import { hasFeature, TEAM_MEMBER_SEAT_CAP, TIER_LABELS } from "@/lib/entitlements";
+import type { BusinessTier, TeamMember } from "@/lib/types";
 import {
   activateTeamMember,
   createTeamMember,
@@ -276,10 +277,12 @@ function ClientAccessList({
   member,
   clients,
   accessibleClientIds,
+  tier,
 }: {
   member: TeamMember;
   clients: ClientOption[];
   accessibleClientIds: string[];
+  tier: BusinessTier;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(accessibleClientIds));
   const [saved, setSaved] = useState(true);
@@ -302,6 +305,15 @@ function ClientAccessList({
       await updateClientAccess(member.id, formData);
       setSaved(true);
     });
+  }
+
+  if (!hasFeature(tier, "perClientAccessControl")) {
+    return (
+      <p className="text-xs text-navy-400">
+        Per-client access control requires the Growth plan or higher — {member.name} can see every client on your{" "}
+        {TIER_LABELS[tier]} plan. Upgrade in Settings &rarr; Billing to restrict access.
+      </p>
+    );
   }
 
   if (clients.length === 0) {
@@ -339,11 +351,13 @@ function AccessPanel({
   member,
   clients,
   accessibleClientIds,
+  tier,
   onClose,
 }: {
   member: TeamMember;
   clients: ClientOption[];
   accessibleClientIds: string[];
+  tier: BusinessTier;
   onClose: () => void;
 }) {
   const [resettingPasscode, setResettingPasscode] = useState(false);
@@ -395,7 +409,7 @@ function AccessPanel({
 
       <div>
         <p className="mb-1.5 text-xs font-medium text-navy-600">Client access</p>
-        <ClientAccessList member={member} clients={clients} accessibleClientIds={accessibleClientIds} />
+        <ClientAccessList member={member} clients={clients} accessibleClientIds={accessibleClientIds} tier={tier} />
       </div>
 
       <button type="button" onClick={onClose} className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer">
@@ -409,10 +423,12 @@ function TeamMemberRow({
   member,
   clients,
   accessibleClientIds,
+  tier,
 }: {
   member: TeamMember;
   clients: ClientOption[];
   accessibleClientIds: string[];
+  tier: BusinessTier;
 }) {
   const [editing, setEditing] = useState(false);
   const [managingAccess, setManagingAccess] = useState(false);
@@ -504,6 +520,7 @@ function TeamMemberRow({
             member={member}
             clients={clients}
             accessibleClientIds={accessibleClientIds}
+            tier={tier}
             onClose={() => setManagingAccess(false)}
           />
         </div>
@@ -512,20 +529,33 @@ function TeamMemberRow({
   );
 }
 
-function AddTeamMemberForm() {
+function AddTeamMemberForm({ tier, seatCount }: { tier: BusinessTier; seatCount: number }) {
   const [expanded, setExpanded] = useState(false);
-  const [, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+
+  const seatCap = TEAM_MEMBER_SEAT_CAP[tier];
+  const atCap = seatCap !== null && seatCount >= seatCap;
 
   if (!expanded) {
     return (
-      <button
-        type="button"
-        onClick={() => setExpanded(true)}
-        className="flex items-center gap-1.5 text-sm font-medium text-burnt-600 hover:text-burnt-700 cursor-pointer"
-      >
-        <Plus size={15} /> Add team member
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          disabled={atCap}
+          className="flex items-center gap-1.5 text-sm font-medium text-burnt-600 hover:text-burnt-700 disabled:cursor-not-allowed disabled:text-navy-300 disabled:hover:text-navy-300 cursor-pointer"
+        >
+          <Plus size={15} /> Add team member
+        </button>
+        {atCap && (
+          <p className="mt-1 text-xs text-navy-400">
+            Your {TIER_LABELS[tier]} plan includes up to {seatCap} team members — upgrade in Settings &rarr; Billing to
+            add more.
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -533,23 +563,36 @@ function AddTeamMemberForm() {
     <form
       ref={formRef}
       action={(formData) => {
+        setError(null);
         startTransition(async () => {
-          await createTeamMember(formData);
+          try {
+            await createTeamMember(formData);
+            formRef.current?.reset();
+            setExpanded(false);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Couldn't add this team member.");
+          }
         });
-        formRef.current?.reset();
-        setExpanded(false);
       }}
       className="rounded-xl border border-dashed border-navy-200 p-3 space-y-2"
     >
       <Input name="name" placeholder="Name" required />
       <Input name="defaultHourlyRate" type="number" step="0.01" min="0" placeholder="Default rate ($/hr)" required />
+      {error && <p className="text-xs text-brick-600">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 cursor-pointer">
-          Add
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 disabled:opacity-50 cursor-pointer"
+        >
+          {pending ? "Adding…" : "Add"}
         </button>
         <button
           type="button"
-          onClick={() => setExpanded(false)}
+          onClick={() => {
+            setError(null);
+            setExpanded(false);
+          }}
           className="rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-600 cursor-pointer"
         >
           Cancel
@@ -563,10 +606,12 @@ export function TeamMembersPanel({
   teamMembers,
   clients,
   clientAccess,
+  tier,
 }: {
   teamMembers: TeamMember[];
   clients: ClientOption[];
   clientAccess: Record<string, string[]>;
+  tier: BusinessTier;
 }) {
   return (
     <div>
@@ -575,11 +620,17 @@ export function TeamMembersPanel({
       ) : (
         <div className="mb-3 space-y-2">
           {teamMembers.map((m) => (
-            <TeamMemberRow key={m.id} member={m} clients={clients} accessibleClientIds={clientAccess[m.id] ?? []} />
+            <TeamMemberRow
+              key={m.id}
+              member={m}
+              clients={clients}
+              accessibleClientIds={clientAccess[m.id] ?? []}
+              tier={tier}
+            />
           ))}
         </div>
       )}
-      <AddTeamMemberForm />
+      <AddTeamMemberForm tier={tier} seatCount={teamMembers.filter((m) => m.active).length} />
 
       <div className="mt-4">
         <InfoNote>

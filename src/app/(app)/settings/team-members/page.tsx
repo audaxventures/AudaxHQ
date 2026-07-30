@@ -26,6 +26,7 @@ export default async function TeamMembersSettingsPage() {
         teamMembers={teamMembers}
         clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
         clientAccess={clientAccess}
+        tier={user.business.tier}
       />
     </Card>
   );

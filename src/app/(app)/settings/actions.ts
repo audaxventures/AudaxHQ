@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import * as businesses from "@/lib/data/businesses";
 import * as workTypes from "@/lib/data/workTypes";
 import * as leadSources from "@/lib/data/leadSources";
@@ -11,7 +13,8 @@ import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
 import { requireOwner } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
-import type { EntityColor } from "@/lib/types";
+import { createCheckoutSession, createPortalSession, createStripeCustomer } from "@/lib/stripe";
+import type { BillingInterval, BusinessTier, EntityColor } from "@/lib/types";
 
 function revalidateWorkTypes() {
   revalidatePath("/settings/work-types");
@@ -250,4 +253,46 @@ export async function deleteFeedback(feedbackId: string) {
   const user = await requireOwner();
   await feedback.deleteFeedback(user.businessId, feedbackId);
   revalidatePath("/settings/feedback");
+}
+
+function currentOrigin(host: string | null): string {
+  const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+/**
+ * Starts (or restarts) a subscription — used both by a brand-new signup
+ * that never completed Checkout and by an existing workspace switching
+ * tier/interval outside the self-serve portal. Creates a Stripe customer
+ * first if this workspace somehow doesn't have one yet (very old
+ * early-access workspaces backfilled by migration 042).
+ */
+export async function startSubscriptionCheckout(tier: BusinessTier, interval: BillingInterval) {
+  const user = await requireOwner();
+  const origin = currentOrigin((await headers()).get("host"));
+
+  let customerId = user.business.stripeCustomerId;
+  if (!customerId) {
+    customerId = await createStripeCustomer(user.businessId, user.business.ownerEmail, user.business.name);
+    await businesses.setStripeCustomerId(user.businessId, customerId);
+  }
+
+  const checkoutUrl = await createCheckoutSession({
+    businessId: user.businessId,
+    customerId,
+    tier,
+    interval,
+    successUrl: `${origin}/settings/billing?checkout=success`,
+    cancelUrl: `${origin}/settings/billing?checkout=canceled`,
+  });
+  redirect(checkoutUrl);
+}
+
+/** Stripe's hosted self-serve page — upgrade/downgrade tier, switch monthly/annual, update a card, or cancel. */
+export async function openBillingPortal() {
+  const user = await requireOwner();
+  if (!user.business.stripeCustomerId) throw new Error("No billing account yet — start a subscription first.");
+  const origin = currentOrigin((await headers()).get("host"));
+  const portalUrl = await createPortalSession(user.business.stripeCustomerId, `${origin}/settings/billing`);
+  redirect(portalUrl);
 }

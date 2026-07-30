@@ -69,6 +69,9 @@ You need a Postgres database to develop against — see "Database setup" below. 
    psql "$DATABASE_URL" -f migrations/037_lead_owner.sql
    psql "$DATABASE_URL" -f migrations/038_team_member_color.sql
    psql "$DATABASE_URL" -f migrations/039_owner_time_entries.sql
+   psql "$DATABASE_URL" -f migrations/040_partners.sql
+   psql "$DATABASE_URL" -f migrations/041_partner_owner.sql
+   psql "$DATABASE_URL" -f migrations/042_stripe_billing.sql
    ```
    (Or paste each file's contents into the Neon SQL editor, in order.)
 
@@ -129,7 +132,28 @@ The "Forgot passcode?" link on the login page, and inviting a team member from S
 2. Go to **API Keys** and create a key. Set it as `RESEND_API_KEY`.
 3. By default, emails send from Resend's shared `onboarding@resend.dev` address, which works immediately but has weaker deliverability and looks less trustworthy. When ready, verify your own sending domain in Resend and set `RESEND_FROM_EMAIL` to an address on it (e.g. `Verclara <noreply@yourdomain.com>`).
 
-### 4. Set environment variables in Vercel
+### 4. Stripe billing setup
+
+Signup, trials, and subscription tiers run on Stripe Checkout + the Billing Portal — no card details ever touch this app's own servers. Every new workspace gets a 7-day free trial with a card collected upfront; discount codes are handled entirely by Stripe's native Coupons/Promotion Codes (no custom promo-code system in this app — Checkout is created with `allow_promotion_codes: true`, so the field just appears).
+
+1. Create a [Stripe](https://stripe.com) account. Stay in **test mode** (toggle top-right of the Dashboard) until you're ready to accept real payments.
+2. Go to **Developers → API keys** and copy the **Secret key** (`sk_test_...` in test mode). Set it as `STRIPE_SECRET_KEY`.
+3. Go to **Product catalog → Add product** and create 3 products — **Starter**, **Growth**, **Scale** — matching `src/lib/pricing.ts`. For each, add two recurring Prices: one **Monthly** and one **Annual**, with amounts matching the marketing pricing page exactly (as of writing: Starter $30/mo or $300/yr, Growth $50/mo or $500/yr, Scale $80/mo or $800/yr — check `src/lib/pricing.ts` for the current numbers, since it's the source of truth the app itself reads from). That's 6 Prices total. Copy each Price's id (`price_...`, not the Product id) into the matching env var:
+   ```
+   STRIPE_PRICE_STARTER_MONTHLY=price_...
+   STRIPE_PRICE_STARTER_ANNUAL=price_...
+   STRIPE_PRICE_GROWTH_MONTHLY=price_...
+   STRIPE_PRICE_GROWTH_ANNUAL=price_...
+   STRIPE_PRICE_SCALE_MONTHLY=price_...
+   STRIPE_PRICE_SCALE_ANNUAL=price_...
+   ```
+4. Go to **Developers → Webhooks → Add endpoint**. Set the URL to `https://<your-app-domain>/api/webhooks/stripe` and subscribe to these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Copy the endpoint's **Signing secret** (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`. This webhook is the *only* writer of `businesses.subscription_status`/`tier`/`billing_interval`/`trial_ends_at` (see `updateSubscriptionFromStripe` in `src/lib/data/businesses.ts`) — the app never trusts the client's word on subscription state.
+5. For local development, use the [Stripe CLI](https://stripe.com/docs/stripe-cli) instead of a Dashboard webhook endpoint: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` prints a `whsec_...` you can use as a temporary local `STRIPE_WEBHOOK_SECRET`.
+6. Create a **Coupon** (Product catalog → Coupons) and a **Promotion code** pointing at it whenever you want to hand out a discount for marketing purposes — no code changes needed, it just works at Checkout via the promo-code field.
+
+A workspace with `subscription_status` of `null` (never completed Checkout) or `canceled` is redirected to Settings → Billing on every page until they start or restart a subscription — see `src/app/(app)/layout.tsx`. `trialing`, `active`, and `past_due` (mid-retry — Stripe's Smart Retries give a grace period before a subscription actually cancels) all keep full access. The platform admin's manual tier override (workspace detail page) still works independently of Stripe, for comped workspaces.
+
+### 5. Set environment variables in Vercel
 
 In the Vercel project's **Settings → Environment Variables**, set:
 
@@ -145,12 +169,15 @@ In the Vercel project's **Settings → Environment Variables**, set:
 | `PLATFORM_ADMIN_EMAILS` | (optional) Comma-separated business-owner emails allowed onto the platform admin portal at `/admin` — sign in normally, no separate credential |
 | `MARKETING_HOSTS` | (optional) Comma-separated hostnames that should serve the public marketing site instead of the app, e.g. `www.verclara.io,verclara.io`. Defaults to those two hosts if unset |
 | `NEXT_PUBLIC_APP_URL` | (optional) Origin the marketing site's "Sign in" / "Start for free" links point to, e.g. `https://app.verclara.io`. Defaults to same-origin (empty string) for local dev |
+| `STRIPE_SECRET_KEY` | Your Stripe secret key (test or live mode) — see "Stripe billing setup" above |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for the `/api/webhooks/stripe` endpoint |
+| `STRIPE_PRICE_STARTER_MONTHLY`, `STRIPE_PRICE_STARTER_ANNUAL`, `STRIPE_PRICE_GROWTH_MONTHLY`, `STRIPE_PRICE_GROWTH_ANNUAL`, `STRIPE_PRICE_SCALE_MONTHLY`, `STRIPE_PRICE_SCALE_ANNUAL` | Stripe Price ids for the 3 tiers x 2 billing intervals |
 
-### 5. Deploy
+### 6. Deploy
 
 Push to your connected Git branch, or run `vercel --prod`. That's it — no build-time database access is required (every page under `/` is rendered on-demand, not statically prerendered).
 
-### 6. (Optional) Automate monthly recurring invoices
+### 7. (Optional) Automate monthly recurring invoices
 
 Recurring clients get their current month's invoice row created automatically the next time the dashboard or their client page is loaded — so in practice a new month's invoice always appears the first time you open the app that month. If you'd rather have it happen exactly on the 1st regardless of whether anyone opens the app, add a [Vercel Cron Job](https://vercel.com/docs/cron-jobs) that hits a route calling `ensureRecurringInvoicesForAllActiveClients()` (see `src/lib/data/clients.ts`) — not included by default since the lazy approach covers the actual use case.
 
@@ -159,6 +186,8 @@ Recurring clients get their current month's invoice row created automatically th
 There are no user accounts. `src/proxy.ts` checks every request (except `/login*` and static assets) for a signed session cookie; `/login` posts an email + passcode to a server action that validates the email against the Settings → Profile email and the passcode against `APP_PASSCODE` (or the Settings-managed passcode), then sets an HTTP-only cookie. Sign out clears the cookie via `POST /api/logout`. `/login/forgot` and `/login/reset-passcode` implement a self-service passcode reset over email (see "Passcode reset emails" above) for when the passcode is forgotten.
 
 **Platform admin** (`/admin`, `src/lib/data/admin.ts`): a workspace owner whose email is listed in `PLATFORM_ADMIN_EMAILS` sees an "Admin" nav link and can view every workspace on the platform plus suspend/reactivate one — see `isPlatformAdmin`/`requirePlatformAdmin` in `src/lib/currentUser.ts`. No separate credential; it's a check layered on top of that account's normal login.
+
+**Billing gate**: `src/app/(app)/layout.tsx` redirects the whole workspace to Settings → Billing whenever `businesses.subscription_status` is `null` (Checkout never completed) or `canceled` — every other status (`trialing`, `active`, `past_due`) keeps full access. A team member landing there sees a read-only "contact your workspace owner" message instead of the plan picker; `src/proxy.ts`'s owner-only `/settings/*` block carries a specific exception for `/settings/billing` so they can actually reach it instead of bouncing to `/`. See "Stripe billing setup" above.
 
 ## Marketing site
 
@@ -208,6 +237,7 @@ migrations/038_team_member_color.sql   adds team_members.color — same optional
 migrations/039_owner_time_entries.sql  drops the NOT NULL constraint on time_entries.team_member_id. Every business still gets one team_members row auto-created and linked as the owner's own identity at signup (businesses.owner_team_member_id — see migration 022), used to hold their default hourly rate and tag color (edited from Settings → Profile, not listed on the Team Members page) and to let them be picked as a Lead Owner — but it's no longer required for the owner to log their own time entries, which now use NULL like every other "who is this for" column in the app (todos, follow_ups, notes, calendar_feeds) already does. See ensureOwnerTeamMember in src/lib/data/teamMembers.ts and the "Me" option in LogTimeEntryButton.tsx
 migrations/040_partners.sql       adds the Partnerships feature, part 1: the partners table (company/contact info, free-text commission terms, active flag, accent color, notes), leads.referred_by_partner_id (nullable — a referral is just a lead tagged with which partner sent it, kept separate from leads.source_id, the generic marketing-channel category, so it inherits the full pipeline/kanban/win-rate tracking), and partner_commissions (money owed OUT to a partner — the mirror image of invoices, which model money coming IN from a client; referred_lead_id/referred_client_id are both nullable since not every commission is tied to one referral, e.g. a flat retainer)
 migrations/041_partner_owner.sql  adds the Partnerships feature, part 2: extends the existing polymorphic client_id/lead_id "owner" pattern on meeting_notes, follow_ups, documents, and todos with a third nullable partner_id, so meetings/tasks/notes/documents can be attached directly to a partner (not tied to any one referral) — precedented by migration 016, which added lead_id to documents the same way. See src/lib/data/partners.ts, src/app/(app)/partners/. Owner-only feature end to end (gated in src/proxy.ts and the sidebar nav, like Invoices/Finance) — partner-owned to-dos/follow-ups/meeting-notes are also excluded by default from the general team-visible boards (see the includePartnerOwned escape hatch in TaskFilters, used only by the full data export)
+migrations/042_stripe_billing.sql  adds businesses.stripe_customer_id/stripe_subscription_id/subscription_status/trial_ends_at/billing_interval — real Stripe-backed subscriptions replacing the free-for-everyone early-access period. Existing businesses are backfilled to subscription_status='active' so nothing already onboarded gets locked out. subscription_status is written exclusively by the webhook handler (src/app/api/webhooks/stripe/route.ts) — never trust it from a client request. See "Stripe billing setup" below
 src/proxy.ts                   passcode gate
 src/lib/db.ts                  Neon client
 src/lib/storage.ts             Supabase Storage client (private bucket for client documents, public bucket for the business logo)

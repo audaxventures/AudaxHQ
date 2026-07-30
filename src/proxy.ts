@@ -8,6 +8,12 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 // replacement for the requireOwner() checks in the server actions themselves.
 const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/partners", "/api/export", "/api/invoice-aging/export", "/api/reports"];
 
+// /settings is owner-only above, but every team member needs to be able to
+// land on the billing page specifically — a lapsed subscription redirects
+// the whole workspace there (see (app)/layout.tsx), owner or not, and the
+// page itself renders a read-only view for anyone who isn't the owner.
+const TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS = ["/settings/billing"];
+
 // Hostnames that serve the public marketing site (src/app/site/*) instead of
 // the app. Requests here are rewritten to /site/* and never reach the
 // passcode gate below — the marketing site has no session-gated content.
@@ -42,11 +48,21 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (claims.role === "TEAM_MEMBER" && OWNER_ONLY_PATH_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p))) {
+  if (
+    claims.role === "TEAM_MEMBER" &&
+    !TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS.includes(request.nextUrl.pathname) &&
+    OWNER_ONLY_PATH_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p))
+  ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return NextResponse.next();
+  // (app)/layout.tsx redirects a lapsed-billing workspace to /settings/billing
+  // for every page, and needs to know when it's already rendering that page
+  // to avoid redirecting to itself — Server Components have no built-in way
+  // to read the current pathname, so pass it through as a request header.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
@@ -59,5 +75,8 @@ export const config = {
   // doesn't exist and would 404. Enumerating filenames one at a time here
   // has bitten us before (sidebar.png/login.png 404ing on marketing hosts
   // because they weren't on the old list) — exclude the whole class instead.
-  matcher: ["/((?!_next/static|_next/image|login|signup|.*\\..*).*)"],
+  // api/webhooks is excluded too — Stripe's webhook requests carry no
+  // session cookie (they're server-to-server), so gating them here would
+  // bounce every delivery to /login instead of reaching the route handler.
+  matcher: ["/((?!_next/static|_next/image|login|signup|api/webhooks|.*\\..*).*)"],
 };

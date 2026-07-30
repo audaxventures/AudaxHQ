@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { sql } from "@/lib/db";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { todayInTimezone } from "@/lib/timezone";
-import type { Business } from "@/lib/types";
+import type { Business, BillingInterval, SubscriptionStatus } from "@/lib/types";
 
 function mapBusiness(row: Record<string, unknown>): Business {
   const logoPath = row.logo_path as string | null;
@@ -19,6 +19,11 @@ function mapBusiness(row: Record<string, unknown>): Business {
     suspendedAt: row.suspended_at as string | null,
     onboardingDismissedAt: row.onboarding_dismissed_at as string | null,
     tier: row.tier as Business["tier"],
+    stripeCustomerId: row.stripe_customer_id as string | null,
+    stripeSubscriptionId: row.stripe_subscription_id as string | null,
+    subscriptionStatus: row.subscription_status as SubscriptionStatus | null,
+    trialEndsAt: row.trial_ends_at as string | null,
+    billingInterval: row.billing_interval as BillingInterval | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -138,6 +143,44 @@ export async function dismissOnboarding(businessId: string): Promise<void> {
 /** Links (or unlinks, with null) a team_members row as the owner's own identity — see migration 022. */
 export async function setOwnerTeamMember(businessId: string, teamMemberId: string | null): Promise<void> {
   await sql`update businesses set owner_team_member_id = ${teamMemberId} where id = ${businessId}`;
+}
+
+/** Set once, right after signup — see createStripeCustomer in src/lib/stripe.ts. */
+export async function setStripeCustomerId(businessId: string, stripeCustomerId: string): Promise<void> {
+  await sql`update businesses set stripe_customer_id = ${stripeCustomerId} where id = ${businessId}`;
+}
+
+/**
+ * The only writer of subscription state — called exclusively from the
+ * Stripe webhook handler (src/app/api/webhooks/stripe/route.ts), never
+ * from a client-facing action, since these fields gate access to the app.
+ */
+export async function updateSubscriptionFromStripe(
+  businessId: string,
+  input: {
+    stripeSubscriptionId: string;
+    subscriptionStatus: SubscriptionStatus;
+    tier: Business["tier"];
+    billingInterval: BillingInterval;
+    trialEndsAt: string | null;
+  }
+): Promise<void> {
+  await sql`
+    update businesses set
+      stripe_subscription_id = ${input.stripeSubscriptionId},
+      subscription_status = ${input.subscriptionStatus},
+      tier = ${input.tier},
+      billing_interval = ${input.billingInterval},
+      trial_ends_at = ${input.trialEndsAt},
+      updated_at = now()
+    where id = ${businessId}
+  `;
+}
+
+/** Looked up by the webhook handler, which only gets a Stripe customer/subscription id off the event payload — never a businessId directly. */
+export async function findBusinessByStripeCustomerId(stripeCustomerId: string): Promise<{ id: string } | null> {
+  const rows = await sql`select id from businesses where stripe_customer_id = ${stripeCustomerId}`;
+  return rows.length > 0 ? { id: (rows[0] as Record<string, unknown>).id as string } : null;
 }
 
 /** Server-only (the logo upload/remove actions) — the raw storage path, needed to delete the previous file when replacing or removing the logo. */

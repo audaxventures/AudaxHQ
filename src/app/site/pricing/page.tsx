@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Wrench } from "lucide-react";
 import { Section } from "@/components/site/Section";
-import { PricingTiers, type PricingTier } from "@/components/site/PricingTiers";
+import { PricingTiers } from "@/components/site/PricingTiers";
 import { BookDemoButton } from "@/components/site/BookDemoButton";
+import { PRICING_TIERS } from "@/lib/pricing";
 import { appPath } from "@/lib/site";
 
 const TITLE = "Pricing — Verclara";
-const DESCRIPTION = "Verclara is free during early access. Here's what plans will cost once early access ends.";
+const DESCRIPTION = "Start with a free 7-day trial. Simple, transparent pricing that scales with your team.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -15,47 +16,6 @@ export const metadata: Metadata = {
   openGraph: { title: TITLE, description: DESCRIPTION },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
-
-const TIERS: PricingTier[] = [
-  {
-    name: "Starter",
-    audience: "For solo operators & small teams",
-    highlight: false,
-    monthly: 30,
-    annualMonthly: 25,
-    annualTotal: 300,
-    features: [
-      "Up to 2 team members",
-      "Unlimited clients & leads",
-      "Pipeline & revenue tracking",
-      "Meeting notes, time tracking & tasks",
-      "Data export, anytime",
-    ],
-  },
-  {
-    name: "Growth",
-    audience: "For small teams",
-    highlight: true,
-    monthly: 50,
-    annualMonthly: 42,
-    annualTotal: 500,
-    features: [
-      "Everything in Starter",
-      "Up to 5 team members",
-      "Per-client access control",
-      "Assign and hand off tasks across your team",
-    ],
-  },
-  {
-    name: "Scale",
-    audience: "For growing teams",
-    highlight: false,
-    monthly: 80,
-    annualMonthly: 67,
-    annualTotal: 800,
-    features: ["Everything in Growth", "Unlimited team members", "Priority support", "Early access to new features"],
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -71,18 +31,17 @@ export default function PricingPage() {
               Pricing
             </span>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-[1.1] text-navy-900 sm:text-5xl">
-              Free during early access.
+              Simple pricing. Try it free.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-navy-700">
-              Every workspace is free and unrestricted while we’re onboarding early customers — no credit card,
-              nothing to unlock. The plans below are what we’ll move to once early access ends; existing workspaces
-              will get advance notice before anything changes.
+              Every plan starts with a 7-day free trial — no charge until it ends, cancel anytime. Pick the tier that
+              fits your team below.
             </p>
             <Link
               href={appPath("/signup")}
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-burnt-500 px-5 py-3 text-sm font-semibold text-cream-50 shadow-sm transition-colors hover:bg-burnt-400"
             >
-              Start for free <ArrowRight size={16} />
+              Start your free trial <ArrowRight size={16} />
             </Link>
           </div>
         </Section>
@@ -95,14 +54,14 @@ export default function PricingPage() {
               <Sparkles size={30} />
             </span>
             <div>
-              <p className="font-heading text-2xl font-semibold text-sage-900 sm:text-3xl">We&rsquo;re on Early Access</p>
+              <p className="font-heading text-2xl font-semibold text-sage-900 sm:text-3xl">7 days, on us</p>
               <p className="mt-2 text-base leading-relaxed text-sage-800 sm:text-lg">
-                Every workspace is free and unrestricted right now — no credit card, nothing to unlock. Prices below
-                are what plans will cost once early access ends.
+                Every new workspace gets a full 7-day trial with nothing locked. Add a card at signup, but you won&rsquo;t
+                be charged until the trial ends — cancel anytime before then and you won&rsquo;t pay a cent.
               </p>
             </div>
           </div>
-          <PricingTiers tiers={TIERS} />
+          <PricingTiers tiers={PRICING_TIERS} />
 
           <div className="mx-auto mt-8 max-w-5xl rounded-2xl border border-navy-100 bg-white p-8 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
             <div>

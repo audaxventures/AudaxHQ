@@ -6,7 +6,7 @@
 // to a normal OWNER/TEAM_MEMBER request path.
 
 import { sql } from "@/lib/db";
-import type { BusinessTier, Feedback, FeedbackStatus, SessionRole } from "@/lib/types";
+import type { BillingInterval, BusinessTier, Feedback, FeedbackStatus, SessionRole, SubscriptionStatus } from "@/lib/types";
 
 export interface PlatformStats {
   totalWorkspaces: number;
@@ -189,6 +189,10 @@ export interface AdminWorkspaceDetail extends AdminWorkspaceSummary {
   taskCount: number;
   followUpCount: number;
   meetingNoteCount: number;
+  stripeCustomerId: string | null;
+  subscriptionStatus: SubscriptionStatus | null;
+  billingInterval: BillingInterval | null;
+  trialEndsAt: string | null;
 }
 
 /** Full stats for a single workspace, for the admin workspace detail page. Returns null if the id doesn't exist. */
@@ -196,6 +200,7 @@ export async function getWorkspaceDetail(businessId: string): Promise<AdminWorks
   const rows = await sql`
     select
       b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at, b.tier,
+      b.stripe_customer_id, b.subscription_status, b.billing_interval, b.trial_ends_at,
       coalesce(tm.n, 0) as team_member_count,
       coalesce(c.n, 0) as client_count,
       coalesce(l.n, 0) as lead_count,
@@ -219,6 +224,10 @@ export async function getWorkspaceDetail(businessId: string): Promise<AdminWorks
     taskCount: Number(row.task_count),
     followUpCount: Number(row.follow_up_count),
     meetingNoteCount: Number(row.meeting_note_count),
+    stripeCustomerId: row.stripe_customer_id as string | null,
+    subscriptionStatus: row.subscription_status as SubscriptionStatus | null,
+    billingInterval: row.billing_interval as BillingInterval | null,
+    trialEndsAt: row.trial_ends_at as string | null,
   };
 }
 
@@ -267,7 +276,13 @@ export async function reactivateBusiness(businessId: string): Promise<void> {
   await sql`update businesses set suspended_at = null, updated_at = now() where id = ${businessId}`;
 }
 
-/** Manual override until real billing exists — see src/lib/entitlements.ts. */
+/**
+ * Manual tier override — stays useful even with real Stripe billing wired
+ * up (see /api/webhooks/stripe) for comped workspaces (partners, friends
+ * and family, internal test accounts) that should sit on a given tier
+ * without an active Stripe subscription driving it. subscription_status
+ * stays whatever the webhook last set it to; this only touches `tier`.
+ */
 export async function setBusinessTier(businessId: string, tier: BusinessTier): Promise<void> {
   await sql`update businesses set tier = ${tier}, updated_at = now() where id = ${businessId}`;
 }

@@ -9,6 +9,7 @@ import * as workCategories from "@/lib/data/workCategories";
 import { generateResetToken, hashResetToken } from "@/lib/auth";
 import { getCurrentUser, requireOwner } from "@/lib/currentUser";
 import { sendTeamMemberInviteEmail } from "@/lib/email";
+import { hasFeature, TEAM_MEMBER_SEAT_CAP, TIER_LABELS } from "@/lib/entitlements";
 import type { EntityColor, FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
@@ -184,6 +185,18 @@ export async function createTeamMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const defaultHourlyRate = Number(formData.get("defaultHourlyRate") ?? 0);
   if (!name) return;
+
+  const seatCap = TEAM_MEMBER_SEAT_CAP[user.business.tier];
+  if (seatCap !== null) {
+    const active = await teamMembers.listTeamMembers(user.businessId);
+    const seatCount = active.filter((t) => t.id !== user.business.ownerTeamMemberId).length;
+    if (seatCount >= seatCap) {
+      throw new Error(
+        `Your ${TIER_LABELS[user.business.tier]} plan includes up to ${seatCap} team members. Upgrade your plan to add more.`
+      );
+    }
+  }
+
   await teamMembers.createTeamMember(user.businessId, { name, defaultHourlyRate });
   revalidateTeamMembers();
 }
@@ -307,6 +320,9 @@ export async function resetTeamMemberPasscode(id: string, formData: FormData) {
 
 export async function updateClientAccess(teamMemberId: string, formData: FormData) {
   const user = await requireOwner();
+  if (!hasFeature(user.business.tier, "perClientAccessControl")) {
+    throw new Error(`Per-client access control requires the Growth plan or higher — you're on ${TIER_LABELS[user.business.tier]}.`);
+  }
   const clientIds = formData.getAll("clientId").map((v) => String(v));
   await clientAccess.setClientAccess(teamMemberId, user.businessId, clientIds);
   revalidateTeamMembers();
