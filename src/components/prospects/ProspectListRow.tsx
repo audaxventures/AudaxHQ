@@ -1,7 +1,6 @@
 "use client";
 
 import { Building2, CalendarClock, Mail, Phone } from "lucide-react";
-import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge, ProspectStatusBadge } from "@/components/ui/Badge";
 import { formatDate, isOverdue } from "@/lib/format";
 import { entityColorChipClass } from "@/lib/avatar";
@@ -25,7 +24,6 @@ export function ProspectListRow({
       className="group flex w-full flex-col gap-3 rounded-2xl bg-white py-4 pl-5 pr-5 text-left shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] transition-colors hover:bg-cream-100/60 cursor-pointer sm:flex-row sm:items-center sm:gap-4"
     >
       <div className="flex flex-1 items-center gap-4 min-w-0">
-        <AvatarChip name={prospect.name} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-heading text-base font-medium text-navy-900 truncate">{prospect.name}</p>

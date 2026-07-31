@@ -102,9 +102,12 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Badge>;
 }
 
+// "navy" is deliberately not used here — its -100 background (#e9ecf2) is
+// nearly identical to "slate"'s (#e7eaf0), so the two tones are visually
+// indistinguishable as pale badge fills even though they're distinct tokens.
 const PROSPECT_STATUS_TONE: Record<ProspectStatus, Tone> = {
   NEW: "slate",
-  CONTACTED: "navy",
+  CONTACTED: "blue",
   ATTEMPTED: "gold",
   QUALIFIED: "sage",
   NOT_INTERESTED: "brick",
