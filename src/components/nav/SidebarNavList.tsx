@@ -8,6 +8,10 @@ import type { SessionRole } from "@/lib/types";
 const FINANCE_HREF = "/invoices";
 const FINANCE_HREF_FOR_TEAM_MEMBER = "/tracker";
 
+function getGroup(link: Record<string, unknown>): string | undefined {
+  return typeof link.group === "string" ? link.group : undefined;
+}
+
 /** The nav-links + Settings + Sign out block shared by the desktop sidebar and the mobile drawer. */
 export function SidebarNavList({
   role,
@@ -31,9 +35,24 @@ export function SidebarNavList({
   return (
     <>
       <nav className="relative flex flex-col gap-1">
-        {links.map((link) => (
-          <NavLink key={link.href} {...link} onClick={onNavigate} collapsed={collapsed} />
-        ))}
+        {links.map((link, i) => {
+          const group = getGroup(link);
+          const prevGroup = i > 0 ? getGroup(links[i - 1]) : undefined;
+          const isNewGroup = group !== undefined && group !== prevGroup;
+          return (
+            <div key={link.href}>
+              {isNewGroup &&
+                (collapsed ? (
+                  <div className="mx-1 mt-2 mb-1.5 border-t border-navy-300/20" />
+                ) : (
+                  <p className="mt-3 mb-1 px-3.5 text-[11px] font-semibold uppercase tracking-wider text-navy-400/70">
+                    {group}
+                  </p>
+                ))}
+              <NavLink {...link} onClick={onNavigate} collapsed={collapsed} />
+            </div>
+          );
+        })}
       </nav>
       {role === "OWNER" && (
         <div className="relative mt-1 border-t border-navy-300/20 pt-1">
