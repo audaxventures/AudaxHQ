@@ -106,6 +106,11 @@ export default async function TodosPage({
       // Your own to-dos plus anything you handed off to someone else — never
       // a colleague's unrelated to-dos.
       visibleTo: selfAssigneeId,
+      // Partner-owned to-dos are excluded from the general board for team
+      // members (Partners is owner-only), but the owner needs to see their
+      // own partner-sourced tasks here just like everywhere else — the
+      // dashboard already does, and this board should match it.
+      includePartnerOwned: user.role === "OWNER",
     }),
     listAllTags(user.businessId),
     listClients(user.businessId, { accessibleClientIds }),

@@ -124,6 +124,7 @@ export async function getDashboardData(
         and t.owned_by = 'TEAM'
         and t.status <> 'COMPLETED'
         and t.assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+        and (${isOwner} or t.partner_id is null)
       group by t.id, creator_tm.name
       order by
         (t.due_date is not null and t.due_date < ${today}::date) desc,
@@ -139,6 +140,7 @@ export async function getDashboardData(
       where business_id = ${businessId}
         and owned_by = 'TEAM'
         and status <> 'COMPLETED' and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+        and (${isOwner} or partner_id is null)
     `,
     sql`
       select count(*)::int as count from todos
@@ -146,6 +148,7 @@ export async function getDashboardData(
         and owned_by = 'TEAM'
         and status <> 'COMPLETED' and due_date = ${today}::date
         and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+        and (${isOwner} or partner_id is null)
     `,
     sql`
       select count(*)::int as count from todos
@@ -153,6 +156,7 @@ export async function getDashboardData(
         and owned_by = 'TEAM'
         and status <> 'COMPLETED' and due_date < ${today}::date
         and assigned_to_team_member_id is not distinct from ${selfAssigneeId}::uuid
+        and (${isOwner} or partner_id is null)
     `,
   ]);
 
