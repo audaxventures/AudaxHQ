@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   Handshake,
+  UserSearch,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { NavIconKey } from "@/components/nav/nav-links";
@@ -23,6 +24,7 @@ const ICONS = {
   dashboard: LayoutDashboard,
   clients: Users,
   leads: Target,
+  prospects: UserSearch,
   leadAnalytics: BarChart3,
   meetingNotes: NotebookPen,
   calendar: Calendar,

@@ -18,9 +18,12 @@ const ALL_ASSIGNEES = "ALL";
 type AssignOption = { value: string; label: string };
 
 function ownerOf(followUp: HotFollowUp) {
-  return followUp.ownerKind === "client"
-    ? { href: `/clients/${followUp.clientId}`, id: { clientId: followUp.clientId! } }
-    : { href: `/leads/${followUp.leadId}`, id: { leadId: followUp.leadId! } };
+  if (followUp.ownerKind === "client") return { href: `/clients/${followUp.clientId}`, id: { clientId: followUp.clientId! } };
+  if (followUp.ownerKind === "lead") return { href: `/leads/${followUp.leadId}`, id: { leadId: followUp.leadId! } };
+  // Prospects have no detail page — the list page reads this and
+  // auto-opens the drawer for that prospect (see ?open= handling on
+  // /prospects).
+  return { href: `/prospects?open=${followUp.prospectId}`, id: { prospectId: followUp.prospectId! } };
 }
 
 function FollowUpRow({

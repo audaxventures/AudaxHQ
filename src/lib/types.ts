@@ -9,6 +9,14 @@ export type LeadStatus =
   | "NEGOTIATING"
   | "WON"
   | "LOST";
+export type ProspectStatus =
+  | "NEW"
+  | "CONTACTED"
+  | "ATTEMPTED"
+  | "QUALIFIED"
+  | "NOT_INTERESTED"
+  | "CONVERTED";
+export type ProspectActivityType = "CALL" | "EMAIL" | "MEETING" | "NOTE";
 export type TaskStatus =
   | "TO_BE_DONE"
   | "IN_PROGRESS"
@@ -81,6 +89,7 @@ export interface FollowUp {
   clientId: string | null;
   leadId: string | null;
   partnerId: string | null;
+  prospectId: string | null;
   label: string;
   date: string;
   status: FollowUpStatus;
@@ -324,6 +333,50 @@ export interface PartnerCommission {
   dueDate: string | null;
   paidDate: string | null;
   createdAt: string;
+}
+
+/**
+ * The funnel stage before a Lead — someone worth reaching out to, with no
+ * active deal yet. Deliberately lighter-weight than Lead (no pipeline
+ * value/stage/source): those only make sense once there's a real
+ * opportunity. Has no detail page — managed entirely from a drawer on the
+ * Prospects list page.
+ */
+export interface Prospect {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  businessName: string | null;
+  title: string | null;
+  industry: string | null;
+  status: ProspectStatus;
+  notes: string | null;
+  /** Who's responsible for this prospect — a simple ownership tag, mirroring Lead.leadOwnerTeamMemberId, not a task-assignment relationship. */
+  ownerTeamMemberId: string | null;
+  ownerName: string | null;
+  ownerColor: EntityColor | null;
+  /** Set once converted to a Lead (see convertProspectToLead) — the prospect row stays around for history, status flips to CONVERTED. */
+  convertedLeadId: string | null;
+  convertedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProspectWithRelations extends Prospect {
+  activity: ProspectActivity[];
+  followUps: FollowUp[];
+}
+
+/** A single logged touchpoint (call, email, meeting, or freeform note) against a prospect — structured outreach history, kept separate from lead_notes/client_notes. */
+export interface ProspectActivity {
+  id: string;
+  prospectId: string;
+  type: ProspectActivityType;
+  body: string;
+  createdAt: string;
+  loggedByTeamMemberId: string | null;
+  loggedByName: string | null;
 }
 
 export interface TeamMember {
@@ -572,6 +625,31 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "WON",
   "LOST",
 ];
+
+export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
+  NEW: "New",
+  CONTACTED: "Contacted",
+  ATTEMPTED: "Attempted",
+  QUALIFIED: "Qualified",
+  NOT_INTERESTED: "Not interested",
+  CONVERTED: "Converted",
+};
+
+export const PROSPECT_STATUS_ORDER: ProspectStatus[] = [
+  "NEW",
+  "CONTACTED",
+  "ATTEMPTED",
+  "QUALIFIED",
+  "NOT_INTERESTED",
+  "CONVERTED",
+];
+
+export const PROSPECT_ACTIVITY_TYPE_LABELS: Record<ProspectActivityType, string> = {
+  CALL: "Call",
+  EMAIL: "Email",
+  MEETING: "Meeting",
+  NOTE: "Note",
+};
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   TO_BE_DONE: "To Be Done",

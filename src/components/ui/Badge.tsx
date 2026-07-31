@@ -6,10 +6,11 @@ import type {
   InvoiceAgeBracket,
   InvoiceStatus,
   LeadStatus,
+  ProspectStatus,
   TaskStatus,
   TaskType,
 } from "@/lib/types";
-import { TASK_STATUS_LABELS, FIXED_TASK_TYPE_LABELS } from "@/lib/types";
+import { TASK_STATUS_LABELS, FIXED_TASK_TYPE_LABELS, PROSPECT_STATUS_LABELS } from "@/lib/types";
 
 export type Tone = "sage" | "gold" | "brick" | "slate" | "burnt" | "navy" | "blue" | "violet";
 
@@ -99,6 +100,19 @@ const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
 
 export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Badge>;
+}
+
+const PROSPECT_STATUS_TONE: Record<ProspectStatus, Tone> = {
+  NEW: "slate",
+  CONTACTED: "navy",
+  ATTEMPTED: "gold",
+  QUALIFIED: "sage",
+  NOT_INTERESTED: "brick",
+  CONVERTED: "violet",
+};
+
+export function ProspectStatusBadge({ status }: { status: ProspectStatus }) {
+  return <Badge tone={PROSPECT_STATUS_TONE[status]}>{PROSPECT_STATUS_LABELS[status]}</Badge>;
 }
 
 export const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {

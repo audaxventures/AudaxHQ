@@ -9,7 +9,7 @@ import { assigneeSelectValue } from "@/lib/assign";
 import type { FollowUp } from "@/lib/types";
 import { addFollowUp, deleteFollowUp, setFollowUpAssignee, setFollowUpStatus, updateFollowUp } from "@/lib/actions/followups";
 
-type Owner = { clientId: string } | { leadId: string } | { partnerId: string };
+type Owner = { clientId: string } | { leadId: string } | { partnerId: string } | { prospectId: string };
 type AssignOption = { value: string; label: string };
 
 function FollowUpRow({

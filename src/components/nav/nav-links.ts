@@ -2,6 +2,7 @@ export const NAV_LINKS = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/clients", label: "Clients", icon: "clients" },
   { href: "/partners", label: "Partners", icon: "partners" },
+  { href: "/prospects", label: "Prospects", icon: "prospects" },
   { href: "/leads", label: "Leads", icon: "leads" },
   { href: "/lead-analytics", label: "Lead Insights", tabLabel: "Insights", icon: "leadAnalytics" },
   { href: "/meeting-notes", label: "Meeting Notes", tabLabel: "Notes", icon: "meetingNotes" },

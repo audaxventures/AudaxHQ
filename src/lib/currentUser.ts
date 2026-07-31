@@ -6,6 +6,7 @@ import { getBusiness } from "@/lib/data/businesses";
 import { clientBelongsToBusiness } from "@/lib/data/clients";
 import { leadBelongsToBusiness } from "@/lib/data/leads";
 import { partnerBelongsToBusiness } from "@/lib/data/partners";
+import { prospectBelongsToBusiness } from "@/lib/data/prospects";
 import type { CurrentUser } from "@/lib/types";
 
 /** Resolves the signed session cookie into a full current-user record. Null if unauthenticated, the business has been suspended by a platform admin, or the team member's login was revoked since the cookie was issued. */
@@ -132,6 +133,17 @@ export async function requirePartnerAccess(partnerId: string): Promise<CurrentUs
   const user = await requireOwner();
   if (!(await partnerBelongsToBusiness(partnerId, user.businessId))) {
     throw new Error("You don't have access to that partner.");
+  }
+  return user;
+}
+
+/** Throws unless the current session's business owns this prospect — like leads, prospects have no per-team-member access-list concept (unrestricted for every team member), so this is purely the tenant-isolation boundary. Returns the resolved user so callers can read businessId without a second lookup. */
+export async function requireProspectAccess(prospectId: string): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
+  if (!(await prospectBelongsToBusiness(prospectId, user.businessId))) {
+    throw new Error("You don't have access to that prospect.");
   }
   return user;
 }
