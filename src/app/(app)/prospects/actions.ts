@@ -79,6 +79,14 @@ export async function addProspectActivity(prospectId: string, formData: FormData
   revalidateProspects();
 }
 
+export async function updateProspectActivityDate(prospectId: string, activityId: string, formData: FormData) {
+  const user = await requireProspectAccess(prospectId);
+  const date = String(formData.get("date") ?? "").trim();
+  if (!date) return;
+  await prospects.updateProspectActivityDate(activityId, user.businessId, date);
+  revalidateProspects();
+}
+
 /** Converts a prospect to a lead and takes the caller straight to the new lead's detail page — the natural next step once a prospect is qualified. */
 export async function convertProspectToLead(prospectId: string) {
   const user = await requireProspectAccess(prospectId);

@@ -2,12 +2,26 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { Trash2, Building2, User, Mail, Phone, Briefcase, Factory, UserCheck, ArrowRight, PhoneCall } from "lucide-react";
+import {
+  Trash2,
+  Building2,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Factory,
+  UserCheck,
+  ArrowRight,
+  PhoneCall,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { Input, Label, Select, FieldGroup, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { FollowUpsList } from "@/components/FollowUpsList";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateInput } from "@/lib/format";
 import { PROSPECT_ACTIVITY_TYPE_LABELS, PROSPECT_STATUS_LABELS, PROSPECT_STATUS_ORDER } from "@/lib/types";
 import type { ProspectActivityType, ProspectWithRelations, TeamMember } from "@/lib/types";
 import {
@@ -16,6 +30,7 @@ import {
   createProspect,
   deleteProspect,
   updateProspect,
+  updateProspectActivityDate,
 } from "@/app/(app)/prospects/actions";
 
 type AssignOption = { value: string; label: string };
@@ -27,6 +42,73 @@ function SubmitButton({ label }: { label: string }) {
       {pending ? "Saving…" : label}
       {!pending && <ArrowRight size={16} />}
     </Button>
+  );
+}
+
+function ActivityEntryRow({
+  entry,
+  prospectId,
+}: {
+  entry: ProspectWithRelations["activity"][number];
+  prospectId: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <li className="group rounded-lg border border-navy-100 bg-cream-100/40 p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="rounded-full bg-navy-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy-600">
+          {PROSPECT_ACTIVITY_TYPE_LABELS[entry.type]}
+        </span>
+        {editing ? (
+          <form
+            action={(formData) => {
+              startTransition(async () => {
+                await updateProspectActivityDate(prospectId, entry.id, formData);
+                setEditing(false);
+              });
+            }}
+            className="flex items-center gap-1"
+          >
+            <input
+              name="date"
+              type="date"
+              defaultValue={formatDateInput(entry.createdAt)}
+              required
+              className="rounded border border-navy-200 px-1.5 py-0.5 text-xs text-navy-700"
+            />
+            <button
+              type="submit"
+              disabled={pending}
+              className="text-navy-400 hover:text-sage-600 cursor-pointer disabled:opacity-50"
+              aria-label="Save date"
+            >
+              <Check size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-navy-400 hover:text-brick-600 cursor-pointer"
+              aria-label="Cancel"
+            >
+              <X size={13} />
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1 text-xs text-navy-400 hover:text-navy-700 cursor-pointer"
+          >
+            {formatDate(entry.createdAt)}
+            <Pencil size={11} className="opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        )}
+      </div>
+      <p className="mt-1.5 text-sm text-navy-800 whitespace-pre-wrap">{entry.body}</p>
+      {entry.loggedByName && <p className="mt-1 text-xs text-navy-400">— {entry.loggedByName}</p>}
+    </li>
   );
 }
 
@@ -43,16 +125,7 @@ function ActivityLog({ prospectId, activity }: { prospectId: string; activity: P
       ) : (
         <ul className="mb-3 max-h-56 space-y-2 overflow-y-auto pr-1">
           {activity.map((entry) => (
-            <li key={entry.id} className="rounded-lg border border-navy-100 bg-cream-100/40 p-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full bg-navy-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-navy-600">
-                  {PROSPECT_ACTIVITY_TYPE_LABELS[entry.type]}
-                </span>
-                <span className="text-xs text-navy-400">{formatDate(entry.createdAt)}</span>
-              </div>
-              <p className="mt-1.5 text-sm text-navy-800 whitespace-pre-wrap">{entry.body}</p>
-              {entry.loggedByName && <p className="mt-1 text-xs text-navy-400">— {entry.loggedByName}</p>}
-            </li>
+            <ActivityEntryRow key={entry.id} entry={entry} prospectId={prospectId} />
           ))}
         </ul>
       )}

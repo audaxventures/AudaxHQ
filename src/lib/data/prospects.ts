@@ -200,6 +200,14 @@ export async function addProspectActivity(
   `;
 }
 
+/** Backdates/corrects when an activity entry happened — created_at doubles as that date since nothing else in the app treats it as tamper-proof audit metadata (unlike e.g. invoices), so there's no separate "occurred on" column to keep in sync. */
+export async function updateProspectActivityDate(id: string, businessId: string, date: string): Promise<void> {
+  await sql`
+    update prospect_activity set created_at = ${date}
+    where id = ${id} and business_id = ${businessId}
+  `;
+}
+
 /**
  * Creates a Lead from a prospect's current data, copies its activity log
  * in as lead notes (each prefixed with its type, so the history isn't
