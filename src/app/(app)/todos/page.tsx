@@ -111,6 +111,11 @@ export default async function TodosPage({
       // own partner-sourced tasks here just like everywhere else — the
       // dashboard already does, and this board should match it.
       includePartnerOwned: user.role === "OWNER",
+      // Surface "waiting on them" action items (owned_by EXTERNAL) on the
+      // board too — client/lead-tied ones are already scoped by client
+      // access via `visibleTo`, and partner-tied ones stay hidden from team
+      // members via includePartnerOwned above.
+      includeExternal: true,
     }),
     listAllTags(user.businessId),
     listClients(user.businessId, { accessibleClientIds }),

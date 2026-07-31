@@ -205,7 +205,7 @@ export async function getLead(id: string, businessId: string): Promise<LeadWithR
       where n.lead_id = ${id} and n.business_id = ${businessId}
       order by n.created_at desc
     `,
-    listTasks(businessId, { leadId: id }),
+    listTasks(businessId, { leadId: id, includeExternal: true }),
     listFollowUpsForLead(id, businessId),
     listMeetingNotes(businessId, { leadId: id }),
     listDocumentsForLead(id, businessId),

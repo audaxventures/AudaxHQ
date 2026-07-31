@@ -102,6 +102,11 @@ const BOARD_COLUMNS: BoardColumn[] = [
 ];
 
 function taskScope(task: Task, currentAssigneeId: string | null): "own" | "handedOff" | "assignedToMe" {
+  // An EXTERNAL item is the client/lead/partner's own commitment — never
+  // assignable to a teammate, so it always lands in "Assigned to others"
+  // (see TaskCard's distinct "Waiting on" badge for it) rather than being
+  // scored against assignee/creator like a TEAM to-do.
+  if (task.ownedBy === "EXTERNAL") return "handedOff";
   if (task.assignedToTeamMemberId !== currentAssigneeId) return "handedOff";
   return task.createdByTeamMemberId === currentAssigneeId ? "own" : "assignedToMe";
 }
@@ -173,9 +178,19 @@ export function TodoWorkspace({
     return assigneeLabelById.get(task.assignedToTeamMemberId ?? "OWNER") ?? "a teammate";
   }
 
+  // Solo workspaces (no one else to hand a to-do to) normally hide both
+  // hand-off columns entirely — but "Assigned to others" also now hosts
+  // "waiting on them" items, which apply even with a team of one, so it
+  // stays visible whenever any exist.
+  const hasExternalTasks = optimisticTasks.some((t) => t.ownedBy === "EXTERNAL");
   const visibleColumns = (
     filterStatus ? BOARD_COLUMNS.filter((c) => c.statuses.includes(filterStatus)) : BOARD_COLUMNS
-  ).filter((c) => c.scope === "own" || assignOptions.length > 1);
+  ).filter(
+    (c) =>
+      c.scope === "own" ||
+      assignOptions.length > 1 ||
+      (c.key === "ASSIGNED_TO_OTHERS" && hasExternalTasks)
+  );
 
   // Falls back to the first visible column whenever the stored key no
   // longer matches one (first render, or the status filter just changed
@@ -188,6 +203,17 @@ export function TodoWorkspace({
   const completedTasks = [...optimisticTasks]
     .filter((t) => t.status === "COMPLETED")
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  // Partner-owned tasks aren't editable through this drawer — it only knows
+  // how to attach a client or lead, not a partner — so opening one here
+  // would either block on save or silently drop its partner link. They're
+  // already fully manageable (status, delete) from the partner's own page,
+  // which the card's owner-name chip links straight to; the checkbox here
+  // still works for a quick complete/reopen.
+  function openTask(task: Task) {
+    if (task.type === "PARTNER") return;
+    setDrawerState({ mode: "edit", task });
+  }
 
   function itemsForColumn(column: BoardColumn): Task[] {
     return optimisticTasks.filter(
@@ -204,7 +230,7 @@ export function TodoWorkspace({
     const status = column.primaryStatus;
     startTransition(async () => {
       applyStatusChange({ id: taskId, status });
-      await setTaskStatus(taskId, task.clientId, task.leadId, status);
+      await setTaskStatus(taskId, task.clientId, task.leadId, status, task.partnerId);
     });
   }
 
@@ -326,7 +352,7 @@ export function TodoWorkspace({
                     assignedToLabel={isHandedOffColumn ? assigneeLabelFor(task) : undefined}
                     onDragColumnChange={setDragOverColumn}
                     onDropOnColumn={(columnKey) => moveTaskToColumn(task.id, columnKey)}
-                    onOpen={() => setDrawerState({ mode: "edit", task })}
+                    onOpen={() => openTask(task)}
                   />
                 ))}
                 {items.length === 0 && (
@@ -365,7 +391,7 @@ export function TodoWorkspace({
                 task={task}
                 today={today}
                 draggable={false}
-                onOpen={() => setDrawerState({ mode: "edit", task })}
+                onOpen={() => openTask(task)}
               />
             ))}
             {completedTasks.length === 0 && <p className="text-sm text-navy-400">Nothing completed yet.</p>}

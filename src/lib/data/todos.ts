@@ -78,6 +78,13 @@ export interface TaskFilters {
    * only the owner-only full data export should ever do.
    */
   includePartnerOwned?: boolean;
+  /**
+   * 'EXTERNAL' to-dos (the client/lead/partner's own commitment, not the
+   * team's) are excluded by default — pass true to include them alongside
+   * the normal 'TEAM' rows, e.g. for the owner-scoped views that show
+   * what's still outstanding from the other side.
+   */
+  includeExternal?: boolean;
   /** Case-insensitive substring match against title or description. */
   search?: string;
   /**
@@ -118,7 +125,7 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
     left join partners p on p.id = t.partner_id
     left join team_members creator_tm on creator_tm.id = t.created_by_team_member_id
     where t.business_id = ${businessId}
-      and t.owned_by = 'TEAM'
+      and (t.owned_by = 'TEAM' or (t.owned_by = 'EXTERNAL' and ${filters.includeExternal ?? false}))
       and (${filters.status ?? null}::task_status is null or t.status = ${filters.status ?? null})
       and (${filters.priority ?? null}::task_priority is null or t.priority = ${filters.priority ?? null})
       and (${filters.type ?? null}::text is null or t.type = ${filters.type ?? null})

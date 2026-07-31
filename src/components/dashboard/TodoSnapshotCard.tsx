@@ -40,7 +40,7 @@ export function TodoSnapshotCard({
   function toggleComplete(task: Task) {
     setCheckedIds((prev) => new Set(prev).add(task.id));
     startTransition(async () => {
-      await setTaskStatus(task.id, task.clientId, task.leadId, "COMPLETED");
+      await setTaskStatus(task.id, task.clientId, task.leadId, "COMPLETED", task.partnerId);
     });
     // Briefly show the checked state before the row disappears, rather than
     // yanking it out instantly — matches the completion feedback on the

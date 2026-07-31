@@ -160,7 +160,7 @@ export async function getClient(id: string, businessId: string): Promise<ClientW
         where i.client_id = ${id} and i.business_id = ${businessId}
         order by i.period_year desc nulls last, i.period_month desc nulls last, i.created_at desc
       `,
-      listTasks(businessId, { clientId: id }),
+      listTasks(businessId, { clientId: id, includeExternal: true }),
       listFollowUpsForClient(id, businessId),
       listMeetingNotes(businessId, { clientId: id }),
       listDocumentsForClient(id, businessId),

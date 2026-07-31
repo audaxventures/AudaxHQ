@@ -80,7 +80,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       break;
     }
     case "tasks": {
-      const tasks = await listTasks(businessId, { includePartnerOwned: true });
+      const tasks = await listTasks(businessId, { includePartnerOwned: true, includeExternal: true });
       lines.push(csvRow(["Title", "Description", "Due Date", "Status", "Type", "Client", "Lead", "Partner", "Tags", "Created At"]));
       for (const t of tasks) {
         lines.push(

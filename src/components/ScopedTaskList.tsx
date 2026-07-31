@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { ChevronDown, Trash2, Plus } from "lucide-react";
+import { ChevronDown, Hourglass, Trash2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { TONE_CLASSES, TASK_STATUS_TONE } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
@@ -80,14 +80,31 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
 export function ScopedTaskList({ owner, tasks, today }: { owner: Owner; tasks: Task[]; today: string }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
+  // Action items marked "them" on a meeting note — their commitment, not
+  // ours, so they're broken out from the team's own task list below rather
+  // than mixed in with it.
+  const waitingTasks = tasks.filter((t) => t.ownedBy === "EXTERNAL");
+  const ownTasks = tasks.filter((t) => t.ownedBy !== "EXTERNAL");
 
   return (
     <div>
-      {tasks.length === 0 ? (
+      {waitingTasks.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gold-600">
+            <Hourglass size={12} /> Waiting on them
+          </p>
+          <ul className="space-y-1 mb-1 divide-y divide-navy-100">
+            {waitingTasks.map((task) => (
+              <TaskRow key={task.id} task={task} owner={owner} today={today} />
+            ))}
+          </ul>
+        </div>
+      )}
+      {ownTasks.length === 0 ? (
         <p className="text-sm text-navy-400 mb-2">No tasks yet.</p>
       ) : (
         <ul className="space-y-1 mb-3 divide-y divide-navy-100">
-          {tasks.map((task) => (
+          {ownTasks.map((task) => (
             <TaskRow key={task.id} task={task} owner={owner} today={today} />
           ))}
         </ul>

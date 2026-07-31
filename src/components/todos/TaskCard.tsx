@@ -69,9 +69,15 @@ export function TaskCard({
   const completed = task.status === "COMPLETED";
   const overdue = !completed && isOverdue(task.dueDate, today);
   const dueToday = !completed && isDueToday(task.dueDate, today);
-  const ownerHref = task.clientId ? `/clients/${task.clientId}` : task.leadId ? `/leads/${task.leadId}` : null;
-  const ownerName = task.clientName ?? task.leadName;
-  const ownerColor = task.clientColor ?? task.leadColor;
+  const ownerHref = task.clientId
+    ? `/clients/${task.clientId}`
+    : task.leadId
+      ? `/leads/${task.leadId}`
+      : task.partnerId
+        ? `/partners/${task.partnerId}`
+        : null;
+  const ownerName = task.clientName ?? task.leadName ?? task.partnerName;
+  const ownerColor = task.clientColor ?? task.leadColor ?? task.partnerColor;
   // Someone handed this off to you rather than you creating it yourself.
   const handedOff = task.createdByTeamMemberId !== task.assignedToTeamMemberId;
 
@@ -83,7 +89,7 @@ export function TaskCard({
     }, 150);
     const nextStatus = completed ? "TO_BE_DONE" : "COMPLETED";
     startTransition(async () => {
-      await setTaskStatus(task.id, task.clientId, task.leadId, nextStatus);
+      await setTaskStatus(task.id, task.clientId, task.leadId, nextStatus, task.partnerId);
     });
   }
 
@@ -166,7 +172,11 @@ export function TaskCard({
             <Hourglass size={11} /> Waiting on client
           </span>
         )}
-        {assignedToLabel ? (
+        {task.ownedBy === "EXTERNAL" ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-xs font-medium text-gold-600">
+            <Hourglass size={11} /> Waiting on {ownerName ?? "them"}
+          </span>
+        ) : assignedToLabel ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
             <Send size={11} /> To {assignedToLabel}
           </span>

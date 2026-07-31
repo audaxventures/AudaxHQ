@@ -31,7 +31,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
     getPartner(id, user.businessId),
     getBusinessToday(user.businessId),
     listTeamMembers(user.businessId),
-    listTasks(user.businessId, { partnerId: id }),
+    listTasks(user.businessId, { partnerId: id, includeExternal: true }),
   ]);
   if (!partner) notFound();
 
