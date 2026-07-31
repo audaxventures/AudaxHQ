@@ -5,12 +5,31 @@ import { EmptyState } from "@/components/ui/EmptyState";
 export function ConversionTable({
   groupLabel,
   stats,
+  rateLabel = "Win rate",
+  totalLabel = "Total leads",
+  wonRevenueLabel = "Won revenue",
+  wonWord = "won",
+  lostWord = "lost",
+  noResolvedText = "No resolved leads yet",
+  emptyTitle = "No leads yet",
+  emptyDescription = "Breakdowns will appear once you add leads.",
 }: {
   groupLabel: string;
   stats: ConversionStat[];
+  /** Header for the rate column — e.g. "Win rate" for leads, "Conversion rate" for prospects. */
+  rateLabel?: string;
+  totalLabel?: string;
+  wonRevenueLabel?: string;
+  /** Caption word for the resolved-positive count, e.g. "won" vs "converted". */
+  wonWord?: string;
+  /** Caption word for the resolved-negative count, e.g. "lost" vs "not interested". */
+  lostWord?: string;
+  noResolvedText?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   if (stats.length === 0) {
-    return <EmptyState title="No leads yet" description="Breakdowns will appear once you add leads." />;
+    return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
 
   const hasWonValue = stats.some((s) => s.wonValue > 0);
@@ -21,10 +40,10 @@ export function ConversionTable({
         <thead>
           <tr className="border-b border-navy-100 text-left text-xs font-medium uppercase tracking-wide text-navy-400">
             <th className="py-2 pr-4">{groupLabel}</th>
-            <th className="py-2 pr-4">Win rate</th>
+            <th className="py-2 pr-4">{rateLabel}</th>
             <th className="py-2 pr-4">In progress</th>
-            <th className="py-2 pr-4">Total leads</th>
-            {hasWonValue && <th className="py-2 pl-4 text-right">Won revenue</th>}
+            <th className="py-2 pr-4">{totalLabel}</th>
+            {hasWonValue && <th className="py-2 pl-4 text-right">{wonRevenueLabel}</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-navy-100">
@@ -46,11 +65,11 @@ export function ConversionTable({
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-navy-400">
-                      {s.won} won · {s.lost} lost
+                      {s.won} {wonWord} · {s.lost} {lostWord}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-navy-400">No resolved leads yet</p>
+                  <p className="text-sm text-navy-400">{noResolvedText}</p>
                 )}
               </td>
               <td className="py-3 pr-4 text-navy-600 tabular-nums">{s.inProgress}</td>

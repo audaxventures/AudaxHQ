@@ -113,6 +113,113 @@ export async function getConversionByPartner(businessId: string): Promise<Conver
   return sortStats(stats);
 }
 
+export interface ProspectFunnelSummary {
+  total: number;
+  /** Still being worked — NEW/CONTACTED/ATTEMPTED/QUALIFIED. */
+  inPipeline: number;
+  converted: number;
+  notInterested: number;
+  /** Converted / (Converted + Not interested) as a 0-100 percentage — null until at least one prospect has resolved either way. */
+  conversionRate: number | null;
+  /** Average calendar days from a prospect's creation to its conversion, across only the ones that have converted. Null until at least one has. */
+  avgDaysToConvert: number | null;
+}
+
+/** Top-line prospect → lead funnel numbers for the Insights page — how much is in the pipeline, how much of it resolves into a lead, and how fast. */
+export async function getProspectFunnelSummary(businessId: string): Promise<ProspectFunnelSummary> {
+  const rows = await sql`
+    select
+      count(*) as total,
+      count(*) filter (where status in ('NEW', 'CONTACTED', 'ATTEMPTED', 'QUALIFIED')) as in_pipeline,
+      count(*) filter (where status = 'CONVERTED') as converted,
+      count(*) filter (where status = 'NOT_INTERESTED') as not_interested,
+      avg(extract(epoch from (converted_at - created_at)) / 86400.0) filter (where converted_at is not null) as avg_days_to_convert
+    from prospects
+    where business_id = ${businessId}
+  `;
+  const row = rows[0] as Record<string, unknown>;
+  const converted = Number(row.converted);
+  const notInterested = Number(row.not_interested);
+  const resolved = converted + notInterested;
+  const avgDays = row.avg_days_to_convert;
+  return {
+    total: Number(row.total),
+    inPipeline: Number(row.in_pipeline),
+    converted,
+    notInterested,
+    conversionRate: resolved > 0 ? (converted / resolved) * 100 : null,
+    avgDaysToConvert: avgDays !== null ? Number(avgDays) : null,
+  };
+}
+
+/**
+ * Same ConversionStat shape as the lead breakdowns, repurposed one funnel
+ * stage earlier: "won" = converted to a lead, "lost" = marked not
+ * interested, "won revenue" = actual client revenue traced two hops down
+ * the chain (prospect → the lead it became → the client that lead won),
+ * via the same client_revenue join the lead breakdowns use.
+ */
+export async function getProspectConversionByIndustry(businessId: string): Promise<ConversionStat[]> {
+  const rows = await sql`
+    with client_revenue as (
+      select client_id, sum(amount) as revenue
+      from invoices
+      where business_id = ${businessId} and status <> 'NOT_INVOICED'
+      group by client_id
+    )
+    select
+      p.industry,
+      count(*) as total,
+      count(*) filter (where p.status = 'CONVERTED') as won,
+      count(*) filter (where p.status = 'NOT_INTERESTED') as lost,
+      count(*) filter (where p.status not in ('CONVERTED', 'NOT_INTERESTED')) as in_progress,
+      coalesce(sum(cr.revenue) filter (where p.status = 'CONVERTED'), 0) as won_value
+    from prospects p
+    left join leads l on l.id = p.converted_lead_id
+    left join client_revenue cr on cr.client_id = l.converted_client_id
+    where p.business_id = ${businessId}
+    group by p.industry
+  `;
+  const stats = rows.map((r) => {
+    const row = r as Record<string, unknown> & GroupRow;
+    const industry = row.industry as string | null;
+    return toStat(industry ?? "NONE", industry ?? "Not set", row);
+  });
+  return sortStats(stats);
+}
+
+/** Same as getProspectConversionByIndustry, grouped by who owns the prospect — surfaces which team member's outreach actually turns into pipeline. */
+export async function getProspectConversionByOwner(businessId: string): Promise<ConversionStat[]> {
+  const rows = await sql`
+    with client_revenue as (
+      select client_id, sum(amount) as revenue
+      from invoices
+      where business_id = ${businessId} and status <> 'NOT_INVOICED'
+      group by client_id
+    )
+    select
+      p.owner_team_member_id, tm.name as owner_name,
+      count(*) as total,
+      count(*) filter (where p.status = 'CONVERTED') as won,
+      count(*) filter (where p.status = 'NOT_INTERESTED') as lost,
+      count(*) filter (where p.status not in ('CONVERTED', 'NOT_INTERESTED')) as in_progress,
+      coalesce(sum(cr.revenue) filter (where p.status = 'CONVERTED'), 0) as won_value
+    from prospects p
+    left join team_members tm on tm.id = p.owner_team_member_id
+    left join leads l on l.id = p.converted_lead_id
+    left join client_revenue cr on cr.client_id = l.converted_client_id
+    where p.business_id = ${businessId}
+    group by p.owner_team_member_id, tm.name
+  `;
+  const stats = rows.map((r) => {
+    const row = r as Record<string, unknown> & GroupRow;
+    const ownerId = row.owner_team_member_id as string | null;
+    const ownerName = row.owner_name as string | null;
+    return toStat(ownerId ?? "NONE", ownerName ?? "Unassigned", row);
+  });
+  return sortStats(stats);
+}
+
 export async function getConversionByWorkType(businessId: string): Promise<ConversionStat[]> {
   const rows = await sql`
     with client_revenue as (
