@@ -57,6 +57,13 @@ export interface MeetingNoteFilters {
   clientId?: string;
   leadId?: string;
   partnerId?: string;
+  /**
+   * Partner-owned notes are excluded unless partnerId is set to that exact
+   * partner — pass true to include them alongside client/lead-owned notes
+   * too, e.g. for the owner-only global Meeting Notes list. Never set this
+   * for a team member — partners are an owner-only feature.
+   */
+  includePartnerOwned?: boolean;
   /** Team-member scoping: restrict client-owned notes to this list — lead-owned notes are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
   accessibleClientIds?: string[] | null;
 }
@@ -94,7 +101,8 @@ export async function listMeetingNotes(businessId: string, filters: MeetingNoteF
       and (${filters.clientId ?? null}::uuid is null or m.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or m.lead_id = ${filters.leadId ?? null})
       and (
-        (${filters.partnerId ?? null}::uuid is not null and m.partner_id = ${filters.partnerId ?? null})
+        ${filters.includePartnerOwned ?? false}
+        or (${filters.partnerId ?? null}::uuid is not null and m.partner_id = ${filters.partnerId ?? null})
         or (${filters.partnerId ?? null}::uuid is null and m.partner_id is null)
       )
       and (

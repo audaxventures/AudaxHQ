@@ -28,7 +28,7 @@ export default async function MeetingNotesPage({
   const search = (sp.q ?? "").trim().toLowerCase();
 
   const [allNotes, clients, leads] = await Promise.all([
-    listMeetingNotes(user.businessId, { ...filters, accessibleClientIds }),
+    listMeetingNotes(user.businessId, { ...filters, accessibleClientIds, includePartnerOwned: user.role === "OWNER" }),
     listClients(user.businessId, { accessibleClientIds }),
     listLeads(user.businessId, { converted: "include" }),
   ]);

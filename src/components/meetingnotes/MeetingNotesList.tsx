@@ -66,7 +66,9 @@ export function MeetingNotesList({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       <p className="font-heading text-base font-medium text-navy-900">{note.title ?? note.ownerName}</p>
-                      {note.title && <Badge tone={note.clientId ? "sage" : "violet"}>{note.ownerName}</Badge>}
+                      {note.title && (
+                        <Badge tone={note.clientId ? "sage" : note.leadId ? "violet" : "gold"}>{note.ownerName}</Badge>
+                      )}
                       <span className="text-xs text-navy-400">{formatDate(note.meetingDate)}</span>
                     </div>
                     {note.attendees && (

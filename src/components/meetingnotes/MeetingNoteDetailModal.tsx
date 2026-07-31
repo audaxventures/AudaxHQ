@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Clock, Download, Mail, MapPin } from "lucide-react";
+import { Clock, Download, Mail, MapPin, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
@@ -13,7 +13,7 @@ import { MeetingNoteEmailDrawer } from "@/components/meetingnotes/MeetingNoteEma
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AvatarChip } from "@/components/ui/AvatarChip";
-import { updateMeetingNote } from "@/lib/actions/meetingnotes";
+import { deleteMeetingNote, updateMeetingNote } from "@/lib/actions/meetingnotes";
 import { setTaskStatus } from "@/lib/actions/tasks";
 import { formatDate, formatDateInput, formatTimeInput } from "@/lib/format";
 import type { MeetingNote } from "@/lib/types";
@@ -51,6 +51,14 @@ export function MeetingNoteDetailModal({
   function toggleActionItem(taskId: string, completed: boolean) {
     startToggleTransition(async () => {
       await setTaskStatus(taskId, note.clientId, note.leadId, completed ? "COMPLETED" : "TO_BE_DONE", note.partnerId);
+    });
+  }
+
+  function handleDelete() {
+    if (!confirm(`Delete "${note.title || "this meeting note"}"? This can't be undone.`)) return;
+    startTransition(async () => {
+      await deleteMeetingNote(note.id, { clientId: note.clientId, leadId: note.leadId, partnerId: note.partnerId });
+      onClose();
     });
   }
 
@@ -190,13 +198,18 @@ export function MeetingNoteDetailModal({
             onToggleExisting={toggleActionItem}
           />
         </FieldGroup>
-        <div className="flex items-center justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-            Cancel
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <Button type="button" variant="danger" size="sm" onClick={handleDelete} disabled={pending}>
+            <Trash2 size={14} /> Delete
           </Button>
-          <Button type="submit" size="sm" disabled={pending}>
-            {pending ? "Saving…" : "Save changes"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={pending}>
+              {pending ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>
