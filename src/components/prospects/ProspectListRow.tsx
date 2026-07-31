@@ -38,7 +38,9 @@ export function ProspectListRow({
           </div>
           <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <ProspectStatusBadge status={prospect.status} />
-            {prospect.industry && <Badge tone="slate">{prospect.industry}</Badge>}
+            {prospect.industry && (
+              <Badge className={entityColorChipClass(null, prospect.industry)}>{prospect.industry}</Badge>
+            )}
             <Badge className={entityColorChipClass(prospect.ownerColor, prospect.ownerName ?? "unassigned")}>
               {prospect.ownerName ?? "Unassigned"}
             </Badge>
