@@ -97,12 +97,24 @@ export interface TaskFilters {
    * member's id for theirs.
    */
   visibleTo?: string | null;
+  /**
+   * Broadens visibleTo for 'EXTERNAL' to-dos only: a client/lead's own
+   * commitment is relevant to anyone who works that account, not just
+   * whoever happened to log the meeting note it came from. Lead-tied ones
+   * are always included (leads aren't access-scoped at all — see
+   * requireLeadAccess); client-tied ones are included when the client is in
+   * this list. Pass null for the owner (unrestricted); omit entirely (or
+   * pass undefined) to grant no extra client-based visibility, which is the
+   * safe default for any caller that doesn't know the viewer's access list.
+   */
+  accessibleClientIds?: string[] | null;
 }
 
 export async function listTasks(businessId: string, filters: TaskFilters = {}): Promise<Task[]> {
   const searchPattern = filters.search ? `%${filters.search}%` : null;
   const hasVisibleToFilter = "visibleTo" in filters;
   const visibleToValue = filters.visibleTo ?? null;
+  const accessibleClientIdsValue = filters.accessibleClientIds === undefined ? [] : filters.accessibleClientIds;
   const rows = (await sql`
     select
       t.id, t.title, t.description, t.due_date, t.status, t.priority, t.type, t.todo_type_id, t.client_id, t.lead_id, t.partner_id,
@@ -154,6 +166,19 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
         ${hasVisibleToFilter} is false
         or t.assigned_to_team_member_id is not distinct from ${visibleToValue}::uuid
         or t.created_by_team_member_id is not distinct from ${visibleToValue}::uuid
+        or (
+          t.owned_by = 'EXTERNAL'
+          and (
+            t.lead_id is not null
+            or (
+              t.client_id is not null
+              and (
+                ${accessibleClientIdsValue}::uuid[] is null
+                or t.client_id = any(${accessibleClientIdsValue}::uuid[])
+              )
+            )
+          )
+        )
       )
     group by t.id, tt_lookup.name, c.company_name, l.company_name, p.company_name, c.color, l.color, p.color, creator_tm.name
     order by (t.status = 'COMPLETED'), (t.due_date is null), t.due_date asc, t.created_at desc

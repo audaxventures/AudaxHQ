@@ -112,10 +112,11 @@ export default async function TodosPage({
       // dashboard already does, and this board should match it.
       includePartnerOwned: user.role === "OWNER",
       // Surface "waiting on them" action items (owned_by EXTERNAL) on the
-      // board too — client/lead-tied ones are already scoped by client
-      // access via `visibleTo`, and partner-tied ones stay hidden from team
-      // members via includePartnerOwned above.
+      // board too, for anyone who works that client/lead — not just
+      // whoever logged the meeting note. Partner-tied ones stay hidden
+      // from team members via includePartnerOwned above.
       includeExternal: true,
+      accessibleClientIds,
     }),
     listAllTags(user.businessId),
     listClients(user.businessId, { accessibleClientIds }),
