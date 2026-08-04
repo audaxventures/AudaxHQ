@@ -28,7 +28,6 @@ export function LogTimeEntryButton({
   teamMembers,
   workCategories,
   lockedTeamMember,
-  ownerHourlyRate,
 }: {
   clients: OwnerOption[];
   leads: OwnerOption[];
@@ -36,8 +35,6 @@ export function LogTimeEntryButton({
   workCategories: WorkCategory[];
   /** Set for a team-member session: locks the entry to their own name, hides the rate field and the Fixed cost option entirely (they only ever log their own billable-by-the-owner hours). */
   lockedTeamMember?: LockedTeamMember;
-  /** Owner-session only — prefills the rate field when they pick the "Me" option in the team member dropdown. */
-  ownerHourlyRate?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -74,7 +71,6 @@ export function LogTimeEntryButton({
           teamMembers={teamMembers}
           workCategories={workCategories}
           lockedTeamMember={lockedTeamMember}
-          ownerHourlyRate={ownerHourlyRate}
           initialOwner={{ clientId: initialClientId, leadId: initialLeadId }}
           onClose={() => setOpen(false)}
         />
@@ -86,7 +82,6 @@ export function LogTimeEntryButton({
 interface PickableTeamMember {
   id: string;
   name: string;
-  defaultHourlyRate: string;
 }
 
 export function LogTimeDrawer({
@@ -95,7 +90,6 @@ export function LogTimeDrawer({
   teamMembers,
   workCategories,
   lockedTeamMember,
-  ownerHourlyRate,
   entry,
   initialOwner,
   onClose,
@@ -105,8 +99,6 @@ export function LogTimeDrawer({
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
   lockedTeamMember?: LockedTeamMember;
-  /** Owner-session only — prefills the rate field when they pick the "Me" option below. */
-  ownerHourlyRate?: string;
   /** When set, the drawer edits this existing entry instead of creating a new one. */
   entry?: CostEntry;
   /** Pre-selects the owner dropdown for a new entry (e.g. from a client/lead detail page's quick-log link). Ignored when editing. */
@@ -118,9 +110,7 @@ export function LogTimeDrawer({
   // stands in for them instead, same convention as assign.ts's "Me"/"Owner" dropdowns.
   // A null team_member_id (or a legacy entry pointing at the owner's now-hidden row,
   // which won't be found here) both default to "Me".
-  const pickableTeamMembers: PickableTeamMember[] = lockedTeamMember
-    ? []
-    : [{ id: "", name: "Me", defaultHourlyRate: ownerHourlyRate ?? "0" }, ...teamMembers];
+  const pickableTeamMembers: PickableTeamMember[] = lockedTeamMember ? [] : [{ id: "", name: "Me" }, ...teamMembers];
   const [entryType, setEntryType] = useState<"TIME" | "FIXED_COST">(entry?.entryType ?? "TIME");
   const [teamMemberId, setTeamMemberId] = useState(
     entry?.teamMemberId && teamMembers.some((t) => t.id === entry.teamMemberId)
@@ -128,10 +118,6 @@ export function LogTimeDrawer({
       : (lockedTeamMember?.id ?? "")
   );
   const [categoryId, setCategoryId] = useState(entry?.workCategoryId ?? "");
-  const [rate, setRate] = useState(() => {
-    if (entry?.rate != null) return String(entry.rate);
-    return pickableTeamMembers.find((t) => t.id === teamMemberId)?.defaultHourlyRate ?? "";
-  });
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -145,24 +131,10 @@ export function LogTimeDrawer({
           ? `lead:${initialOwner.leadId}`
           : "";
 
-  function handleTeamMemberChange(id: string) {
-    setTeamMemberId(id);
-    const tm = pickableTeamMembers.find((t) => t.id === id);
-    if (tm) setRate(tm.defaultHourlyRate);
-  }
-
-  function handleCategoryChange(id: string) {
-    setCategoryId(id);
-    if (lockedTeamMember) return;
-    const category = workCategories.find((c) => c.id === id);
-    if (category) setRate(category.defaultHourlyRate);
-  }
-
   function resetForm() {
     formRef.current?.reset();
     setTeamMemberId(lockedTeamMember?.id ?? "");
     setCategoryId("");
-    setRate("");
   }
 
   return (
@@ -258,20 +230,15 @@ export function LogTimeDrawer({
         {entryType === "TIME" ? (
           <>
             <FieldGroup>
-              <Label htmlFor="entry-work-category" required>
-                Category
-              </Label>
+              <Label htmlFor="entry-work-category">Category (optional)</Label>
               <Select
                 id="entry-work-category"
                 name="categoryId"
-                required
                 value={categoryId}
-                onChange={(e) => handleCategoryChange(e.target.value)}
+                onChange={(e) => setCategoryId(e.target.value)}
                 icon={List}
               >
-                <option value="" disabled>
-                  Select a category
-                </option>
+                <option value="">Uncategorized</option>
                 {workCategories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -290,7 +257,7 @@ export function LogTimeDrawer({
                   id="entry-team-member"
                   name="teamMemberId"
                   value={teamMemberId}
-                  onChange={(e) => handleTeamMemberChange(e.target.value)}
+                  onChange={(e) => setTeamMemberId(e.target.value)}
                   icon={User}
                 >
                   {pickableTeamMembers.map((t) => (
@@ -310,7 +277,7 @@ export function LogTimeDrawer({
                 name="date"
                 type="date"
                 required
-                defaultValue={entry ? formatDateInput(entry.date) : undefined}
+                defaultValue={entry ? formatDateInput(entry.date) : formatDateInput(new Date().toISOString())}
                 className="min-w-0"
               />
             </FieldGroup>
@@ -334,19 +301,15 @@ export function LogTimeDrawer({
               </FieldGroup>
               {!lockedTeamMember && (
                 <FieldGroup>
-                  <Label htmlFor="entry-rate" required>
-                    Rate ($/hr)
-                  </Label>
+                  <Label htmlFor="entry-rate">Rate ($/hr, optional)</Label>
                   <Input
                     id="entry-rate"
                     name="rate"
                     type="number"
                     step="0.01"
                     min="0"
-                    required
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
-                    placeholder="0.00"
+                    defaultValue={entry?.rate ?? undefined}
+                    placeholder="Leave blank to bill later"
                     icon={DollarSign}
                   />
                 </FieldGroup>
@@ -396,7 +359,7 @@ export function LogTimeDrawer({
                 name="date"
                 type="date"
                 required
-                defaultValue={entry ? formatDateInput(entry.date) : undefined}
+                defaultValue={entry ? formatDateInput(entry.date) : formatDateInput(new Date().toISOString())}
                 className="min-w-0"
               />
             </FieldGroup>

@@ -18,7 +18,9 @@ function mapCostEntry(row: Record<string, unknown>): CostEntry {
     workCategoryId: row.work_category_id as string | null,
     workCategoryName: row.work_category_name as string | null,
     category: row.category as FixedCostCategory | null,
-    amount: Number(row.amount),
+    amount: row.amount !== null ? Number(row.amount) : null,
+    cost: Number(row.cost),
+    invoiceId: row.invoice_id as string | null,
     createdAt: row.created_at as string,
   };
 }
@@ -46,6 +48,11 @@ export interface CostEntryFilters {
  * them narrows the fixed-cost branch to nothing rather than ignoring
  * the filter. The same is true of restrictToTeamMemberId (team-member-role
  * scoping) — fixed costs are always excluded once that's set.
+ *
+ * `cost` (labor cost) is computed here from the logging team member's
+ * default_hourly_rate — falling back to the business owner's own
+ * team_members row when team_member_id is null — never from the entry's
+ * own (optional, billing-only) `rate`.
  */
 export async function listCostEntries(businessId: string, filters: CostEntryFilters = {}): Promise<CostEntry[]> {
   const rows = await sql`
@@ -56,10 +63,13 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
         te.date, te.description, te.hours, te.rate, te.billable,
         te.team_member_id, coalesce(tm.name, b.owner_name) as team_member_name, te.category_id as work_category_id, wc.name as work_category_name,
         null::text as category,
-        (te.hours * te.rate) as amount, te.created_at
+        (case when te.rate is not null then te.hours * te.rate else null end) as amount,
+        (te.hours * coalesce(tm.default_hourly_rate, owner_tm.default_hourly_rate, 0)) as cost,
+        te.invoice_id, te.created_at
       from time_entries te
       left join team_members tm on tm.id = te.team_member_id
       left join businesses b on b.id = te.business_id
+      left join team_members owner_tm on owner_tm.id = b.owner_team_member_id
       left join work_categories wc on wc.id = te.category_id
       left join clients c on c.id = te.client_id
       left join leads l on l.id = te.lead_id
@@ -87,7 +97,8 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
         fc.date, fc.description, null::numeric as hours, null::numeric as rate, null::boolean as billable,
         null::uuid as team_member_id, null::text as team_member_name, null::uuid as work_category_id, null::text as work_category_name,
         fc.category,
-        fc.amount, fc.created_at
+        fc.amount, fc.amount as cost,
+        null::uuid as invoice_id, fc.created_at
       from fixed_costs fc
       left join clients c on c.id = fc.client_id
       left join leads l on l.id = fc.lead_id
@@ -110,21 +121,21 @@ export async function listCostEntries(businessId: string, filters: CostEntryFilt
 export function rollupCostEntries(entries: CostEntry[]): CostRollup {
   let billableHours = 0;
   let nonBillableHours = 0;
-  let variableCost = 0;
-  let nonBillableCost = 0;
+  let unbilledBillableHours = 0;
+  let laborCost = 0;
   let fixedCost = 0;
 
   for (const e of entries) {
     if (e.entryType === "TIME") {
       if (e.billable) {
         billableHours += e.hours ?? 0;
-        variableCost += e.amount;
+        if (!e.invoiceId) unbilledBillableHours += e.hours ?? 0;
       } else {
         nonBillableHours += e.hours ?? 0;
-        nonBillableCost += e.amount;
       }
+      laborCost += e.cost;
     } else {
-      fixedCost += e.amount;
+      fixedCost += e.cost;
     }
   }
 
@@ -133,14 +144,14 @@ export function rollupCostEntries(entries: CostEntry[]): CostRollup {
     billableHours,
     nonBillableHours,
     totalHours,
-    variableCost,
-    nonBillableCost,
+    unbilledBillableHours,
+    laborCost,
     fixedCost,
-    totalCost: variableCost + fixedCost,
+    totalCost: laborCost + fixedCost,
   };
 }
 
-/** Per-work-category hours/cost breakdown for time entries, sorted by total hours descending. */
+/** Per-work-category hours/labor-cost breakdown for time entries, sorted by total hours descending. */
 export function buildCategoryBreakdown(entries: CostEntry[]): CategoryBreakdown[] {
   const byCategory = new Map<string, CategoryBreakdown>();
 
@@ -156,10 +167,10 @@ export function buildCategoryBreakdown(entries: CostEntry[]): CategoryBreakdown[
     };
     if (e.billable) {
       row.billableHours += e.hours ?? 0;
-      row.cost += e.amount;
     } else {
       row.nonBillableHours += e.hours ?? 0;
     }
+    row.cost += e.cost;
     byCategory.set(key, row);
   }
 
@@ -168,6 +179,7 @@ export function buildCategoryBreakdown(entries: CostEntry[]): CategoryBreakdown[
   );
 }
 
+/** revenue (totalInvoiced) and cost are computed independently — revenue from what's actually been invoiced, cost from labor + fixed costs — rather than derived from each other, so profit means the same thing everywhere this is called. */
 export function buildCostSummary(
   entries: CostEntry[],
   totalInvoiced: number,
@@ -195,7 +207,8 @@ export interface TimeEntryInput {
   categoryId: string | null;
   date: string;
   hours: number;
-  rate: number;
+  /** Optional billing rate — null means no $ value has been assigned to this time yet. */
+  rate: number | null;
   billable: boolean;
   description: string | null;
 }
@@ -239,6 +252,21 @@ export async function updateTimeEntry(
       description = ${input.description}
     where id = ${id} and business_id = ${businessId}
       and (${restrictToTeamMemberId ?? null}::uuid is null or team_member_id = ${restrictToTeamMemberId ?? null})
+  `;
+}
+
+/** Billable time entries for a client that haven't been attached to an invoice yet — the source list for "generate an invoice from unbilled hours." Fixed rate first (per-entry rate if set), falling back to the client's hourly rate for entries logged with no rate. */
+export async function listUnbilledTimeEntries(businessId: string, clientId: string): Promise<CostEntry[]> {
+  const entries = await listCostEntries(businessId, { clientId, billable: true });
+  return entries.filter((e) => e.entryType === "TIME" && !e.invoiceId);
+}
+
+/** Marks a set of time entries as billed on the given invoice, scoped to one client so a stray id from another owner can't be swept in. Used right after generating an hourly invoice from selected unbilled entries. */
+export async function markTimeEntriesBilled(businessId: string, clientId: string, entryIds: string[], invoiceId: string): Promise<void> {
+  if (entryIds.length === 0) return;
+  await sql`
+    update time_entries set invoice_id = ${invoiceId}
+    where business_id = ${businessId} and client_id = ${clientId} and id = any(${entryIds}::uuid[])
   `;
 }
 

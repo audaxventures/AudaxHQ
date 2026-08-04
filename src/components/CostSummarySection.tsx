@@ -72,7 +72,8 @@ export function CostSummarySection({
         <Metric label="Billable hours" value={summary.billableHours.toFixed(1)} />
         <Metric label="Non-billable hours" value={summary.nonBillableHours.toFixed(1)} />
         <Metric label="Total hours" value={summary.totalHours.toFixed(1)} />
-        <Metric label="Variable cost" value={formatCurrency(summary.variableCost)} />
+        <Metric label="Unbilled billable hours" value={summary.unbilledBillableHours.toFixed(1)} />
+        <Metric label="Labor cost" value={formatCurrency(summary.laborCost)} />
         <Metric label="Fixed costs" value={formatCurrency(summary.fixedCost)} />
         <Metric label="Total cost" value={formatCurrency(summary.totalCost)} />
         <Metric label="Total invoiced" value={formatCurrency(summary.totalInvoiced)} />
@@ -129,7 +130,7 @@ export function CostSummarySection({
                   <td className="py-2 pr-4 tabular-nums text-navy-900">{summary.billableHours.toFixed(1)}</td>
                   <td className="py-2 pr-4 tabular-nums text-navy-900">{summary.nonBillableHours.toFixed(1)}</td>
                   <td className="py-2 pl-4 pr-3 text-right tabular-nums text-navy-900">
-                    {formatCurrency(summary.variableCost)}
+                    {formatCurrency(summary.laborCost)}
                   </td>
                 </tr>
               </tbody>

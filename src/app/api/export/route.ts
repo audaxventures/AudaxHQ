@@ -114,7 +114,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
             e.rate ?? "",
             e.billable ? "Yes" : "No",
             e.description ?? "",
-            e.amount.toFixed(2),
+            e.amount !== null ? e.amount.toFixed(2) : "",
           ])
         );
       }
@@ -124,7 +124,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       const entries = (await listCostEntries(businessId)).filter((e) => e.entryType === "FIXED_COST");
       lines.push(csvRow(["Date", "Client / Lead", "Description", "Category", "Amount"]));
       for (const e of entries) {
-        lines.push(csvRow([formatDateInput(e.date), e.ownerName, e.description ?? "", e.category ?? "", e.amount.toFixed(2)]));
+        lines.push(csvRow([formatDateInput(e.date), e.ownerName, e.description ?? "", e.category ?? "", (e.amount ?? 0).toFixed(2)]));
       }
       break;
     }

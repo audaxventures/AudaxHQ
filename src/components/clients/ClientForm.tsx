@@ -169,6 +169,26 @@ export function ClientForm({
             )}
           </FieldGroup>
         )}
+        {!hideRate && (
+          <FieldGroup>
+            <Label htmlFor="hourlyRate" compact={compact}>
+              Hourly rate ($/hr, optional)
+            </Label>
+            <Input
+              id="hourlyRate"
+              name="hourlyRate"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={client?.hourlyRate ?? ""}
+              placeholder="e.g. 150.00"
+              icon={fieldIcon(Clock)}
+            />
+            <p className="mt-1.5 text-xs text-navy-400">
+              What to bill this client per hour — defaults an hourly invoice generated from their unbilled tracked time.
+            </p>
+          </FieldGroup>
+        )}
         <FieldGroup>
           <Label htmlFor="startDate" compact={compact}>
             Start date

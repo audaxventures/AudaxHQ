@@ -27,6 +27,7 @@ function mapClient(row: Record<string, unknown>): Client {
     type: row.type as ClientType,
     status: row.status as ClientStatus,
     rate: row.rate as string,
+    hourlyRate: row.hourly_rate as string | null,
     workTypeId: row.work_type_id as string | null,
     workTypeName: (row.work_type_name as string | null) ?? null,
     workTypeOther: row.work_type_other as string | null,
@@ -131,10 +132,11 @@ export async function clientBelongsToBusiness(clientId: string, businessId: stri
   return rows.length > 0;
 }
 
-/** Cheap single-column lookup — used as a fallback when a team member's edit form doesn't submit a rate at all (see ClientForm's hideRate). */
-export async function getClientRate(id: string, businessId: string): Promise<number> {
-  const rows = await sql`select rate from clients where id = ${id} and business_id = ${businessId}`;
-  return rows[0] ? Number((rows[0] as Record<string, unknown>).rate) : 0;
+/** Cheap lookup — used as a fallback when a team member's edit form doesn't submit rate/hourlyRate at all (see ClientForm's hideRate). */
+export async function getClientRate(id: string, businessId: string): Promise<{ rate: number; hourlyRate: number | null }> {
+  const rows = await sql`select rate, hourly_rate from clients where id = ${id} and business_id = ${businessId}`;
+  const row = rows[0] as Record<string, unknown> | undefined;
+  return row ? { rate: Number(row.rate), hourlyRate: row.hourly_rate !== null ? Number(row.hourly_rate) : null } : { rate: 0, hourlyRate: null };
 }
 
 export async function getClient(id: string, businessId: string): Promise<ClientWithRelations | null> {
@@ -188,6 +190,8 @@ export interface ClientInput {
   type: ClientType;
   status: ClientStatus;
   rate: number;
+  /** What to bill this client per hour of tracked time — separate from `rate`. Null if never set. */
+  hourlyRate?: number | null;
   workTypeId?: string | null;
   workTypeOther?: string | null;
   startDate?: string | null;
@@ -197,10 +201,10 @@ export interface ClientInput {
 
 export async function createClient(businessId: string, input: ClientInput, today: string): Promise<Client> {
   const rows = await sql`
-    insert into clients (business_id, company_name, contact_name, contact_email, contact_phone, type, status, rate, work_type_id, work_type_other, start_date, budgeted_hours, color)
+    insert into clients (business_id, company_name, contact_name, contact_email, contact_phone, type, status, rate, hourly_rate, work_type_id, work_type_other, start_date, budgeted_hours, color)
     values (
       ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
-      ${input.type}, ${input.status}, ${input.rate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
+      ${input.type}, ${input.status}, ${input.rate}, ${input.hourlyRate ?? null}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}, ${input.startDate ?? null},
       ${input.budgetedHours ?? null}, ${input.color ?? null}
     )
     returning *
@@ -224,6 +228,7 @@ export async function updateClient(id: string, businessId: string, input: Client
       type = ${input.type},
       status = ${input.status},
       rate = ${input.rate},
+      hourly_rate = ${input.hourlyRate ?? null},
       work_type_id = ${input.workTypeId ?? null},
       work_type_other = ${input.workTypeOther ?? null},
       start_date = ${input.startDate ?? null},
@@ -325,15 +330,17 @@ export interface InvoiceInput {
   workTypeOther?: string | null;
 }
 
-export async function addInvoice(clientId: string, businessId: string, input: InvoiceInput): Promise<void> {
-  await sql`
+export async function addInvoice(clientId: string, businessId: string, input: InvoiceInput): Promise<{ id: string }> {
+  const rows = await sql`
     insert into invoices (client_id, business_id, label, amount, invoice_type, hours, hourly_rate, description, status, invoiced_date, paid_date, work_type_id, work_type_other)
     values (
       ${clientId}, ${businessId}, ${input.label}, ${input.amount},
       ${input.invoiceType}, ${input.hours}, ${input.hourlyRate}, ${input.description},
       ${input.status}, ${input.invoicedDate}, ${input.paidDate}, ${input.workTypeId ?? null}, ${input.workTypeOther ?? null}
     )
+    returning id
   `;
+  return { id: (rows[0] as Record<string, unknown>).id as string };
 }
 
 /**

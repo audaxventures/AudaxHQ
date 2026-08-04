@@ -229,6 +229,8 @@ export interface Client {
   type: ClientType;
   status: ClientStatus;
   rate: string;
+  /** What to bill this client per hour of tracked time — separate from `rate` above (a monthly-fee/reference-total figure). Defaults an hourly invoice's rate and is what "unbilled hours" are valued at. Null if never set. */
+  hourlyRate: string | null;
   workTypeId: string | null;
   workTypeName: string | null;
   /** Free text, used only when the selected work type is the "Other" fallback row. */
@@ -382,6 +384,7 @@ export interface ProspectActivity {
 export interface TeamMember {
   id: string;
   name: string;
+  /** What an hour of this person's time costs the business — used to compute labor cost on every time entry they log, billable or not. Not a billing rate; see Client.hourlyRate for what a client is charged. */
   defaultHourlyRate: string;
   active: boolean;
   createdAt: string;
@@ -531,7 +534,14 @@ export const FIXED_COST_CATEGORY_ORDER: FixedCostCategory[] = [
 
 export type CostEntryType = "TIME" | "FIXED_COST";
 
-/** A time entry or fixed cost, normalized to one shape for the combined entry log. */
+/**
+ * A time entry or fixed cost, normalized to one shape for the combined
+ * entry log. Cost and billing are deliberately separate concepts here:
+ * `cost` is what the hour actually costs the business (team member's cost
+ * rate × hours — always present, whether or not the time is billable);
+ * `rate`/`amount` is what the entry would be billed at, which is optional
+ * and only matters once the hours are actually invoiced (see `invoiceId`).
+ */
 export interface CostEntry {
   id: string;
   entryType: CostEntryType;
@@ -541,6 +551,7 @@ export interface CostEntry {
   date: string;
   description: string | null;
   hours: number | null;
+  /** Billing rate for a time entry — optional; null means no $ value has been assigned yet. Always null for a fixed cost (use `amount` instead). */
   rate: number | null;
   billable: boolean | null;
   /** Time entries only — needed to re-select the team member when editing. */
@@ -551,8 +562,12 @@ export interface CostEntry {
   workCategoryName: string | null;
   /** Fixed-cost category (Software/Tools, Contractor, ...) — a separate concept from workCategory, fixed costs only. */
   category: FixedCostCategory | null;
-  /** hours × rate for a time entry, or the flat amount for a fixed cost. */
-  amount: number;
+  /** hours × rate for a time entry with a rate set, or the flat amount for a fixed cost. Null for a time entry with no rate assigned. */
+  amount: number | null;
+  /** Labor cost of this entry — hours × the team member's cost rate for a time entry (regardless of billable), or the flat amount for a fixed cost. */
+  cost: number;
+  /** Time entries only — set once this entry has been included on a generated invoice, so it can't be billed twice. Null means unbilled. */
+  invoiceId: string | null;
   createdAt: string;
 }
 
@@ -560,10 +575,10 @@ export interface CostRollup {
   billableHours: number;
   nonBillableHours: number;
   totalHours: number;
-  /** Cost of billable hours only — non-billable time isn't part of what was priced. */
-  variableCost: number;
-  /** hours × rate for non-billable time entries — a real labor cost even though it isn't billed to anyone. */
-  nonBillableCost: number;
+  /** Billable hours that haven't been attached to an invoice yet. */
+  unbilledBillableHours: number;
+  /** Total labor cost — every time entry's hours × its team member's cost rate, billable or not. */
+  laborCost: number;
   fixedCost: number;
   totalCost: number;
 }
@@ -574,15 +589,18 @@ export interface CategoryBreakdown {
   categoryName: string;
   billableHours: number;
   nonBillableHours: number;
+  /** Labor cost for this category, billable or not. */
   cost: number;
 }
 
 export interface CostSummary extends CostRollup {
+  /** Revenue actually invoiced for this client/lead in the filtered range — not a guess based on unbilled hours. */
   totalInvoiced: number;
+  /** totalInvoiced − totalCost. */
   profit: number;
   /** Null when nothing has been invoiced yet — a percentage isn't meaningful without a denominator. */
   profitMarginPercent: number | null;
-  /** Null when there are no billable hours to divide by. */
+  /** totalInvoiced ÷ billable hours. Null when there are no billable hours to divide by. */
   effectiveHourlyRate: number | null;
   budgetedHours: number | null;
   overBudget: boolean;

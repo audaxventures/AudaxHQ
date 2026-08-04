@@ -8,7 +8,7 @@ import { CostEntryLog } from "@/components/tracker/CostEntryLog";
 import { LogTimeEntryButton } from "@/components/tracker/LogTimeEntryButton";
 import { Pagination } from "@/components/ui/Pagination";
 import { listCostEntries, rollupCostEntries } from "@/lib/data/costEntries";
-import { getTeamMember, listTeamMembers } from "@/lib/data/teamMembers";
+import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
@@ -63,15 +63,12 @@ export default async function TrackerPage({
   const search = (sp.q ?? "").trim().toLowerCase();
   const page = Math.max(1, Number(sp.page) || 1);
 
-  const [allEntries, teamMembers, workCategories, clients, leads, ownerTeamMember] = await Promise.all([
+  const [allEntries, teamMembers, workCategories, clients, leads] = await Promise.all([
     listCostEntries(user.businessId, filters),
     listTeamMembers(user.businessId, { includeInactive: true }),
     listWorkCategories(user.businessId, { includeInactive: true }),
     listClients(user.businessId, { accessibleClientIds }),
     listLeads(user.businessId),
-    isOwner && user.business.ownerTeamMemberId
-      ? getTeamMember(user.business.ownerTeamMemberId, user.businessId)
-      : Promise.resolve(null),
   ]);
 
   const inactiveTeamMemberIds = new Set(teamMembers.filter((t) => !t.active).map((t) => t.id));
@@ -100,18 +97,16 @@ export default async function TrackerPage({
   }
 
   const rollup = rollupCostEntries(entries);
-  const revenue = rollup.variableCost;
-  const costs = rollup.nonBillableCost + rollup.fixedCost;
-  const profit = revenue - costs;
-  const marginPercent = revenue > 0 ? (profit / revenue) * 100 : null;
   const billablePercent = rollup.totalHours > 0 ? (rollup.billableHours / rollup.totalHours) * 100 : null;
 
   const total = entries.length;
   const start = (page - 1) * PAGE_SIZE;
-  // CostEntryTable is a Client Component — its props (including rate/amount)
+  // CostEntryTable is a Client Component — its props (including rate/amount/cost)
   // are serialized to the browser regardless of which columns get rendered,
   // so strip the $ fields here rather than trusting hideFinancials alone.
-  const pageEntries = entries.slice(start, start + PAGE_SIZE).map((e) => (isOwner ? e : { ...e, rate: null, amount: 0 }));
+  const pageEntries = entries
+    .slice(start, start + PAGE_SIZE)
+    .map((e) => (isOwner ? e : { ...e, rate: null, amount: null, cost: 0 }));
 
   const filterParams: Record<string, string | undefined> = {
     clientId: filters.clientId,
@@ -162,7 +157,7 @@ export default async function TrackerPage({
         tone="navy"
         eyebrow="Finance"
         title="Hour & Cost Tracker"
-        description="Log time and expenses against clients and leads to see real profitability"
+        description="Log hours and expenses against clients and leads — see profitability on each client's Finance tab"
         action={
           <div className="flex items-center gap-3">
             {isOwner && (
@@ -176,7 +171,6 @@ export default async function TrackerPage({
               teamMembers={pickableActiveTeamMembers}
               workCategories={activeWorkCategories}
               lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
-              ownerHourlyRate={ownerTeamMember?.defaultHourlyRate}
             />
           </div>
         }
@@ -184,7 +178,7 @@ export default async function TrackerPage({
 
       {isOwner && <FinanceTabs active="tracker" />}
 
-      <div className={cn("mb-6 grid grid-cols-2 gap-4", isOwner ? "sm:grid-cols-3 lg:grid-cols-5" : "sm:grid-cols-2")}>
+      <div className={cn("mb-6 grid grid-cols-2 gap-4", isOwner ? "sm:grid-cols-4" : "sm:grid-cols-2")}>
         <StatTile label="Hours logged" value={rollup.totalHours.toFixed(1)} tone="navy" />
         <StatTile
           label="Billable hours"
@@ -194,14 +188,13 @@ export default async function TrackerPage({
         />
         {isOwner && (
           <>
-            <StatTile label="Revenue" value={formatCurrency(revenue)} subtext="From billable hours" tone="sage" />
-            <StatTile label="Costs" value={formatCurrency(costs)} subtext="Total cost" tone="burnt" />
             <StatTile
-              label="Profit"
-              value={formatCurrency(profit)}
-              subtext={marginPercent !== null ? `${marginPercent.toFixed(1)}% margin` : undefined}
+              label="Unbilled billable hours"
+              value={rollup.unbilledBillableHours.toFixed(1)}
+              subtext="Ready to invoice"
               tone="gold"
             />
+            <StatTile label="Total cost" value={formatCurrency(rollup.totalCost)} subtext="Labor + fixed costs" tone="burnt" />
           </>
         )}
       </div>
@@ -226,7 +219,6 @@ export default async function TrackerPage({
           teamMembers={pickableActiveTeamMembers}
           workCategories={activeWorkCategories}
           lockedTeamMember={teamMember ? { id: teamMember.id, name: teamMember.name } : undefined}
-          ownerHourlyRate={ownerTeamMember?.defaultHourlyRate}
           showOwner
           hideFinancials={!isOwner}
         />

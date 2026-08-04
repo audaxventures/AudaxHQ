@@ -17,7 +17,7 @@ function entryRow(e: CostEntry): string {
     e.hours ?? "",
     e.rate ?? "",
     e.entryType === "TIME" ? (e.billable ? "Yes" : "No") : "",
-    e.amount.toFixed(2),
+    e.amount !== null ? e.amount.toFixed(2) : "",
   ]);
 }
 
@@ -81,7 +81,8 @@ export async function GET(request: Request) {
     lines.push(csvRow(["Billable hours", summary.billableHours]));
     lines.push(csvRow(["Non-billable hours", summary.nonBillableHours]));
     lines.push(csvRow(["Total hours", summary.totalHours]));
-    lines.push(csvRow(["Variable cost", summary.variableCost.toFixed(2)]));
+    lines.push(csvRow(["Unbilled billable hours", summary.unbilledBillableHours]));
+    lines.push(csvRow(["Labor cost", summary.laborCost.toFixed(2)]));
     lines.push(csvRow(["Fixed cost", summary.fixedCost.toFixed(2)]));
     lines.push(csvRow(["Total cost", summary.totalCost.toFixed(2)]));
     lines.push(csvRow(["Total invoiced", summary.totalInvoiced.toFixed(2)]));
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
       for (const c of summary.categoryBreakdown) {
         lines.push(csvRow([c.categoryName, c.billableHours, c.nonBillableHours, c.cost.toFixed(2)]));
       }
-      lines.push(csvRow(["Total", summary.billableHours, summary.nonBillableHours, summary.variableCost.toFixed(2)]));
+      lines.push(csvRow(["Total", summary.billableHours, summary.nonBillableHours, summary.laborCost.toFixed(2)]));
       lines.push("");
     }
   }

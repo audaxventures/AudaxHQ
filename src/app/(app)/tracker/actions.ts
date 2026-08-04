@@ -10,7 +10,7 @@ import { generateResetToken, hashResetToken } from "@/lib/auth";
 import { requireCurrentUser, requireOwner } from "@/lib/currentUser";
 import { sendTeamMemberInviteEmail } from "@/lib/email";
 import { hasFeature, TEAM_MEMBER_SEAT_CAP, TIER_LABELS } from "@/lib/entitlements";
-import type { EntityColor, FixedCostCategory } from "@/lib/types";
+import type { CurrentUser, EntityColor, FixedCostCategory } from "@/lib/types";
 
 function revalidateOwner(clientId: string | null, leadId: string | null) {
   revalidatePath("/tracker");
@@ -25,9 +25,18 @@ function parseOwner(raw: string): { clientId: string | null; leadId: string | nu
   return { clientId: type === "client" ? id : null, leadId: type === "lead" ? id : null };
 }
 
-export async function createTimeEntry(formData: FormData) {
-  const user = await requireCurrentUser();
-
+/**
+ * Shared parsing for both createTimeEntry and updateTimeEntry — hours,
+ * date, and who this is for are the only required fields (see migration
+ * 044: rate is now an optional, owner-only billing figure, not something
+ * every logged hour needs). Team members never set a rate themselves —
+ * pricing decisions aren't theirs to make — and can only log/edit their
+ * own hours against clients they have access to.
+ */
+async function parseTimeEntryForm(
+  user: CurrentUser,
+  formData: FormData
+): Promise<{ input: costEntries.TimeEntryInput; restrictToTeamMemberId: string | null }> {
   const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
   const categoryId = String(formData.get("categoryId") ?? "") || null;
   const date = String(formData.get("date") ?? "");
@@ -40,63 +49,18 @@ export async function createTimeEntry(formData: FormData) {
   }
 
   let teamMemberId: string | null;
-  let rate: number;
+  let rate: number | null;
+  let restrictToTeamMemberId: string | null = null;
 
   if (user.role === "OWNER") {
     // "" (the "Me" option) means the owner logged it themselves — null,
     // same as everywhere else null means "the owner" (see migration 039).
     teamMemberId = String(formData.get("teamMemberId") ?? "") || null;
-    rate = Number(formData.get("rate"));
-    if (!(rate >= 0)) {
-      throw new Error("Fill in a rate.");
-    }
+    const rawRate = String(formData.get("rate") ?? "").trim();
+    rate = rawRate && Number(rawRate) >= 0 ? Number(rawRate) : null;
   } else {
-    // Team members can only log their own hours, at their own rate — both are
-    // pinned server-side rather than trusted from the form, which also keeps
-    // the rate ($) figure out of their hands entirely.
     teamMemberId = user.teamMember.id;
-    rate = Number(user.teamMember.defaultHourlyRate);
-    if (clientId) {
-      const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId, user.businessId);
-      if (!accessibleIds.includes(clientId)) {
-        throw new Error("You don't have access to that client.");
-      }
-    }
-  }
-
-  await costEntries.createTimeEntry(user.businessId, { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description });
-  revalidateOwner(clientId, leadId);
-}
-
-export async function updateTimeEntry(id: string, previousClientId: string | null, previousLeadId: string | null, formData: FormData) {
-  const user = await requireCurrentUser();
-
-  const { clientId, leadId } = parseOwner(String(formData.get("owner") ?? ""));
-  const categoryId = String(formData.get("categoryId") ?? "") || null;
-  const date = String(formData.get("date") ?? "");
-  const hours = Number(formData.get("hours"));
-  const billable = formData.get("billable") === "on";
-  const description = String(formData.get("description") ?? "").trim() || null;
-
-  if (!date || !(hours > 0)) {
-    throw new Error("Fill in date and hours.");
-  }
-
-  let teamMemberId: string | null;
-  let rate: number;
-  let restrictToTeamMemberId: string | null = null;
-
-  if (user.role === "OWNER") {
-    teamMemberId = String(formData.get("teamMemberId") ?? "") || null;
-    rate = Number(formData.get("rate"));
-    if (!(rate >= 0)) {
-      throw new Error("Fill in a rate.");
-    }
-  } else {
-    // Team members can only edit their own entries, at their own rate — both
-    // are pinned server-side rather than trusted from the form.
-    teamMemberId = user.teamMember.id;
-    rate = Number(user.teamMember.defaultHourlyRate);
+    rate = null;
     restrictToTeamMemberId = user.teamMember.id;
     if (clientId) {
       const accessibleIds = await clientAccess.getClientAccessIds(teamMemberId, user.businessId);
@@ -106,14 +70,25 @@ export async function updateTimeEntry(id: string, previousClientId: string | nul
     }
   }
 
-  await costEntries.updateTimeEntry(
-    id,
-    user.businessId,
-    { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description },
-    restrictToTeamMemberId
-  );
+  return {
+    input: { clientId, leadId, teamMemberId, categoryId, date, hours, rate, billable, description },
+    restrictToTeamMemberId,
+  };
+}
+
+export async function createTimeEntry(formData: FormData) {
+  const user = await requireCurrentUser();
+  const { input } = await parseTimeEntryForm(user, formData);
+  await costEntries.createTimeEntry(user.businessId, input);
+  revalidateOwner(input.clientId, input.leadId);
+}
+
+export async function updateTimeEntry(id: string, previousClientId: string | null, previousLeadId: string | null, formData: FormData) {
+  const user = await requireCurrentUser();
+  const { input, restrictToTeamMemberId } = await parseTimeEntryForm(user, formData);
+  await costEntries.updateTimeEntry(id, user.businessId, input, restrictToTeamMemberId);
   revalidateOwner(previousClientId, previousLeadId);
-  revalidateOwner(clientId, leadId);
+  revalidateOwner(input.clientId, input.leadId);
 }
 
 export async function deleteTimeEntry(id: string, clientId: string | null, leadId: string | null) {

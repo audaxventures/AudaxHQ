@@ -43,11 +43,24 @@ function entryCategoryLabel(entry: CostEntry): string {
   return entry.category ? FIXED_COST_CATEGORY_LABELS[entry.category] : "Uncategorized";
 }
 
-function entryFinancials(entry: CostEntry): { revenue: number; cost: number; profit: number } {
-  if (entry.entryType === "TIME" && entry.billable) {
-    return { revenue: entry.amount, cost: entry.amount, profit: 0 };
-  }
-  return { revenue: 0, cost: entry.amount, profit: -entry.amount };
+/** "$X/hr" for a time entry with a rate set, the flat amount for a fixed cost, "—" for a time entry with no rate assigned yet. */
+function entryAmountLabel(entry: CostEntry): string {
+  if (entry.entryType === "FIXED_COST") return formatCurrency(entry.amount ?? 0);
+  return entry.rate !== null ? `${formatCurrency(entry.rate)}/hr` : "—";
+}
+
+/** Billed/unbilled only means something for a billable time entry — everything else has no invoicing status to show. */
+function BilledStatus({ entry }: { entry: CostEntry }) {
+  if (entry.entryType !== "TIME" || !entry.billable) return <span className="text-navy-300">—</span>;
+  return entry.invoiceId ? (
+    <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap", PILL_TONE_CLASSES.sage)}>
+      Billed
+    </span>
+  ) : (
+    <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap", PILL_TONE_CLASSES.gold)}>
+      Unbilled
+    </span>
+  );
 }
 
 const MENU_WIDTH = 128;
@@ -178,10 +191,8 @@ export function CostEntryTable({
               <th className="py-2 pr-4">Billable</th>
               {!hideFinancials && (
                 <>
-                  <th className="py-2 pr-4">Rate</th>
-                  <th className="py-2 pr-4 text-right">Cost</th>
-                  <th className="py-2 pr-4 text-right">Revenue</th>
-                  <th className="py-2 pr-4 text-right">Profit</th>
+                  <th className="py-2 pr-4">Rate / Amount</th>
+                  <th className="py-2 pr-4">Status</th>
                 </>
               )}
               {(deletable || onEdit) && <th className="py-2 pl-2" />}
@@ -191,14 +202,13 @@ export function CostEntryTable({
             <tbody key={group.date} className="divide-y divide-navy-100">
               <tr>
                 <td
-                  colSpan={(showOwner ? 1 : 0) + (hideFinancials ? 4 : 8) + (deletable || onEdit ? 1 : 0)}
+                  colSpan={(showOwner ? 1 : 0) + (hideFinancials ? 4 : 6) + (deletable || onEdit ? 1 : 0)}
                   className="pt-4 pb-1.5 text-xs font-semibold uppercase tracking-wide text-navy-400"
                 >
                   {formatDate(group.date)}
                 </td>
               </tr>
               {group.entries.map((e) => {
-                const { revenue, cost, profit } = entryFinancials(e);
                 return (
                   <tr key={`${e.entryType}-${e.id}`} className="group">
                     {showOwner && (
@@ -222,18 +232,9 @@ export function CostEntryTable({
                     </td>
                     {!hideFinancials && (
                       <>
-                        <td className="py-2.5 pr-4 tabular-nums text-navy-600">
-                          {e.rate !== null ? formatCurrency(e.rate) : "—"}
-                        </td>
-                        <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(cost)}</td>
-                        <td className="py-2.5 pr-4 text-right tabular-nums text-navy-600">{formatCurrency(revenue)}</td>
-                        <td
-                          className={cn(
-                            "py-2.5 pr-4 text-right font-medium tabular-nums",
-                            profit < 0 ? "text-brick-600" : "text-navy-900"
-                          )}
-                        >
-                          {formatCurrency(profit)}
+                        <td className="py-2.5 pr-4 tabular-nums text-navy-600">{entryAmountLabel(e)}</td>
+                        <td className="py-2.5 pr-4">
+                          <BilledStatus entry={e} />
                         </td>
                       </>
                     )}

@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as clients from "@/lib/data/clients";
 import * as clientAccess from "@/lib/data/clientAccess";
+import * as costEntries from "@/lib/data/costEntries";
 import * as notifications from "@/lib/data/notifications";
 import * as teamMembers from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
+import { formatDateInput } from "@/lib/format";
 import { requireClientAccess, requireCurrentUser, requireOwner } from "@/lib/currentUser";
 import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
 import { extractMentionIds } from "@/lib/mentions";
@@ -22,6 +24,7 @@ const clientSchema = z.object({
   type: z.enum(["PROJECT", "RECURRING"]),
   status: z.enum(["ACTIVE", "PAUSED", "CHURNED"]),
   rate: z.coerce.number().min(0),
+  hourlyRate: z.coerce.number().min(0).optional(),
   workTypeId: z.string().optional(),
   workTypeOther: z.string().optional(),
   startDate: z.string().optional(),
@@ -30,13 +33,15 @@ const clientSchema = z.object({
 });
 
 /**
- * `fallbackRate` covers team members editing a client with the rate field
- * hidden (ClientForm's hideRate) — formData.get("rate") is null (never
- * submitted) rather than an empty string, so without a fallback the client's
- * existing rate would silently get zeroed out by an unrelated edit.
+ * `fallback` covers team members editing a client with the rate fields
+ * hidden (ClientForm's hideRate) — formData.get("rate")/("hourlyRate") is
+ * null (never submitted) rather than an empty string, so without a
+ * fallback the client's existing rate/hourlyRate would silently get
+ * zeroed out by an unrelated edit.
  */
-function parseClientForm(formData: FormData, fallbackRate = 0) {
+function parseClientForm(formData: FormData, fallback: { rate: number; hourlyRate: number | null } = { rate: 0, hourlyRate: null }) {
   const rate = formData.get("rate");
+  const hourlyRate = formData.get("hourlyRate");
   const parsed = clientSchema.parse({
     companyName: formData.get("companyName"),
     contactName: formData.get("contactName") || undefined,
@@ -44,7 +49,8 @@ function parseClientForm(formData: FormData, fallbackRate = 0) {
     contactPhone: formData.get("contactPhone") || undefined,
     type: formData.get("type"),
     status: formData.get("status"),
-    rate: rate !== null ? rate || 0 : fallbackRate,
+    rate: rate !== null ? rate || 0 : fallback.rate,
+    hourlyRate: hourlyRate !== null ? hourlyRate || undefined : (fallback.hourlyRate ?? undefined),
     workTypeId: formData.get("workTypeId") || undefined,
     // Only ever submitted by the form when the "Other" fallback work type is selected.
     workTypeOther: formData.get("workTypeOther") || undefined,
@@ -54,6 +60,7 @@ function parseClientForm(formData: FormData, fallbackRate = 0) {
   });
   return {
     ...parsed,
+    hourlyRate: parsed.hourlyRate ?? null,
     contactName: parsed.contactName ?? null,
     contactEmail: parsed.contactEmail ?? null,
     contactPhone: parsed.contactPhone ?? null,
@@ -87,8 +94,9 @@ export async function createClient(formData: FormData) {
 
 export async function updateClient(id: string, formData: FormData) {
   const user = await requireClientAccess(id);
-  const fallbackRate = formData.get("rate") === null ? await clients.getClientRate(id, user.businessId) : 0;
-  const input = parseClientForm(formData, fallbackRate);
+  const needsFallback = formData.get("rate") === null || formData.get("hourlyRate") === null;
+  const fallback = needsFallback ? await clients.getClientRate(id, user.businessId) : { rate: 0, hourlyRate: null };
+  const input = parseClientForm(formData, fallback);
   await clients.updateClient(id, user.businessId, input, await getBusinessToday(user.businessId));
   revalidatePath(`/clients/${id}`);
   revalidatePath("/clients");
@@ -268,6 +276,55 @@ export async function addInvoice(clientId: string, formData: FormData) {
   });
   revalidatePath(`/clients/${clientId}`);
   revalidatePath("/invoices");
+  revalidatePath("/");
+}
+
+/**
+ * Generates one HOURLY invoice from a set of a client's unbilled billable
+ * time entries and marks them billed (see migration 044) so they can't be
+ * pulled into a second invoice later. The rate is whatever the owner
+ * confirms on the "Generate invoice" panel — defaulted client-side from
+ * the client's hourlyRate, but not re-derived here, since the owner may
+ * deliberately override it for this batch.
+ */
+export async function generateHourlyInvoiceFromUnbilledHours(clientId: string, formData: FormData) {
+  const user = await requireOwnerClientAccess(clientId);
+  const selectedIds = formData.getAll("entryId").map((v) => String(v));
+  const rate = Number(formData.get("rate"));
+  if (selectedIds.length === 0) throw new Error("Select at least one unbilled entry.");
+  if (!(rate > 0)) throw new Error("Enter a rate to bill these hours at.");
+
+  // Re-derive from the unbilled set itself rather than trusting the
+  // submitted hours — a stray/stale id, or one already billed by a
+  // concurrent request, is silently dropped rather than double-billed.
+  const unbilled = await costEntries.listUnbilledTimeEntries(user.businessId, clientId);
+  const selected = unbilled.filter((e) => selectedIds.includes(e.id));
+  if (selected.length === 0) throw new Error("Those entries are no longer unbilled — refresh and try again.");
+
+  const totalHours = selected.reduce((sum, e) => sum + (e.hours ?? 0), 0);
+  const amount = totalHours * rate;
+  const dates = selected.map((e) => formatDateInput(e.date)).sort();
+  const label = `Hourly — ${dates[0]} to ${dates[dates.length - 1]}`;
+
+  const workType = await clients.getClientWorkType(clientId, user.businessId);
+  const invoice = await clients.addInvoice(clientId, user.businessId, {
+    label,
+    amount,
+    invoiceType: "HOURLY",
+    hours: totalHours,
+    hourlyRate: rate,
+    description: null,
+    status: "NOT_INVOICED",
+    invoicedDate: null,
+    paidDate: null,
+    workTypeId: workType?.workTypeId ?? null,
+    workTypeOther: workType?.workTypeOther ?? null,
+  });
+  await costEntries.markTimeEntriesBilled(user.businessId, clientId, selected.map((e) => e.id), invoice.id);
+
+  revalidatePath(`/clients/${clientId}`);
+  revalidatePath("/invoices");
+  revalidatePath("/tracker");
   revalidatePath("/");
 }
 

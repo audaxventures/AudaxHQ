@@ -23,7 +23,6 @@ export function CostEntryLog({
   teamMembers,
   workCategories,
   lockedTeamMember,
-  ownerHourlyRate,
   showOwner = false,
   hideFinancials = false,
 }: {
@@ -33,8 +32,6 @@ export function CostEntryLog({
   teamMembers: TeamMember[];
   workCategories: WorkCategory[];
   lockedTeamMember?: LockedTeamMember;
-  /** Owner-session only — prefills the rate field when they pick the "Me" option while editing. */
-  ownerHourlyRate?: string;
   showOwner?: boolean;
   hideFinancials?: boolean;
 }) {
@@ -56,7 +53,6 @@ export function CostEntryLog({
           teamMembers={teamMembers}
           workCategories={workCategories}
           lockedTeamMember={lockedTeamMember}
-          ownerHourlyRate={ownerHourlyRate}
           entry={editingEntry}
           onClose={() => setEditingEntry(null)}
         />

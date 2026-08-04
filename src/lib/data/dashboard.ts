@@ -43,6 +43,7 @@ function mapClient(row: Record<string, unknown>): Client {
     type: row.type as ClientType,
     status: row.status as Client["status"],
     rate: row.rate as string,
+    hourlyRate: row.hourly_rate as string | null,
     // Not surfaced on the dashboard (no work-type badges here), so skip the join.
     workTypeId: row.work_type_id as string | null,
     workTypeName: null,

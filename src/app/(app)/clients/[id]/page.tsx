@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { getClient, listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
-import { listCostEntries } from "@/lib/data/costEntries";
+import { listCostEntries, listUnbilledTimeEntries } from "@/lib/data/costEntries";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { accessibleClientIdsFor, listAllClientAccess } from "@/lib/data/clientAccess";
@@ -31,6 +31,7 @@ import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { EmailSection } from "@/components/EmailSection";
 import { DocumentsSection } from "@/components/DocumentsSection";
 import { CostSummarySection } from "@/components/CostSummarySection";
+import { UnbilledHoursPanel } from "@/components/tracker/UnbilledHoursPanel";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
 import { NotesLog } from "@/components/NotesLog";
 import { formatCurrency, isDateInRange } from "@/lib/format";
@@ -54,12 +55,14 @@ export default async function ClientDetailPage({
     const accessibleClientIds = await accessibleClientIdsFor(user);
     if (!accessibleClientIds?.includes(id)) notFound();
   }
-  const [client, costEntries, workTypes, today, teamMembers, workCategories, allClients, leads, clientAccessMap] =
+  const [client, costEntries, unbilledEntries, workTypes, today, teamMembers, workCategories, allClients, leads, clientAccessMap] =
     await Promise.all([
       getClient(id, user.businessId),
       isOwner
         ? listCostEntries(user.businessId, { clientId: id, dateFrom: costFrom, dateTo: costTo })
         : Promise.resolve([]),
+      // Not scoped by the costFrom/costTo report filter — old unbilled hours should still show up here to be invoiced even if the current date filter excludes them.
+      isOwner ? listUnbilledTimeEntries(user.businessId, id) : Promise.resolve([]),
       listWorkTypes(user.businessId, { includeInactive: true }),
       getBusinessToday(user.businessId),
       // Needed for follow-up assignment (all roles), not just the owner-only Cost & Profitability section below.
@@ -191,8 +194,13 @@ export default async function ClientDetailPage({
                       ? "One entry per month, created automatically — add one-off invoices any time."
                       : "Split the project total across deposits, milestones, or however you invoice this client."}
                   </p>
-                  <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.rate)} />
+                  <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.hourlyRate ?? 0)} />
                 </div>
+                {unbilledEntries.length > 0 && (
+                  <div className="mt-8 border-t-2 border-navy-100 pt-6">
+                    <UnbilledHoursPanel clientId={id} entries={unbilledEntries} defaultRate={client.hourlyRate} />
+                  </div>
+                )}
                 <div className="mt-8 border-t-2 border-navy-100 pt-6">
                   <h4 className="mb-3 font-heading text-base font-bold text-navy-900">
                     Cost &amp; Profitability
