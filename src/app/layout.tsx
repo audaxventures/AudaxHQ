@@ -18,7 +18,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "Verclara",
-  description: "Client, lead, and task management for Audax Ventures.",
+  description: "The CRM and business operating system for service businesses.",
   icons: {
     // Versioned so browsers that cached an older favicon under this exact
     // URL (favicons are cached unusually aggressively, especially on the
