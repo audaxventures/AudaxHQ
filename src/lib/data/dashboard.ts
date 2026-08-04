@@ -15,7 +15,7 @@ export interface AttentionFlag {
 export interface DashboardData {
   projectClients: Client[];
   recurringClients: Client[];
-  /** Paid invoices dated within the current calendar month — actual recognized revenue, not a forecast. Null for team members — client billing is hidden from them entirely. */
+  /** Everything invoiced (sent or paid, not draft) dated within the current calendar month — matches the Revenue Tracking page's "Total billed" figure, not just what's been collected so far. Null for team members — client billing is hidden from them entirely. */
   thisMonthRevenue: number | null;
   /** Same calculation, prior calendar month — shown as a small comparison figure next to thisMonthRevenue. */
   lastMonthRevenue: number | null;
@@ -165,8 +165,8 @@ export async function getDashboardData(
   const projectClients = activeClients.filter((c) => c.type === "PROJECT");
   const recurringClients = activeClients.filter((c) => c.type === "RECURRING");
 
-  const thisMonthRevenue = thisMonthSummary?.paid ?? null;
-  const lastMonthRevenue = lastMonthSummary?.paid ?? null;
+  const thisMonthRevenue = thisMonthSummary?.totalBilled ?? null;
+  const lastMonthRevenue = lastMonthSummary?.totalBilled ?? null;
 
   const attentionFlags: AttentionFlag[] = [];
   for (const row of staleInvoiceRows) {
