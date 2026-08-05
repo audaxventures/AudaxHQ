@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
 import { entityColorClass } from "@/lib/avatar";
@@ -16,12 +15,9 @@ export function PartnerGridCard({ partner }: { partner: PartnerSummary }) {
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", entityColorClass(partner.color, partner.companyName))}
       />
-      <div className="flex items-center gap-3">
-        <AvatarChip name={partner.companyName} color={partner.color} />
-        <div className="min-w-0 flex-1">
-          <p className="font-heading text-base font-medium text-navy-900 truncate">{partner.companyName}</p>
-          {partner.contactName && <p className="text-sm text-navy-400 truncate">{partner.contactName}</p>}
-        </div>
+      <div className="min-w-0">
+        <p className="font-heading text-base font-medium text-navy-900 truncate">{partner.companyName}</p>
+        {partner.contactName && <p className="text-sm text-navy-400 truncate">{partner.contactName}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={partner.active ? "sage" : "slate"}>{partner.active ? "Active" : "Inactive"}</Badge>

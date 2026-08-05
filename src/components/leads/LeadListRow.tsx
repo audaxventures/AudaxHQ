@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRight, CalendarClock } from "lucide-react";
-import { AvatarChip } from "@/components/ui/AvatarChip";
 import { Badge, LeadStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { entityColorClass, entityColorChipClass } from "@/lib/avatar";
@@ -25,7 +24,6 @@ export function LeadListRow({
         className={cn("absolute inset-y-0 left-0 w-1.5", entityColorClass(lead.color, lead.companyName))}
       />
       <div className="flex items-center gap-4">
-        <AvatarChip name={lead.companyName} color={lead.color} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-heading text-base font-medium text-navy-900 truncate">{lead.companyName}</p>
