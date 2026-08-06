@@ -98,6 +98,14 @@ export async function setLeadColor(id: string, color: EntityColor | null) {
   revalidatePath("/");
 }
 
+export async function setLeadHot(id: string, hot: boolean) {
+  const user = await requireLeadAccess(id);
+  await leads.setLeadHot(id, user.businessId, hot);
+  revalidatePath(`/leads/${id}`);
+  revalidatePath("/leads");
+  revalidatePath("/");
+}
+
 export async function deleteLead(id: string) {
   const user = await requireLeadAccess(id);
   await leads.deleteLead(id, user.businessId);

@@ -279,6 +279,8 @@ export interface Lead {
   referredByPartnerId: string | null;
   referredByPartnerName: string | null;
   referredByPartnerColor: EntityColor | null;
+  /** Flagged as needing extra focus — sorts to the top of the Leads list ahead of the normal sort order. */
+  hot: boolean;
 }
 
 export interface LeadWithRelations extends Lead {
@@ -363,6 +365,8 @@ export interface Prospect {
   convertedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Flagged as needing extra focus — sorts to the top of the Prospects list ahead of the normal sort order. */
+  hot: boolean;
 }
 
 export interface ProspectWithRelations extends Prospect {

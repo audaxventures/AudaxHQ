@@ -20,6 +20,7 @@ function mapProspect(row: Record<string, unknown>): Prospect {
     convertedAt: row.converted_at as string | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    hot: row.hot as boolean,
   };
 }
 
@@ -108,6 +109,7 @@ export async function listProspects(
         or p.email ilike ${searchPattern}
       )
     order by
+      case when p.hot then 0 else 1 end asc,
       case when ${sort} = 'next_follow_up' and f.next_date is null then 1 else 0 end asc,
       case when ${sort} = 'next_follow_up' then f.next_date end asc,
       case when ${sort} = 'name' then p.name end asc,
@@ -186,6 +188,10 @@ export async function updateProspect(id: string, businessId: string, input: Pros
 
 export async function deleteProspect(id: string, businessId: string): Promise<void> {
   await sql`delete from prospects where id = ${id} and business_id = ${businessId}`;
+}
+
+export async function setProspectHot(id: string, businessId: string, hot: boolean): Promise<void> {
+  await sql`update prospects set hot = ${hot}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
 export async function addProspectActivity(

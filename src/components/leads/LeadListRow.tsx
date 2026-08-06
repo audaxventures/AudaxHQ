@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ChevronRight, CalendarClock } from "lucide-react";
 import { Badge, LeadStatusBadge } from "@/components/ui/Badge";
+import { HotToggle } from "@/components/ui/HotToggle";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { entityColorClass, entityColorChipClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
+import { setLeadHot } from "@/app/(app)/leads/actions";
 import type { Lead } from "@/lib/types";
 
 export function LeadListRow({
@@ -24,6 +26,7 @@ export function LeadListRow({
         className={cn("absolute inset-y-0 left-0 w-1.5", entityColorClass(lead.color, lead.companyName))}
       />
       <div className="flex items-center gap-4">
+        <HotToggle hot={lead.hot} onToggle={setLeadHot.bind(null, lead.id)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-heading text-base font-medium text-navy-900 truncate">{lead.companyName}</p>

@@ -31,6 +31,7 @@ function mapLead(row: Record<string, unknown>): Lead {
     referredByPartnerId: (row.referred_by_partner_id as string | null) ?? null,
     referredByPartnerName: (row.referred_by_partner_name as string | null) ?? null,
     referredByPartnerColor: (row.referred_by_partner_color as EntityColor | null) ?? null,
+    hot: row.hot as boolean,
   };
 }
 
@@ -104,6 +105,7 @@ export async function listLeads(
       and (${filters.converted === "include"} or l.converted_client_id is null)
       and (${filters.includeLost === true} or l.status <> 'LOST')
     order by
+      case when l.hot then 0 else 1 end asc,
       case when f.next_date is null then 1 else 0 end asc,
       f.next_date asc,
       l.created_at desc
@@ -297,6 +299,10 @@ export async function updateLead(
 
 export async function setLeadColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {
   await sql`update leads set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
+}
+
+export async function setLeadHot(id: string, businessId: string, hot: boolean): Promise<void> {
+  await sql`update leads set hot = ${hot}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
 /** Creates a Client from a lead's current data, copies its notes, and links the two. */

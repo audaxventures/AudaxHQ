@@ -141,6 +141,7 @@ export async function listReferredLeads(partnerId: string, businessId: string): 
       referredByPartnerId: row.referred_by_partner_id as string | null,
       referredByPartnerName: null,
       referredByPartnerColor: null,
+      hot: row.hot as boolean,
     };
   });
 }

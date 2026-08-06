@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ChevronRight, CalendarClock } from "lucide-react";
 import { Badge, LeadStatusBadge } from "@/components/ui/Badge";
+import { HotToggle } from "@/components/ui/HotToggle";
 import { formatCurrency, formatDate, isOverdue } from "@/lib/format";
 import { entityColorClass, entityColorChipClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
+import { setLeadHot } from "@/app/(app)/leads/actions";
 import type { Lead } from "@/lib/types";
 
 export function LeadGridCard({
@@ -23,13 +25,16 @@ export function LeadGridCard({
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", entityColorClass(lead.color, lead.companyName))}
       />
-      <div className="min-w-0">
-        <p className="font-heading text-base font-medium text-navy-900 truncate">
-          {lead.companyName}
-        </p>
-        {lead.contactName && (
-          <p className="text-sm text-navy-400 truncate">{lead.contactName}</p>
-        )}
+      <div className="flex items-center gap-2">
+        <HotToggle hot={lead.hot} onToggle={setLeadHot.bind(null, lead.id)} />
+        <div className="min-w-0 flex-1">
+          <p className="font-heading text-base font-medium text-navy-900 truncate">
+            {lead.companyName}
+          </p>
+          {lead.contactName && (
+            <p className="text-sm text-navy-400 truncate">{lead.contactName}</p>
+          )}
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <LeadStatusBadge status={lead.status} />

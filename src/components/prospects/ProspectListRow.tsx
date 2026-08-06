@@ -2,8 +2,10 @@
 
 import { Building2, CalendarClock, Mail, Phone } from "lucide-react";
 import { Badge, ProspectStatusBadge } from "@/components/ui/Badge";
+import { HotToggle } from "@/components/ui/HotToggle";
 import { formatDate, isOverdue } from "@/lib/format";
 import { entityColorChipClass } from "@/lib/avatar";
+import { setProspectHot } from "@/app/(app)/prospects/actions";
 import type { Prospect } from "@/lib/types";
 
 export function ProspectListRow({
@@ -18,12 +20,25 @@ export function ProspectListRow({
   const overdue = isOverdue(prospect.nextFollowUpDate, today);
 
   return (
-    <button
-      type="button"
+    // A <div> with a button role, not a real <button> — it needs to contain
+    // HotToggle's own interactive button, and nesting <button> inside
+    // <button> is invalid HTML that browsers silently reparent, causing a
+    // hydration mismatch. onKeyDown restores the Enter/Space activation a
+    // real button would give for free.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       className="group flex w-full flex-col gap-3 rounded-2xl bg-white py-4 pl-5 pr-5 text-left shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] transition-colors hover:bg-cream-100/60 cursor-pointer sm:flex-row sm:items-center sm:gap-4"
     >
       <div className="flex flex-1 items-center gap-4 min-w-0">
+        <HotToggle hot={prospect.hot} onToggle={setProspectHot.bind(null, prospect.id)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-heading text-base font-medium text-navy-900 truncate">{prospect.name}</p>
@@ -70,6 +85,6 @@ export function ProspectListRow({
           </span>
         )}
       </div>
-    </button>
+    </div>
   );
 }

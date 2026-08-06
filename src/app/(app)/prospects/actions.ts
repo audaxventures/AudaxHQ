@@ -70,6 +70,12 @@ export async function deleteProspect(id: string) {
   revalidateProspects();
 }
 
+export async function setProspectHot(id: string, hot: boolean) {
+  const user = await requireProspectAccess(id);
+  await prospects.setProspectHot(id, user.businessId, hot);
+  revalidateProspects();
+}
+
 export async function addProspectActivity(prospectId: string, formData: FormData) {
   const user = await requireProspectAccess(prospectId);
   const type = String(formData.get("type") ?? "NOTE") as "CALL" | "EMAIL" | "MEETING" | "NOTE";
