@@ -11,10 +11,12 @@ const STORAGE_KEY = "sidebar-collapsed";
 
 export function Sidebar({
   role,
+  hasPartnersAccess,
   isAdmin,
   businessName,
 }: {
   role: SessionRole;
+  hasPartnersAccess?: boolean;
   isAdmin?: boolean;
   businessName: string;
 }) {
@@ -75,7 +77,7 @@ export function Sidebar({
           </>
         )}
       </div>
-      <SidebarNavList role={role} isAdmin={isAdmin} collapsed={collapsed} />
+      <SidebarNavList role={role} hasPartnersAccess={hasPartnersAccess} isAdmin={isAdmin} collapsed={collapsed} />
     </aside>
   );
 }

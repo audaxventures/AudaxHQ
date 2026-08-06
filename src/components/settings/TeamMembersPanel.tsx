@@ -23,6 +23,7 @@ import {
   resendTeamMemberInvite,
   resetTeamMemberPasscode,
   setTeamMemberColor,
+  setTeamMemberPartnersAccess,
   updateClientAccess,
   updateTeamMember,
 } from "@/app/(app)/tracker/actions";
@@ -366,6 +367,31 @@ function ClientAccessList({
   );
 }
 
+/** Instant-save toggle for the one Partners-section flag a team member either has or doesn't — no per-partner picklist like ClientAccessList's, since Partners has no per-record scoping concept. */
+function PartnersAccessToggle({ member }: { member: TeamMember }) {
+  const [checked, setChecked] = useState(member.hasPartnersAccess);
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-sm text-navy-700">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={pending}
+        onChange={(e) => {
+          const next = e.target.checked;
+          setChecked(next);
+          startTransition(async () => {
+            await setTeamMemberPartnersAccess(member.id, next);
+          });
+        }}
+        className="h-3.5 w-3.5 rounded-sm border-navy-300 text-burnt-600 focus:ring-burnt-500"
+      />
+      Can view Partners
+    </label>
+  );
+}
+
 function AccessPanel({
   member,
   clients,
@@ -429,6 +455,11 @@ function AccessPanel({
       <div>
         <p className="mb-1.5 text-xs font-medium text-navy-600">Client access</p>
         <ClientAccessList member={member} clients={clients} accessibleClientIds={accessibleClientIds} tier={tier} />
+      </div>
+
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-navy-600">Partners access</p>
+        <PartnersAccessToggle member={member} />
       </div>
 
       <button type="button" onClick={onClose} className="text-xs font-medium text-navy-400 hover:text-navy-600 cursor-pointer">
@@ -658,8 +689,8 @@ export function TeamMembersPanel({
             member to manage their login and access.
           </p>
           <p className="text-navy-500">
-            That&apos;s where you invite them by email to set up their own password, reset one, and choose which
-            clients they can see.
+            That&apos;s where you invite them by email to set up their own password, reset one, choose which clients
+            they can see, and grant Partners access — off by default, since it&apos;s referral/commission data.
           </p>
           <p className="mt-2 text-navy-500">
             Your own hourly rate and tag color are set from Settings &rarr; Profile instead — you&apos;re not listed

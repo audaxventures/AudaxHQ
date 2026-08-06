@@ -6,7 +6,11 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 // settings) — team members are bounced back to / even if they navigate here
 // directly. This is a defense on top of hiding the nav links, not a
 // replacement for the requireOwner() checks in the server actions themselves.
-const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/partners", "/api/export", "/api/invoice-aging/export", "/api/reports"];
+// /partners is deliberately NOT here — access is a per-team-member grant
+// (team_members.has_partners_access, see migration 046), checked at the
+// page/action level instead of this blanket route-prefix block, the same
+// way per-client access is (proxy.ts has no /clients prefix either).
+const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/export", "/api/invoice-aging/export", "/api/reports"];
 
 // /settings is owner-only above, but every team member needs to be able to
 // land on the billing page specifically — a lapsed subscription redirects

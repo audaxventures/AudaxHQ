@@ -128,10 +128,22 @@ export async function requireLeadAccess(leadId: string): Promise<CurrentUser> {
   return user;
 }
 
-/** Throws unless the current session is the owner of the partner's business — partners are an owner-only feature (referral/commission data), like Invoices. Returns the resolved user so callers can read businessId without a second lookup. */
-export async function requirePartnerAccess(partnerId: string): Promise<CurrentUser & { role: "OWNER" }> {
-  const user = await requireOwner();
+/**
+ * Throws unless the current session's business owns this partner AND (for a
+ * team member) has Partners access granted (see migration 046 —
+ * team_members.has_partners_access, set via Settings > Team Members).
+ * Unlike client_access, there's no per-partner picklist — a granted team
+ * member sees every partner, same as the owner. Returns the resolved user
+ * so callers can branch on role without a second lookup.
+ */
+export async function requirePartnerAccess(partnerId: string): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authorized.");
+  if (isBillingBlocked(user.business.subscriptionStatus)) throw new Error(BILLING_BLOCKED_MESSAGE);
   if (!(await partnerBelongsToBusiness(partnerId, user.businessId))) {
+    throw new Error("You don't have access to that partner.");
+  }
+  if (user.role === "TEAM_MEMBER" && !user.teamMember.hasPartnersAccess) {
     throw new Error("You don't have access to that partner.");
   }
   return user;

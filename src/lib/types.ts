@@ -398,6 +398,8 @@ export interface TeamMember {
   hasLogin: boolean;
   /** Explicit accent color, same palette as clients/leads — falls back to a hash-of-name color when unset. */
   color: EntityColor | null;
+  /** Whether this team member can see the Partners section — owner-only by default, granted per team member (see migration 046). Always effectively true for the owner regardless of this field, which only exists on team_members rows. */
+  hasPartnersAccess: boolean;
 }
 
 /**

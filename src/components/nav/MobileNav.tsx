@@ -10,10 +10,12 @@ import type { SessionRole } from "@/lib/types";
 
 export function MobileTopBar({
   role,
+  hasPartnersAccess,
   isAdmin,
   businessName,
 }: {
   role: SessionRole;
+  hasPartnersAccess?: boolean;
   isAdmin?: boolean;
   businessName: string;
 }) {
@@ -58,7 +60,13 @@ export function MobileTopBar({
         </div>
       </header>
       {drawerOpen && (
-        <MobileSidebarDrawer role={role} isAdmin={isAdmin} businessName={businessName} onClose={() => setDrawerOpen(false)} />
+        <MobileSidebarDrawer
+          role={role}
+          hasPartnersAccess={hasPartnersAccess}
+          isAdmin={isAdmin}
+          businessName={businessName}
+          onClose={() => setDrawerOpen(false)}
+        />
       )}
     </>
   );

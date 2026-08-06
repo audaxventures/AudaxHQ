@@ -13,6 +13,7 @@ function mapTeamMember(row: Record<string, unknown>): TeamMember {
     email: (row.email as string | null) ?? null,
     hasLogin: row.passcode_hash != null,
     color: (row.color as EntityColor | null) ?? null,
+    hasPartnersAccess: row.has_partners_access as boolean,
   };
 }
 
@@ -76,6 +77,10 @@ export async function setTeamMemberActive(id: string, businessId: string, active
 
 export async function setTeamMemberColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {
   await sql`update team_members set color = ${color} where id = ${id} and business_id = ${businessId}`;
+}
+
+export async function setTeamMemberPartnersAccess(id: string, businessId: string, hasAccess: boolean): Promise<void> {
+  await sql`update team_members set has_partners_access = ${hasAccess} where id = ${id} and business_id = ${businessId}`;
 }
 
 /** Time entries are the one record type that never disappears silently — they feed cost/profitability reporting. */

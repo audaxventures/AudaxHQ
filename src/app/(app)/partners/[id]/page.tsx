@@ -3,7 +3,7 @@ import { IdCard, CalendarClock, NotebookPen, FileText, DollarSign, Target, BarCh
 import { getPartner } from "@/lib/data/partners";
 import { listTasks } from "@/lib/data/todos";
 import { getBusinessToday } from "@/lib/data/businesses";
-import { requireOwner, senderFirstName } from "@/lib/currentUser";
+import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { deletePartner, setPartnerActive, setPartnerColor } from "@/app/(app)/partners/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
@@ -26,7 +26,10 @@ import { listTeamMembers } from "@/lib/data/teamMembers";
 
 export default async function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await requireOwner();
+  const user = await requireCurrentUser();
+  // Same "not found" treatment as a client a team member has no access to
+  // (clients/[id]/page.tsx) rather than an ugly thrown-error page.
+  if (user.role === "TEAM_MEMBER" && !user.teamMember.hasPartnersAccess) notFound();
   const [partner, today, teamMembers, tasks] = await Promise.all([
     getPartner(id, user.businessId),
     getBusinessToday(user.businessId),

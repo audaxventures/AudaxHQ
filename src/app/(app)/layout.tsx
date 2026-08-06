@@ -71,6 +71,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const logoUrl = currentUser?.business.logoUrl ?? null;
   const businessName = currentUser?.business.name ?? "Verclara";
   const isAdmin = currentUser ? isPlatformAdmin(currentUser) : false;
+  const hasPartnersAccess =
+    currentUser?.role === "OWNER" || (currentUser?.role === "TEAM_MEMBER" && currentUser.teamMember.hasPartnersAccess);
 
   const showWelcome = currentUser?.role === "OWNER" && !currentUser.business.onboardingDismissedAt;
 
@@ -89,9 +91,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {showWelcome && (
         <WelcomeModal ownerName={currentUser.business.ownerName} businessName={currentUser.business.name} />
       )}
-      <Sidebar role={role} isAdmin={isAdmin} businessName={businessName} />
+      <Sidebar role={role} hasPartnersAccess={hasPartnersAccess} isAdmin={isAdmin} businessName={businessName} />
       <div className="flex flex-1 flex-col min-w-0">
-        <MobileTopBar role={role} isAdmin={isAdmin} businessName={businessName} />
+        <MobileTopBar role={role} hasPartnersAccess={hasPartnersAccess} isAdmin={isAdmin} businessName={businessName} />
         <main className="flex-1 px-4 py-6 sm:px-8 sm:py-10 pb-24 md:pb-10 max-w-6xl w-full mx-auto">
           <div className="mb-4 flex items-center justify-between">
             {notificationSnapshot ? (

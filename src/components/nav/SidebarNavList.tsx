@@ -15,11 +15,14 @@ function getGroup(link: Record<string, unknown>): string | undefined {
 /** The nav-links + Settings + Sign out block shared by the desktop sidebar and the mobile drawer. */
 export function SidebarNavList({
   role,
+  hasPartnersAccess,
   isAdmin,
   onNavigate,
   collapsed,
 }: {
   role: SessionRole;
+  /** Owner-only visually redundant (the owner always has access) — only matters for a team member. Gates the Partners nav link the same way team_members.has_partners_access gates the page itself (see migration 046). */
+  hasPartnersAccess?: boolean;
   /** Platform-admin status — an axis orthogonal to role (see isPlatformAdmin in src/lib/currentUser.ts), so it's a separate prop rather than a third role value. */
   isAdmin?: boolean;
   onNavigate?: () => void;
@@ -29,7 +32,7 @@ export function SidebarNavList({
   const links =
     role === "OWNER"
       ? NAV_LINKS
-      : NAV_LINKS.filter((link) => link.href !== "/partners").map((link) =>
+      : NAV_LINKS.filter((link) => hasPartnersAccess || link.href !== "/partners").map((link) =>
           link.href === FINANCE_HREF ? { ...link, href: FINANCE_HREF_FOR_TEAM_MEMBER } : link
         );
   return (

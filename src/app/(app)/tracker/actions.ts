@@ -200,6 +200,13 @@ export async function setTeamMemberColor(id: string, color: EntityColor | null) 
   revalidateTeamMembers();
 }
 
+export async function setTeamMemberPartnersAccess(id: string, hasAccess: boolean) {
+  const user = await requireOwner();
+  await teamMembers.setTeamMemberPartnersAccess(id, user.businessId, hasAccess);
+  revalidateTeamMembers();
+  revalidatePath("/partners");
+}
+
 export async function deleteTeamMemberPermanently(id: string) {
   const user = await requireOwner();
   if (id === user.business.ownerTeamMemberId) {

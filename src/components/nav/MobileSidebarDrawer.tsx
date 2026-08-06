@@ -9,11 +9,13 @@ import type { SessionRole } from "@/lib/types";
 /** Only ever rendered while open — the caller conditionally mounts it (`{drawerOpen && <MobileSidebarDrawer .../>}`). */
 export function MobileSidebarDrawer({
   role,
+  hasPartnersAccess,
   isAdmin,
   businessName,
   onClose,
 }: {
   role: SessionRole;
+  hasPartnersAccess?: boolean;
   isAdmin?: boolean;
   businessName: string;
   onClose: () => void;
@@ -70,7 +72,7 @@ export function MobileSidebarDrawer({
             <X size={20} />
           </button>
         </div>
-        <SidebarNavList role={role} isAdmin={isAdmin} onNavigate={onClose} />
+        <SidebarNavList role={role} hasPartnersAccess={hasPartnersAccess} isAdmin={isAdmin} onNavigate={onClose} />
       </div>
     </div>
   );
