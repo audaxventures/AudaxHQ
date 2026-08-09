@@ -129,4 +129,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-07-30",
     readingMinutes: 5,
   },
+  {
+    slug: "turning-clients-into-retainers",
+    title: "How to Turn One-Off Consulting Clients Into Retainers",
+    description:
+      "Most consultants lose repeat revenue not because clients don't want more help, but because nobody ever proposes it.",
+    category: "Retention",
+    publishedAt: "2026-08-04",
+    readingMinutes: 6,
+  },
 ];
