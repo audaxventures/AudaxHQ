@@ -120,4 +120,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-07-23",
     readingMinutes: 6,
   },
+  {
+    slug: "client-retention-strategies",
+    title: "How to Keep Clients Renewing Without Cutting Your Rate",
+    description:
+      "Most client churn is visible months before it happens — here's how to catch it early and keep clients without racing to the bottom on price.",
+    category: "Retention",
+    publishedAt: "2026-07-30",
+    readingMinutes: 5,
+  },
 ];
