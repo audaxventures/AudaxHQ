@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import type { MentionOption } from "@/lib/mentions";
+import { useEffect, useRef, useState } from "react";
+import { parseMentionSegments, type MentionOption } from "@/lib/mentions";
 
 const EDITOR_CLASS =
   "w-full min-h-[4.5rem] rounded-lg border border-navy-200 bg-cream-50 px-3 py-2 text-base sm:text-sm text-navy-900 whitespace-pre-wrap break-words transition-colors focus:outline-none focus:border-burnt-400 focus:ring-2 focus:ring-burnt-100 empty:before:content-[attr(data-placeholder)] empty:before:text-navy-400 empty:before:pointer-events-none";
@@ -67,15 +67,38 @@ export function MentionTextarea({
   name,
   placeholder,
   mentionables,
+  defaultValue,
 }: {
   name: string;
   placeholder?: string;
   mentionables: MentionOption[];
+  /** Pre-fills the editor from an existing note's raw body (its `@[Name](id)` tokens rendered back as chips) — for editing rather than composing fresh. Only read once, on mount; the component isn't meant to react to a later change in this prop. */
+  defaultValue?: string;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
   const activeRangeRef = useRef<Range | null>(null);
   const [query, setQuery] = useState<string | null>(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !defaultValue) return;
+    for (const segment of parseMentionSegments(defaultValue)) {
+      if (segment.type === "mention") {
+        const chip = document.createElement("span");
+        chip.contentEditable = "false";
+        chip.dataset.mentionId = segment.id;
+        chip.dataset.mentionName = segment.value;
+        chip.className = CHIP_CLASS;
+        chip.textContent = `@${segment.value}`;
+        editor.appendChild(chip);
+      } else {
+        editor.appendChild(document.createTextNode(segment.value));
+      }
+    }
+    if (hiddenInputRef.current) hiddenInputRef.current.value = serialize(editor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial content only; each edit session mounts a fresh instance rather than reacting to defaultValue changing in place
+  }, []);
 
   const suggestions =
     query !== null ? mentionables.filter((m) => m.label.toLowerCase().includes(query.toLowerCase())).slice(0, 6) : [];

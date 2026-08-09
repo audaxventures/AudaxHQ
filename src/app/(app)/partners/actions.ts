@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import * as partners from "@/lib/data/partners";
+import * as notifications from "@/lib/data/notifications";
+import * as teamMembers from "@/lib/data/teamMembers";
 import { requireOwner, requirePartnerAccess } from "@/lib/currentUser";
-import type { CommissionStatus, EntityColor } from "@/lib/types";
+import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
+import { extractMentionIds } from "@/lib/mentions";
+import type { CommissionStatus, CurrentUser, EntityColor } from "@/lib/types";
 
 const partnerSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -13,7 +17,6 @@ const partnerSchema = z.object({
   contactEmail: z.string().optional(),
   contactPhone: z.string().optional(),
   commissionTerms: z.string().optional(),
-  notes: z.string().optional(),
   color: z.enum(["navy", "slate", "blue", "teal", "sage", "burnt", "gold", "brick", "rose", "violet"]).optional(),
 });
 
@@ -24,7 +27,6 @@ function parsePartnerForm(formData: FormData) {
     contactEmail: formData.get("contactEmail") || undefined,
     contactPhone: formData.get("contactPhone") || undefined,
     commissionTerms: formData.get("commissionTerms") || undefined,
-    notes: formData.get("notes") || undefined,
     color: formData.get("color") || undefined,
   });
   return {
@@ -33,7 +35,6 @@ function parsePartnerForm(formData: FormData) {
     contactEmail: parsed.contactEmail ?? null,
     contactPhone: parsed.contactPhone ?? null,
     commissionTerms: parsed.commissionTerms ?? null,
-    notes: parsed.notes ?? null,
     color: parsed.color ?? null,
   };
 }
@@ -134,5 +135,49 @@ export async function markCommissionPaid(id: string, partnerId: string, paidDate
 export async function deleteCommission(id: string, partnerId: string) {
   const user = await requirePartnerAccess(partnerId);
   await partners.deleteCommission(id, user.businessId);
+  revalidatePath(`/partners/${partnerId}`);
+}
+
+/** Fires a "mentioned you" notification for each valid @mention in a note body — mirrors notifyMentionedTeamMembers in clients/actions.ts and leads/actions.ts. */
+async function notifyMentionedTeamMembers(user: CurrentUser, body: string, link: string, entityLabel: string) {
+  const rawIds = extractMentionIds(body);
+  if (rawIds.length === 0) return;
+  const self = selfId(user);
+  const validIds = new Set((await teamMembers.listTeamMembers(user.businessId)).map((t) => t.id));
+  const recipients = new Set<string | null>();
+  for (const raw of rawIds) {
+    const recipientId = resolveAssignedTeamMemberId(raw, user);
+    if (recipientId === self) continue;
+    if (recipientId !== null && !validIds.has(recipientId)) continue;
+    recipients.add(recipientId);
+  }
+  await Promise.all(
+    [...recipients].map((recipientId) =>
+      notifications.createNotification(
+        user.businessId,
+        recipientId,
+        "MENTION",
+        `${actorDisplayName(user)} mentioned you in a note on ${entityLabel}`,
+        link
+      )
+    )
+  );
+}
+
+export async function addPartnerNote(partnerId: string, formData: FormData) {
+  const user = await requirePartnerAccess(partnerId);
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+  await partners.addPartnerNote(partnerId, user.businessId, body, selfId(user));
+  const companyName = await partners.getPartnerCompanyName(partnerId, user.businessId);
+  await notifyMentionedTeamMembers(user, body, `/partners/${partnerId}`, companyName ?? "a partner");
+  revalidatePath(`/partners/${partnerId}`);
+}
+
+export async function updatePartnerNote(partnerId: string, noteId: string, formData: FormData) {
+  const user = await requirePartnerAccess(partnerId);
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+  await partners.updatePartnerNote(noteId, user.businessId, body);
   revalidatePath(`/partners/${partnerId}`);
 }

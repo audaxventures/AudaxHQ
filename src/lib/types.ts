@@ -304,12 +304,21 @@ export interface Partner {
   commissionTerms: string | null;
   active: boolean;
   color: EntityColor | null;
-  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface PartnerNote {
+  id: string;
+  partnerId: string;
+  body: string;
+  createdAt: string;
+  authorTeamMemberId: string | null;
+  authorName: string | null;
+}
+
 export interface PartnerWithRelations extends Partner {
+  notes: PartnerNote[];
   referredLeads: Lead[];
   followUps: FollowUp[];
   meetingNotes: MeetingNote[];

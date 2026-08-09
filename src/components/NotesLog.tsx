@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
+import { Check, Pencil, X } from "lucide-react";
 import { formatDate } from "@/lib/format";
 import { MentionTextarea } from "@/components/MentionTextarea";
 import { parseMentionSegments, type MentionOption } from "@/lib/mentions";
-import { addClientNote } from "@/app/(app)/clients/actions";
-import { addLeadNote } from "@/app/(app)/leads/actions";
+import { addClientNote, updateClientNote } from "@/app/(app)/clients/actions";
+import { addLeadNote, updateLeadNote } from "@/app/(app)/leads/actions";
+import { addPartnerNote, updatePartnerNote } from "@/app/(app)/partners/actions";
 
 interface Note {
   id: string;
@@ -45,6 +47,78 @@ function NoteBody({ body }: { body: string }) {
   );
 }
 
+function NoteItem({
+  note,
+  mentionables,
+  updateAction,
+}: {
+  note: Note;
+  mentionables: MentionOption[];
+  updateAction: (noteId: string, formData: FormData) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  if (editing) {
+    return (
+      <li className="border-l-2 border-burnt-200 pl-4">
+        <p className="text-xs font-medium text-navy-400 mb-1">
+          {note.authorName ?? "Owner"} · {formatDate(note.createdAt)}
+        </p>
+        <form
+          action={(formData) => {
+            if (!String(formData.get("body") ?? "").trim()) return;
+            startTransition(async () => {
+              await updateAction(note.id, formData);
+              setEditing(false);
+            });
+          }}
+          className="flex flex-col gap-2"
+        >
+          <MentionTextarea name="body" mentionables={mentionables} defaultValue={note.body} />
+          <div className="flex items-center gap-2 self-end">
+            <button
+              type="submit"
+              disabled={pending}
+              className="flex items-center gap-1 rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-medium text-cream-50 disabled:opacity-50 cursor-pointer"
+            >
+              <Check size={12} /> {pending ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="flex items-center gap-1 rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-600 cursor-pointer"
+            >
+              <X size={12} /> Cancel
+            </button>
+          </div>
+        </form>
+      </li>
+    );
+  }
+
+  return (
+    <li className="group border-l-2 border-burnt-200 pl-4">
+      <div className="mb-1 flex items-center gap-1.5">
+        <p className="text-xs font-medium text-navy-400">
+          {note.authorName ?? "Owner"} · {formatDate(note.createdAt)}
+        </p>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-navy-300 opacity-0 transition-opacity hover:text-navy-600 group-hover:opacity-100 cursor-pointer"
+          aria-label="Edit note"
+        >
+          <Pencil size={11} />
+        </button>
+      </div>
+      <p className="text-sm text-navy-800 whitespace-pre-wrap">
+        <NoteBody body={note.body} />
+      </p>
+    </li>
+  );
+}
+
 export function NotesLog({
   notes,
   kind,
@@ -52,7 +126,7 @@ export function NotesLog({
   mentionables,
 }: {
   notes: Note[];
-  kind: "client" | "lead";
+  kind: "client" | "lead" | "partner";
   entityId: string;
   /** Who this note's author can @mention — see mentionOptions in src/lib/mentions.ts. */
   mentionables: MentionOption[];
@@ -62,7 +136,14 @@ export function NotesLog({
   // its internal state — a plain form.reset() can't reach into a controlled
   // child's own useState the way it could the old uncontrolled Textarea.
   const [formKey, setFormKey] = useState(0);
-  const action = kind === "client" ? addClientNote.bind(null, entityId) : addLeadNote.bind(null, entityId);
+  const addAction =
+    kind === "client" ? addClientNote.bind(null, entityId) : kind === "lead" ? addLeadNote.bind(null, entityId) : addPartnerNote.bind(null, entityId);
+  const updateAction =
+    kind === "client"
+      ? updateClientNote.bind(null, entityId)
+      : kind === "lead"
+        ? updateLeadNote.bind(null, entityId)
+        : updatePartnerNote.bind(null, entityId);
 
   return (
     <div>
@@ -72,7 +153,7 @@ export function NotesLog({
           // form field with `required` — replicate the "don't submit an
           // empty note" behavior the old Textarea got for free.
           if (!String(formData.get("body") ?? "").trim()) return;
-          startTransition(() => action(formData));
+          startTransition(() => addAction(formData));
           setFormKey((k) => k + 1);
         }}
         className="flex flex-col gap-2 mb-5"
@@ -90,14 +171,7 @@ export function NotesLog({
       ) : (
         <ol className="space-y-4">
           {notes.map((note) => (
-            <li key={note.id} className="border-l-2 border-burnt-200 pl-4">
-              <p className="text-xs font-medium text-navy-400 mb-1">
-                {note.authorName ?? "Owner"} · {formatDate(note.createdAt)}
-              </p>
-              <p className="text-sm text-navy-800 whitespace-pre-wrap">
-                <NoteBody body={note.body} />
-              </p>
-            </li>
+            <NoteItem key={note.id} note={note} mentionables={mentionables} updateAction={updateAction} />
           ))}
         </ol>
       )}

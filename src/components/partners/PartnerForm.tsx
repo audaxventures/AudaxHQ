@@ -100,18 +100,6 @@ export function PartnerForm({
             placeholder="e.g. 10% of first invoice, or a flat $500 per referral"
           />
         </FieldGroup>
-        <FieldGroup className="sm:col-span-2">
-          <Label htmlFor="notes" compact={compact}>
-            Notes
-          </Label>
-          <Textarea
-            id="notes"
-            name="notes"
-            rows={3}
-            defaultValue={partner?.notes ?? ""}
-            placeholder="Anything else worth remembering about this partnership…"
-          />
-        </FieldGroup>
         {!compact ? (
           <FieldGroup>
             <Label compact={compact}>Color</Label>

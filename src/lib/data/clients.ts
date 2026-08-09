@@ -281,6 +281,10 @@ export async function addClientNote(
   await sql`insert into client_notes (client_id, business_id, body, author_team_member_id) values (${clientId}, ${businessId}, ${body}, ${authorTeamMemberId})`;
 }
 
+export async function updateClientNote(id: string, businessId: string, body: string): Promise<void> {
+  await sql`update client_notes set body = ${body} where id = ${id} and business_id = ${businessId}`;
+}
+
 /** Cheap single-column lookup — names the client in a mention notification's message without loading the full record. */
 export async function getClientCompanyName(id: string, businessId: string): Promise<string | null> {
   const rows = await sql`select company_name from clients where id = ${id} and business_id = ${businessId}`;

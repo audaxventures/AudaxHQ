@@ -183,6 +183,14 @@ export async function addClientNote(clientId: string, formData: FormData) {
   revalidatePath(`/clients/${clientId}`);
 }
 
+export async function updateClientNote(clientId: string, noteId: string, formData: FormData) {
+  const user = await requireClientAccess(clientId);
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+  await clients.updateClientNote(noteId, user.businessId, body);
+  revalidatePath(`/clients/${clientId}`);
+}
+
 export async function addClientLink(clientId: string, formData: FormData) {
   const user = await requireClientAccess(clientId);
   const label = String(formData.get("label") ?? "").trim();

@@ -357,6 +357,10 @@ export async function addLeadNote(
   await sql`insert into lead_notes (lead_id, business_id, body, author_team_member_id) values (${leadId}, ${businessId}, ${body}, ${authorTeamMemberId})`;
 }
 
+export async function updateLeadNote(id: string, businessId: string, body: string): Promise<void> {
+  await sql`update lead_notes set body = ${body} where id = ${id} and business_id = ${businessId}`;
+}
+
 /** Cheap single-column lookup — names the lead in a mention notification's message without loading the full record. */
 export async function getLeadCompanyName(id: string, businessId: string): Promise<string | null> {
   const rows = await sql`select company_name from leads where id = ${id} and business_id = ${businessId}`;

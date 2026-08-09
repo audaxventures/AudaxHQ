@@ -2,7 +2,7 @@ import { sql } from "@/lib/db";
 import { listFollowUpsForPartner } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { listDocumentsForPartner } from "@/lib/data/documents";
-import type { CommissionStatus, EntityColor, Lead, Partner, PartnerCommission, PartnerWithRelations } from "@/lib/types";
+import type { CommissionStatus, EntityColor, Lead, Partner, PartnerCommission, PartnerNote, PartnerWithRelations } from "@/lib/types";
 
 function mapPartner(row: Record<string, unknown>): Partner {
   return {
@@ -14,9 +14,19 @@ function mapPartner(row: Record<string, unknown>): Partner {
     commissionTerms: row.commission_terms as string | null,
     active: row.active as boolean,
     color: row.color as EntityColor | null,
-    notes: row.notes as string | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+  };
+}
+
+function mapPartnerNote(row: Record<string, unknown>): PartnerNote {
+  return {
+    id: row.id as string,
+    partnerId: row.partner_id as string,
+    body: row.body as string,
+    createdAt: row.created_at as string,
+    authorTeamMemberId: (row.author_team_member_id as string | null) ?? null,
+    authorName: (row.author_name as string | null) ?? null,
   };
 }
 
@@ -78,8 +88,15 @@ export async function listPartners(businessId: string, opts: { includeInactive?:
 }
 
 export async function getPartner(id: string, businessId: string): Promise<PartnerWithRelations | null> {
-  const [partnerRows, referredLeads, followUps, meetingNotes, documents, commissionRows, revenueRows] = await Promise.all([
+  const [partnerRows, noteRows, referredLeads, followUps, meetingNotes, documents, commissionRows, revenueRows] = await Promise.all([
     sql`select * from partners where id = ${id} and business_id = ${businessId}`,
+    sql`
+      select n.*, tm.name as author_name
+      from partner_notes n
+      left join team_members tm on tm.id = n.author_team_member_id
+      where n.partner_id = ${id} and n.business_id = ${businessId}
+      order by n.created_at desc
+    `,
     listReferredLeads(id, businessId),
     listFollowUpsForPartner(id, businessId),
     listMeetingNotes(businessId, { partnerId: id }),
@@ -96,6 +113,7 @@ export async function getPartner(id: string, businessId: string): Promise<Partne
   if (partnerRows.length === 0) return null;
   return {
     ...mapPartner(partnerRows[0] as Record<string, unknown>),
+    notes: noteRows.map((r) => mapPartnerNote(r as Record<string, unknown>)),
     referredLeads,
     followUps,
     meetingNotes,
@@ -152,16 +170,15 @@ export interface PartnerInput {
   contactEmail?: string | null;
   contactPhone?: string | null;
   commissionTerms?: string | null;
-  notes?: string | null;
   color?: EntityColor | null;
 }
 
 export async function createPartner(businessId: string, input: PartnerInput): Promise<Partner> {
   const rows = await sql`
-    insert into partners (business_id, company_name, contact_name, contact_email, contact_phone, commission_terms, notes, color)
+    insert into partners (business_id, company_name, contact_name, contact_email, contact_phone, commission_terms, color)
     values (
       ${businessId}, ${input.companyName}, ${input.contactName ?? null}, ${input.contactEmail ?? null}, ${input.contactPhone ?? null},
-      ${input.commissionTerms ?? null}, ${input.notes ?? null}, ${input.color ?? null}
+      ${input.commissionTerms ?? null}, ${input.color ?? null}
     )
     returning *
   `;
@@ -176,11 +193,31 @@ export async function updatePartner(id: string, businessId: string, input: Partn
       contact_email = ${input.contactEmail ?? null},
       contact_phone = ${input.contactPhone ?? null},
       commission_terms = ${input.commissionTerms ?? null},
-      notes = ${input.notes ?? null},
       color = ${input.color ?? null},
       updated_at = now()
     where id = ${id} and business_id = ${businessId}
   `;
+}
+
+// --- Notes ---
+
+export async function addPartnerNote(
+  partnerId: string,
+  businessId: string,
+  body: string,
+  authorTeamMemberId: string | null
+): Promise<void> {
+  await sql`insert into partner_notes (partner_id, business_id, body, author_team_member_id) values (${partnerId}, ${businessId}, ${body}, ${authorTeamMemberId})`;
+}
+
+export async function updatePartnerNote(id: string, businessId: string, body: string): Promise<void> {
+  await sql`update partner_notes set body = ${body} where id = ${id} and business_id = ${businessId}`;
+}
+
+/** Cheap single-column lookup — names the partner in a mention notification's message without loading the full record. */
+export async function getPartnerCompanyName(id: string, businessId: string): Promise<string | null> {
+  const rows = await sql`select company_name from partners where id = ${id} and business_id = ${businessId}`;
+  return rows[0] ? ((rows[0] as Record<string, unknown>).company_name as string) : null;
 }
 
 export async function setPartnerColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {

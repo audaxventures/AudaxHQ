@@ -150,6 +150,14 @@ export async function addLeadNote(leadId: string, formData: FormData) {
   revalidatePath(`/leads/${leadId}`);
 }
 
+export async function updateLeadNote(leadId: string, noteId: string, formData: FormData) {
+  const user = await requireLeadAccess(leadId);
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return;
+  await leads.updateLeadNote(noteId, user.businessId, body);
+  revalidatePath(`/leads/${leadId}`);
+}
+
 export async function convertLeadToClient(leadId: string) {
   const user = await requireLeadAccess(leadId);
   const clientId = await leads.convertLeadToClient(leadId, user.businessId, await getBusinessToday(user.businessId));

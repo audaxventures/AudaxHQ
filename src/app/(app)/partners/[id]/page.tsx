@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { IdCard, CalendarClock, NotebookPen, FileText, DollarSign, Target, BarChart3 } from "lucide-react";
+import { IdCard, CalendarClock, NotebookPen, FileText, DollarSign, Target, BarChart3, StickyNote } from "lucide-react";
 import { getPartner } from "@/lib/data/partners";
 import { listTasks } from "@/lib/data/todos";
 import { getBusinessToday } from "@/lib/data/businesses";
@@ -19,9 +19,11 @@ import { FollowUpsList } from "@/components/FollowUpsList";
 import { MeetingNotesSection } from "@/components/MeetingNotesSection";
 import { DocumentsSection } from "@/components/DocumentsSection";
 import { ScopedTaskList } from "@/components/ScopedTaskList";
+import { NotesLog } from "@/components/NotesLog";
 import { Button } from "@/components/ui/Button";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { buildAssignOptions, selfId } from "@/lib/assign";
+import { mentionOptions } from "@/lib/mentions";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 
 export default async function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,6 +45,14 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const owner = { type: "PARTNER" as const, partnerId: id };
   const boundDeletePartner = deletePartner.bind(null, id);
   const boundSetActive = setPartnerActive.bind(null, id);
+  // Partners have no per-team-member access list to check against (like
+  // leads, unlike clients) — every active, login-enabled team member is
+  // eligible to be @mentioned.
+  const noteMentionOptions = mentionOptions(
+    user,
+    teamMembers.filter((t) => t.hasLogin),
+    null
+  );
 
   const partnerSectionTabs: SectionTab[] = [
     {
@@ -117,6 +127,14 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
       color: "blue",
       count: partner.documents.length,
       content: <DocumentsSection owner={{ partnerId: id }} documents={partner.documents} />,
+    },
+    {
+      key: "discussion-notes",
+      label: "Notes & Activity",
+      icon: <StickyNote size={15} />,
+      color: "slate",
+      count: partner.notes.length,
+      content: <NotesLog notes={partner.notes} kind="partner" entityId={id} mentionables={noteMentionOptions} />,
     },
   ];
 
