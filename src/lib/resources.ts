@@ -138,4 +138,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-08-04",
     readingMinutes: 6,
   },
+  {
+    slug: "referrals-for-consultants",
+    title: "How to Get More Referrals as a Consultant Without Asking Awkwardly",
+    description:
+      "Referrals are the cheapest, highest-trust leads a consultant will ever get — most people just never build a system for actually getting them.",
+    category: "Referrals",
+    publishedAt: "2026-08-10",
+    readingMinutes: 5,
+  },
 ];
