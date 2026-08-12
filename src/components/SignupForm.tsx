@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Check } from "lucide-react";
@@ -124,6 +124,16 @@ export function SignupForm({
   initialInterval?: BillingInterval;
 }) {
   const [state, formAction] = useActionState(signup, initialState);
+
+  // A full navigation, not router.push: the session cookie was just set by
+  // the action's response, and a plain top-level navigation is guaranteed to
+  // send it (see the comment in signup/actions.ts).
+  useEffect(() => {
+    if (state.checkoutUrl) {
+      window.location.href = state.checkoutUrl;
+    }
+  }, [state.checkoutUrl]);
+
   const [tier, setTier] = useState<BusinessTier>(initialTier);
   const [interval, setInterval] = useState<BillingInterval>(initialInterval);
   let detectedTimezone = DEFAULT_TIMEZONE;

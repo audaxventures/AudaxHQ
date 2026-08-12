@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { login, type LoginState } from "@/app/login/actions";
@@ -23,6 +23,16 @@ function SubmitButton() {
 
 export function LoginForm({ next }: { next: string }) {
   const [state, formAction] = useActionState(login, initialState);
+
+  // A full navigation, not router.push: the session cookie was just set by
+  // the action's response, and a plain top-level navigation is guaranteed to
+  // send it, sidestepping the redirect-inside-a-server-action issue this
+  // works around (see the comment in login/actions.ts).
+  useEffect(() => {
+    if (state.redirectTo) {
+      window.location.href = state.redirectTo;
+    }
+  }, [state.redirectTo]);
 
   return (
     <form action={formAction} className="space-y-4">

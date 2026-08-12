@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { createSessionToken, hashPasscode, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { createBusiness, setStripeCustomerId } from "@/lib/data/businesses";
 import { createCheckoutSession, createStripeCustomer } from "@/lib/stripe";
@@ -10,6 +9,7 @@ import type { BillingInterval, BusinessTier } from "@/lib/types";
 
 export interface SignupState {
   error: string | null;
+  checkoutUrl?: string;
 }
 
 const UNIQUE_VIOLATION = "23505";
@@ -96,5 +96,9 @@ export async function signup(
     cancelUrl: `${origin}/settings/billing?checkout=canceled`,
   });
 
-  redirect(checkoutUrl);
+  // Not calling redirect() here — see the matching comment in
+  // login/actions.ts. This response also carries the just-set session
+  // cookie, so it needs to stay a plain 200 for Safari to persist it; the
+  // client does the actual navigation to Stripe (see SignupForm.tsx).
+  return { error: null, checkoutUrl };
 }

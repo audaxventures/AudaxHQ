@@ -135,6 +135,10 @@ export function MeetingNotesSection({
             }}
             className="mt-3 space-y-3 border-t border-navy-100 pt-3"
           >
+            <FieldGroup>
+              <Label htmlFor="schedule-title">Title (optional)</Label>
+              <Input id="schedule-title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
+            </FieldGroup>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FieldGroup className="min-w-0">
                 <Label htmlFor="schedule-date">Date</Label>

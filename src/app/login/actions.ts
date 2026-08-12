@@ -17,6 +17,7 @@ import { sendPasscodeResetEmail } from "@/lib/email";
 
 export interface LoginState {
   error: string | null;
+  redirectTo?: string;
 }
 
 export async function login(
@@ -69,7 +70,13 @@ export async function login(
     maxAge: 60 * 60 * 24 * 30,
   });
 
-  redirect(next.startsWith("/") ? next : "/");
+  // Deliberately not calling redirect() here: Safari drops Set-Cookie
+  // headers on a redirected response inside a followed fetch (the
+  // mechanism useActionState submits this form through), which silently
+  // failed to persist the session cookie on mobile Safari. Returning the
+  // destination instead and letting the client do a real navigation (see
+  // LoginForm.tsx) keeps this response a plain 200, so the cookie sticks.
+  return { error: null, redirectTo: next.startsWith("/") ? next : "/" };
 }
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
