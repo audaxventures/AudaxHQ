@@ -147,4 +147,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-08-10",
     readingMinutes: 5,
   },
+  {
+    slug: "how-to-price-consulting-work",
+    title: "How to Price Consulting Work Without Underselling Yourself",
+    description:
+      "Hourly rates quietly cap what you can earn — here's how to price consulting work around the value you deliver instead of the hours you log.",
+    category: "Pricing",
+    publishedAt: "2026-08-14",
+    readingMinutes: 6,
+  },
 ];
