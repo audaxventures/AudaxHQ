@@ -156,4 +156,12 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-08-14",
     readingMinutes: 6,
   },
+  {
+    slug: "client-status-updates",
+    title: "How to Send Client Status Updates Without Losing an Afternoon to Them",
+    description: "A system for keeping clients on progress without writing a status report from scratch every week.",
+    category: "Client Reporting",
+    publishedAt: "2026-08-17",
+    readingMinutes: 5,
+  },
 ];
