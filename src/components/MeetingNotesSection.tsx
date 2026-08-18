@@ -32,13 +32,20 @@ function durationLabel(minutes: number): string {
   return `${hours} hr${hours > 1 ? "s" : ""}`;
 }
 
-/** Nearest not-yet-past meeting, by date then time — date-only comparison, matching the rest of the app's "today" conventions. */
+/**
+ * Nearest not-yet-happened meeting, by date then time. A meeting counts as
+ * "happened" — and drops out of this hero into the Past meetings timeline —
+ * the moment notes are written for it, not only once its date rolls into
+ * the past. Without that, filling in notes the same day (or a day behind)
+ * left the meeting stuck showing as "Next meeting" right after being
+ * written up, since the date itself hadn't caught up yet.
+ */
 function nextUpcomingMeeting(notes: MeetingNote[], today: string): MeetingNote | null {
   // meetingDate arrives as a Date value (the SQL layer's `date` columns
   // deserialize that way despite the string type), so it's normalized to
   // "YYYY-MM-DD" the same way every other date-comparing helper in this app
   // does, via formatDateInput, before it's compared as a string.
-  const upcoming = notes.filter((n) => formatDateInput(n.meetingDate) >= today);
+  const upcoming = notes.filter((n) => formatDateInput(n.meetingDate) >= today && !n.notes);
   if (upcoming.length === 0) return null;
   return upcoming
     .slice()
