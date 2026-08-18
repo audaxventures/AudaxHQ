@@ -119,7 +119,7 @@ export default async function ClientDetailPage({
         <>
           <div>
             <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Your tasks</h4>
-            <ScopedTaskList owner={owner} tasks={myTasks} today={today} />
+            <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
           </div>
           <div className="mt-8 border-t-2 border-navy-100 pt-6">
             <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>

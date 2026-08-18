@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { ChevronDown, Hourglass, Trash2, Plus } from "lucide-react";
-import { Input } from "@/components/ui/Field";
+import { ChevronDown, Hourglass, Trash2, Plus, UserCircle2 } from "lucide-react";
+import { Input, Select } from "@/components/ui/Field";
 import { TONE_CLASSES, TASK_STATUS_TONE } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { formatDate, isOverdue } from "@/lib/format";
@@ -11,6 +11,7 @@ import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
 import { createScopedTask, deleteTask, setTaskStatus } from "@/lib/actions/tasks";
 
 type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
+type AssignOption = { value: string; label: string };
 
 function ownerIds(owner: Owner) {
   if (owner.type === "CLIENT") return { clientId: owner.clientId, leadId: null, partnerId: null };
@@ -77,7 +78,18 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
   );
 }
 
-export function ScopedTaskList({ owner, tasks, today }: { owner: Owner; tasks: Task[]; today: string }) {
+export function ScopedTaskList({
+  owner,
+  tasks,
+  today,
+  assignOptions,
+}: {
+  owner: Owner;
+  tasks: Task[];
+  today: string;
+  /** Who a new task can be assigned to — "Me" plus whoever else is on the team. The field is hidden when there's nobody else to assign to (a solo business), same as FollowUpsList's add-row. */
+  assignOptions: AssignOption[];
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   // Action items marked "them" on a meeting note — their commitment, not
@@ -120,7 +132,16 @@ export function ScopedTaskList({ owner, tasks, today }: { owner: Owner; tasks: T
       >
         <Input name="title" placeholder="Add a task…" required className="w-full mb-2" />
         <div className="flex items-center gap-2">
-          <Input name="dueDate" type="date" className="flex-1" />
+          <Input name="dueDate" type="date" className="flex-1 min-w-0" />
+          {assignOptions.length > 1 && (
+            <Select name="assignedTo" defaultValue="" className="w-32 shrink-0" icon={UserCircle2} aria-label="Assign to">
+              {assignOptions.map((opt) => (
+                <option key={opt.value || "self"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          )}
           <button
             type="submit"
             className="flex items-center justify-center rounded-lg bg-navy-100 p-1.5 text-navy-600 hover:bg-navy-200 transition-colors cursor-pointer shrink-0"

@@ -133,6 +133,7 @@ export async function createScopedTask(owner: ScopedTaskOwner, formData: FormDat
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+  const assignedToTeamMemberId = resolveAssignee(formData, user);
   await tasks.createTask(
     user.businessId,
     {
@@ -144,10 +145,11 @@ export async function createScopedTask(owner: ScopedTaskOwner, formData: FormDat
       clientId: owner.type === "CLIENT" ? owner.clientId : undefined,
       leadId: owner.type === "LEAD" ? owner.leadId : undefined,
       partnerId: owner.type === "PARTNER" ? owner.partnerId : undefined,
-      assignedToTeamMemberId: selfId(user),
+      assignedToTeamMemberId,
     },
     selfId(user)
   );
+  await notifyTaskAssignee(user, user.businessId, assignedToTeamMemberId, undefined, title);
   revalidateForTask(
     owner.type === "CLIENT" ? owner.clientId : undefined,
     owner.type === "LEAD" ? owner.leadId : undefined,
