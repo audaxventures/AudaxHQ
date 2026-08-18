@@ -704,24 +704,25 @@ export async function sendNotificationEmail(params: {
 }
 
 /**
- * Short, specific lines for the Daily Brief's masthead — deliberately not
- * generic "you've got this" filler, grounded in the actual work of running
- * a client-facing service business. One is picked deterministically by
- * date (a simple hash of the YYYY-MM-DD string, not Math.random()) so the
- * same day always shows the same line — different daily, reproducible for
- * testing, no stored state needed.
+ * Short, specific lines for the Daily Brief's masthead — upbeat and
+ * motivating (this is the first thing someone reads each morning), but
+ * still grounded in the actual work of running a client-facing service
+ * business rather than generic "you've got this" filler. One is picked
+ * deterministically by date (a simple hash of the YYYY-MM-DD string, not
+ * Math.random()) so the same day always shows the same line — different
+ * daily, reproducible for testing, no stored state needed.
  */
 const DAILY_BRIEF_LINES = [
-  "The work that keeps clients around isn't the big win — it's the follow-up nobody would've noticed if you skipped it.",
-  "A short list you actually finish beats a long one you keep carrying forward.",
-  "Every client relationship you still have is one you kept showing up for.",
-  "Momentum is just yesterday's follow-through, repeated.",
-  "The client waiting on you doesn't know you're busy — they just know you haven't replied yet.",
-  "Small, finished tasks compound faster than big, half-started ones.",
-  "Nobody built a retainer by winging the follow-up.",
-  "Closing the loop today is easier than explaining why it's still open next week.",
-  "Consistency is unglamorous, and it's still most of the job.",
-  "The best time to update your board is before it stops reflecting reality.",
+  "Every task you clear today is one less thing between you and the work you actually want to be doing.",
+  "The clients who trust you most have watched you follow through, again and again — today's another one of those days.",
+  "Small wins add up fast. Today's list is full of them.",
+  "There's real satisfaction in a job followed all the way through — today's a good day to feel it.",
+  "You've built something real, and every day you show up for it, it gets a little stronger.",
+  "Momentum feels good. All it takes is finishing the next thing.",
+  "Being the person people can count on is a genuine edge — and you're building it again today.",
+  "A clear list today makes for a lighter week tomorrow.",
+  "The work you finish today is the reputation you're building for next year.",
+  "Today's a fresh start, and everything on this list is within reach.",
 ];
 
 function dailyBriefLineFor(dateKey: string): string {
@@ -901,7 +902,7 @@ export async function sendDailyBriefEmail(params: {
 
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
               <tr>
-                <td style="border-radius: 10px; background: #101d33;">
+                <td style="border-radius: 10px; background: #be5a1e;">
                   <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Open Verclara &rarr;</a>
                 </td>
                 <td style="padding-left: 14px; font-size: 13px; color: #7c8aa3;">Everything above is one click away.</td>
