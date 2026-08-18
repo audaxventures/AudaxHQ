@@ -3,6 +3,7 @@
 import { useRef, useTransition } from "react";
 import { ChevronDown, Hourglass, Trash2, Plus, UserCircle2 } from "lucide-react";
 import { Input, Select } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { TONE_CLASSES, TASK_STATUS_TONE } from "@/components/ui/Badge";
 import { cn } from "@/lib/cn";
 import { formatDate, isOverdue } from "@/lib/format";
@@ -99,28 +100,30 @@ export function ScopedTaskList({
   const ownTasks = tasks.filter((t) => t.ownedBy !== "EXTERNAL");
 
   return (
-    <div>
-      {waitingTasks.length > 0 && (
-        <div className="mb-4">
-          <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gold-600">
-            <Hourglass size={12} /> Waiting on them
-          </p>
-          <ul className="space-y-1 mb-1 divide-y divide-navy-100">
-            {waitingTasks.map((task) => (
+    <SectionPanel eyebrow="Your tasks" title="What needs done" description="Stay on top of your priorities." tone="burnt">
+      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-3">
+        {waitingTasks.length > 0 && (
+          <div className="mb-3">
+            <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gold-600">
+              <Hourglass size={12} /> Waiting on them
+            </p>
+            <ul className="space-y-1 mb-1 divide-y divide-navy-100">
+              {waitingTasks.map((task) => (
+                <TaskRow key={task.id} task={task} owner={owner} today={today} />
+              ))}
+            </ul>
+          </div>
+        )}
+        {ownTasks.length === 0 ? (
+          <p className="text-sm text-navy-400">No tasks yet.</p>
+        ) : (
+          <ul className="space-y-1 divide-y divide-navy-100">
+            {ownTasks.map((task) => (
               <TaskRow key={task.id} task={task} owner={owner} today={today} />
             ))}
           </ul>
-        </div>
-      )}
-      {ownTasks.length === 0 ? (
-        <p className="text-sm text-navy-400 mb-2">No tasks yet.</p>
-      ) : (
-        <ul className="space-y-1 mb-3 divide-y divide-navy-100">
-          {ownTasks.map((task) => (
-            <TaskRow key={task.id} task={task} owner={owner} today={today} />
-          ))}
-        </ul>
-      )}
+        )}
+      </div>
       <form
         ref={formRef}
         action={(formData) => {
@@ -129,6 +132,7 @@ export function ScopedTaskList({
           });
           formRef.current?.reset();
         }}
+        className="border-t border-navy-100/70 pt-3"
       >
         <Input name="title" placeholder="Add a task…" required className="w-full mb-2" />
         <div className="flex items-center gap-2">
@@ -151,6 +155,6 @@ export function ScopedTaskList({
           </button>
         </div>
       </form>
-    </div>
+    </SectionPanel>
   );
 }

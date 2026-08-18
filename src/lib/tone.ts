@@ -40,3 +40,15 @@ export const ICON_TONE_CLASSES: Record<IconTone, string> = {
   blue: "bg-blue-100 text-blue-600",
   violet: "bg-violet-100 text-violet-600",
 };
+
+// Text-only version of the same tone family — drives both the SectionPanel
+// eyebrow label and (via currentColor) its corner dot-grid accent.
+export const TONE_TEXT_CLASSES: Record<IconTone, string> = {
+  burnt: "text-burnt-600",
+  gold: "text-gold-600",
+  sage: "text-sage-600",
+  slate: "text-slate-600",
+  navy: "text-navy-700",
+  blue: "text-blue-600",
+  violet: "text-violet-600",
+};

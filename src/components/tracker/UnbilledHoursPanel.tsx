@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Receipt } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, FieldGroup } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { CostEntry } from "@/lib/types";
 import { generateHourlyInvoiceFromUnbilledHours } from "@/app/(app)/clients/actions";
@@ -45,12 +46,7 @@ export function UnbilledHoursPanel({
   }
 
   return (
-    <div className="rounded-xl border border-navy-100 p-4">
-      <div className="mb-3">
-        <h5 className="font-heading text-sm font-semibold text-navy-900">Unbilled hours</h5>
-        <p className="text-xs text-navy-500">Select the hours to bundle into a new hourly invoice.</p>
-      </div>
-
+    <SectionPanel eyebrow="Unbilled" title="Ready to invoice" description="Select the hours to bundle into a new hourly invoice." tone="sage">
       <div className="overflow-x-auto rounded-lg border border-navy-100">
         <table className="w-full text-sm">
           <thead>
@@ -131,6 +127,6 @@ export function UnbilledHoursPanel({
         </Button>
       </form>
       {error && <p className="mt-2 text-sm text-brick-600">{error}</p>}
-    </div>
+    </SectionPanel>
   );
 }

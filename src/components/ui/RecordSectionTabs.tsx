@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 
 const STORAGE_PREFIX = "record-section-tab:";
@@ -94,7 +93,10 @@ export function RecordSectionTabs({ storageKey, tabs }: { storageKey: string; ta
           );
         })}
       </div>
-      <Card className="mt-4 p-6">{activeTab?.content}</Card>
+      {/* Each tab's own content supplies its own SectionPanel card(s) now —
+          a single shared wrapper here would double up the border/shadow
+          around every panel a tab renders (one card, or two side by side). */}
+      <div className="mt-5">{activeTab?.content}</div>
     </div>
   );
 }

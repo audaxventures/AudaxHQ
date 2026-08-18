@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Trash2, Plus, CalendarClock, UserCircle2, Pencil, Check, X } from "lucide-react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateInput, isOverdue } from "@/lib/format";
 import { assigneeSelectValue } from "@/lib/assign";
@@ -191,33 +192,35 @@ export function FollowUpsList({
   const completed = followUps.filter((f) => f.status === "COMPLETED");
 
   return (
-    <div>
-      {followUps.length === 0 ? (
-        <p className="text-sm text-navy-400 mb-3">No follow-ups yet.</p>
-      ) : (
-        <ul className="space-y-0.5 mb-3">
-          {upcoming.map((f) => (
-            <FollowUpRow
-              key={f.id}
-              followUp={f}
-              owner={owner}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          ))}
-          {completed.map((f) => (
-            <FollowUpRow
-              key={f.id}
-              followUp={f}
-              owner={owner}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          ))}
-        </ul>
-      )}
+    <SectionPanel eyebrow="Follow-ups" title="What's next" description="Track and follow up on important next steps." tone="violet">
+      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-3">
+        {followUps.length === 0 ? (
+          <p className="text-sm text-navy-400">No follow-ups yet.</p>
+        ) : (
+          <ul className="space-y-0.5">
+            {upcoming.map((f) => (
+              <FollowUpRow
+                key={f.id}
+                followUp={f}
+                owner={owner}
+                today={today}
+                assignOptions={assignOptions}
+                currentAssigneeId={currentAssigneeId}
+              />
+            ))}
+            {completed.map((f) => (
+              <FollowUpRow
+                key={f.id}
+                followUp={f}
+                owner={owner}
+                today={today}
+                assignOptions={assignOptions}
+                currentAssigneeId={currentAssigneeId}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
       <form
         ref={formRef}
         action={(formData) => {
@@ -231,7 +234,7 @@ export function FollowUpsList({
             }
           });
         }}
-        className="flex flex-wrap items-end gap-2"
+        className="flex flex-wrap items-end gap-2 border-t border-navy-100/70 pt-3"
       >
         <FieldGroup className="flex-1 min-w-[10rem]">
           <Label htmlFor="followup-label">Follow-up</Label>
@@ -262,6 +265,6 @@ export function FollowUpsList({
         </button>
         {addError && <p className="w-full text-xs text-brick-600">{addError}</p>}
       </form>
-    </div>
+    </SectionPanel>
   );
 }

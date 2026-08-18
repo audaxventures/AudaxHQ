@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { Check, Pencil, X } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateInput } from "@/lib/format";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { MentionTextarea } from "@/components/MentionTextarea";
 import { parseMentionSegments, type MentionOption } from "@/lib/mentions";
 import { addClientNote, updateClientNote } from "@/app/(app)/clients/actions";
@@ -145,8 +146,24 @@ export function NotesLog({
         ? updateLeadNote.bind(null, entityId)
         : updatePartnerNote.bind(null, entityId);
 
+  // Consecutive notes sharing a calendar day are grouped under one divider —
+  // notes arrive newest-first already, so this only ever merges adjacent
+  // entries, never reorders anything.
+  const dayGroups: { dayKey: string; notes: Note[] }[] = [];
+  for (const note of notes) {
+    const dayKey = formatDateInput(note.createdAt);
+    const lastGroup = dayGroups[dayGroups.length - 1];
+    if (lastGroup?.dayKey === dayKey) lastGroup.notes.push(note);
+    else dayGroups.push({ dayKey, notes: [note] });
+  }
+
   return (
-    <div>
+    <SectionPanel
+      eyebrow="Activity"
+      title="Notes & updates"
+      description="Everything logged here, most recent first."
+      tone="slate"
+    >
       <form
         action={(formData) => {
           // MentionTextarea's editor is a contentEditable div, not a native
@@ -169,12 +186,24 @@ export function NotesLog({
       {notes.length === 0 ? (
         <p className="text-sm text-navy-400">No notes yet.</p>
       ) : (
-        <ol className="space-y-4">
-          {notes.map((note) => (
-            <NoteItem key={note.id} note={note} mentionables={mentionables} updateAction={updateAction} />
+        <div className="max-h-[34rem] overflow-y-auto -mx-1 px-1 space-y-5">
+          {dayGroups.map((group) => (
+            <div key={group.dayKey}>
+              <div className="mb-3 flex items-center gap-3">
+                <p className="shrink-0 text-xs font-semibold uppercase tracking-wide text-navy-400">
+                  {formatDate(group.notes[0].createdAt)}
+                </p>
+                <div className="h-px flex-1 bg-navy-100" />
+              </div>
+              <ol className="space-y-4">
+                {group.notes.map((note) => (
+                  <NoteItem key={note.id} note={note} mentionables={mentionables} updateAction={updateAction} />
+                ))}
+              </ol>
+            </div>
           ))}
-        </ol>
+        </div>
       )}
-    </div>
+    </SectionPanel>
   );
 }

@@ -116,22 +116,16 @@ export default async function ClientDetailPage({
       color: "burnt",
       count: client.followUps.length + myTasks.length,
       content: (
-        <>
-          <div>
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Your tasks</h4>
-            <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
-          </div>
-          <div className="mt-8 border-t-2 border-navy-100 pt-6">
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>
-            <FollowUpsList
-              owner={{ clientId: id }}
-              followUps={client.followUps}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+          <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
+          <FollowUpsList
+            owner={{ clientId: id }}
+            followUps={client.followUps}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
+        </div>
       ),
     },
     {
@@ -157,16 +151,10 @@ export default async function ClientDetailPage({
       color: "blue",
       count: client.documents.length + client.links.length,
       content: (
-        <>
-          <div>
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Documents</h4>
-            <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
-          </div>
-          <div className="mt-8 border-t-2 border-navy-100 pt-6">
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Links</h4>
-            <ClientLinks clientId={id} links={client.links} />
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+          <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
+          <ClientLinks clientId={id} links={client.links} />
+        </div>
       ),
     },
     {
@@ -186,48 +174,45 @@ export default async function ClientDetailPage({
             color: "gold" as const,
             count: client.invoices.length + costEntries.length,
             content: (
-              <>
-                <div>
-                  <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Invoices</h4>
-                  <p className="text-sm text-navy-500 mb-4">
-                    {client.type === "RECURRING"
-                      ? "One entry per month, created automatically — add one-off invoices any time."
-                      : "Split the project total across deposits, milestones, or however you invoice this client."}
-                  </p>
-                  <InvoicesList clientId={id} invoices={client.invoices} defaultHourlyRate={Number(client.hourlyRate ?? 0)} />
-                </div>
-                {unbilledEntries.length > 0 && (
-                  <div className="mt-8 border-t-2 border-navy-100 pt-6">
-                    <UnbilledHoursPanel clientId={id} entries={unbilledEntries} defaultRate={client.hourlyRate} />
-                  </div>
-                )}
-                <div className="mt-8 border-t-2 border-navy-100 pt-6">
-                  <h4 className="mb-3 font-heading text-base font-bold text-navy-900">
-                    Cost &amp; Profitability
-                  </h4>
-                  <CostSummarySection
-                    entries={costEntries}
-                    clients={allClients}
-                    leads={leads}
-                    teamMembers={teamMembers}
-                    workCategories={workCategories}
-                    totalInvoiced={client.invoices
-                      .filter((i) => i.status !== "NOT_INVOICED")
-                      .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
-                      .reduce((sum, i) => sum + Number(i.amount), 0)}
-                    budgetedHours={client.budgetedHours}
-                    reportHref={`/api/reports?${new URLSearchParams({
-                      clientId: id,
-                      summary: "1",
-                      ...(costFrom ? { dateFrom: costFrom } : {}),
-                      ...(costTo ? { dateTo: costTo } : {}),
-                    }).toString()}`}
-                    logHref={`/tracker?logTime=1&clientId=${id}`}
-                    dateFrom={costFrom}
-                    dateTo={costTo}
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+                  <InvoicesList
+                    clientId={id}
+                    invoices={client.invoices}
+                    defaultHourlyRate={Number(client.hourlyRate ?? 0)}
+                    description={
+                      client.type === "RECURRING"
+                        ? "One entry per month, created automatically — add one-off invoices any time."
+                        : "Split the project total across deposits, milestones, or however you invoice this client."
+                    }
+                    className={unbilledEntries.length === 0 ? "lg:col-span-2" : undefined}
                   />
+                  {unbilledEntries.length > 0 && (
+                    <UnbilledHoursPanel clientId={id} entries={unbilledEntries} defaultRate={client.hourlyRate} />
+                  )}
                 </div>
-              </>
+                <CostSummarySection
+                  entries={costEntries}
+                  clients={allClients}
+                  leads={leads}
+                  teamMembers={teamMembers}
+                  workCategories={workCategories}
+                  totalInvoiced={client.invoices
+                    .filter((i) => i.status !== "NOT_INVOICED")
+                    .filter((i) => isDateInRange(i.invoicedDate, costFrom, costTo))
+                    .reduce((sum, i) => sum + Number(i.amount), 0)}
+                  budgetedHours={client.budgetedHours}
+                  reportHref={`/api/reports?${new URLSearchParams({
+                    clientId: id,
+                    summary: "1",
+                    ...(costFrom ? { dateFrom: costFrom } : {}),
+                    ...(costTo ? { dateTo: costTo } : {}),
+                  }).toString()}`}
+                  logHref={`/tracker?logTime=1&clientId=${id}`}
+                  dateFrom={costFrom}
+                  dateTo={costTo}
+                />
+              </div>
             ),
           },
         ]

@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Download, File as FileIcon, FileSpreadsheet, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import type { Document } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { ALLOWED_DOCUMENT_EXTENSIONS, MAX_DOCUMENT_SIZE_BYTES, getFileExtension } from "@/lib/documents";
@@ -163,15 +164,17 @@ function UploadForm({ owner }: { owner: Owner }) {
 
 export function DocumentsSection({ owner, documents }: { owner: Owner; documents: Document[] }) {
   return (
-    <div>
-      <div className="space-y-2 mb-4">
+    <SectionPanel eyebrow="Documents" title="Files & attachments" description="Contracts, briefs, anything worth keeping on hand." tone="blue">
+      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-4 space-y-2">
         {documents.length === 0 ? (
           <p className="text-sm text-navy-400">No documents yet.</p>
         ) : (
           documents.map((doc) => <DocumentRow key={doc.id} owner={owner} doc={doc} />)
         )}
       </div>
-      <UploadForm owner={owner} />
-    </div>
+      <div className="border-t border-navy-100/70 pt-3">
+        <UploadForm owner={owner} />
+      </div>
+    </SectionPanel>
   );
 }

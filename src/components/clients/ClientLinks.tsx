@@ -3,6 +3,7 @@
 import { useRef, useTransition } from "react";
 import { ExternalLink, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import type { ClientLink } from "@/lib/types";
 import { addClientLink, deleteClientLink } from "@/app/(app)/clients/actions";
 
@@ -11,9 +12,9 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
   const [, startTransition] = useTransition();
 
   return (
-    <div>
+    <SectionPanel eyebrow="Links" title="Quick links" description="Shared docs, boards, anything worth a bookmark." tone="sage">
       {links.length > 0 && (
-        <ul className="space-y-1.5 mb-3">
+        <ul className="max-h-[22rem] overflow-y-auto -mx-1 px-1 space-y-1.5 mb-3">
           {links.map((link) => (
             <li key={link.id} className="group flex items-center gap-2 text-sm">
               <a
@@ -49,7 +50,7 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
           });
           formRef.current?.reset();
         }}
-        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        className="flex flex-col gap-2 border-t border-navy-100/70 pt-3 sm:flex-row sm:items-center"
       >
         <Input name="label" placeholder="Label" required className="sm:w-24" />
         <div className="flex items-center gap-2">
@@ -63,6 +64,6 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
           </button>
         </div>
       </form>
-    </div>
+    </SectionPanel>
   );
 }

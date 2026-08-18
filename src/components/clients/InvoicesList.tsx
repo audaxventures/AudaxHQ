@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Pencil, Trash2, X, Check, Plus } from "lucide-react";
 import { Input, Select, Label, FieldGroup, Textarea } from "@/components/ui/Field";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { InvoiceStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -301,10 +302,15 @@ export function InvoicesList({
   clientId,
   invoices,
   defaultHourlyRate = 0,
+  description,
+  className,
 }: {
   clientId: string;
   invoices: Invoice[];
   defaultHourlyRate?: number;
+  /** Client-type-specific copy ("One entry per month…" vs. "Split the project total…"), computed by the page. */
+  description?: string;
+  className?: string;
 }) {
   const invoicedTotal = invoices
     .filter((i) => i.status !== "NOT_INVOICED")
@@ -317,13 +323,13 @@ export function InvoicesList({
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
   return (
-    <div>
+    <SectionPanel eyebrow="Invoices" title="Billing" description={description} tone="gold" className={className}>
       <div className="grid grid-cols-3 gap-3 mb-5">
         <TotalStat label="Invoiced to date" value={invoicedTotal} />
         <TotalStat label="Paid to date" value={paidTotal} />
         <TotalStat label="Remaining" value={remaining} />
       </div>
-      <div className="space-y-2 mb-4">
+      <div className="max-h-[26rem] overflow-y-auto -mx-1 px-1 space-y-2 mb-4">
         {invoices.length === 0 ? (
           <p className="text-sm text-navy-400">No invoices yet.</p>
         ) : (
@@ -332,7 +338,9 @@ export function InvoicesList({
           ))
         )}
       </div>
-      <AddInvoiceForm clientId={clientId} defaultHourlyRate={defaultHourlyRate} />
-    </div>
+      <div className="border-t border-navy-100/70 pt-3">
+        <AddInvoiceForm clientId={clientId} defaultHourlyRate={defaultHourlyRate} />
+      </div>
+    </SectionPanel>
   );
 }
