@@ -70,22 +70,16 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
       color: "burnt",
       count: partner.followUps.length,
       content: (
-        <>
-          <div>
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Tasks</h4>
-            <ScopedTaskList owner={owner} tasks={tasks} today={today} assignOptions={assignOptions} />
-          </div>
-          <div className="mt-8 border-t-2 border-navy-100 pt-6">
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>
-            <FollowUpsList
-              owner={{ partnerId: id }}
-              followUps={partner.followUps}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <ScopedTaskList owner={owner} tasks={tasks} today={today} assignOptions={assignOptions} />
+          <FollowUpsList
+            owner={{ partnerId: id }}
+            followUps={partner.followUps}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
+        </div>
       ),
     },
     {

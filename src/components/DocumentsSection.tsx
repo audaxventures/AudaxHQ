@@ -162,17 +162,32 @@ function UploadForm({ owner }: { owner: Owner }) {
   );
 }
 
-export function DocumentsSection({ owner, documents }: { owner: Owner; documents: Document[] }) {
+export function DocumentsSection({
+  owner,
+  documents,
+  paired = false,
+}: {
+  owner: Owner;
+  documents: Document[];
+  /** True when this panel sits next to a sibling (Links, on the client page) and needs to match its height — false where Documents is the only panel on the tab (leads, partners). */
+  paired?: boolean;
+}) {
   return (
-    <SectionPanel eyebrow="Documents" title="Files & attachments" description="Contracts, briefs, anything worth keeping on hand." tone="blue">
-      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-4 space-y-2">
+    <SectionPanel
+      eyebrow="Documents"
+      title="Files & attachments"
+      description="Contracts, briefs, anything worth keeping on hand."
+      tone="blue"
+      matchHeight={paired}
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 mb-4 space-y-2">
         {documents.length === 0 ? (
           <p className="text-sm text-navy-400">No documents yet.</p>
         ) : (
           documents.map((doc) => <DocumentRow key={doc.id} owner={owner} doc={doc} />)
         )}
       </div>
-      <div className="border-t border-navy-100/70 pt-3">
+      <div className="shrink-0 border-t border-navy-100/70 pt-3">
         <UploadForm owner={owner} />
       </div>
     </SectionPanel>

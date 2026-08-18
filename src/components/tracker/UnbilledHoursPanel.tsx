@@ -46,8 +46,14 @@ export function UnbilledHoursPanel({
   }
 
   return (
-    <SectionPanel eyebrow="Unbilled" title="Ready to invoice" description="Select the hours to bundle into a new hourly invoice." tone="sage">
-      <div className="overflow-x-auto rounded-lg border border-navy-100">
+    <SectionPanel
+      eyebrow="Unbilled"
+      title="Ready to invoice"
+      description="Select the hours to bundle into a new hourly invoice."
+      tone="sage"
+      matchHeight
+    >
+      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-navy-100">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-navy-100 bg-cream-100/40 text-left text-xs font-medium uppercase tracking-wide text-navy-400">
@@ -100,7 +106,7 @@ export function UnbilledHoursPanel({
             }
           });
         }}
-        className="mt-4 flex flex-wrap items-end gap-3"
+        className="shrink-0 mt-4 flex flex-wrap items-end gap-3"
       >
         {[...selected].map((id) => (
           <input key={id} type="hidden" name="entryId" value={id} />
@@ -126,7 +132,7 @@ export function UnbilledHoursPanel({
           <Receipt size={14} /> {pending ? "Generating…" : "Generate invoice"}
         </Button>
       </form>
-      {error && <p className="mt-2 text-sm text-brick-600">{error}</p>}
+      {error && <p className="shrink-0 mt-2 text-sm text-brick-600">{error}</p>}
     </SectionPanel>
   );
 }

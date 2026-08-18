@@ -116,7 +116,7 @@ export default async function ClientDetailPage({
       color: "burnt",
       count: client.followUps.length + myTasks.length,
       content: (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
           <FollowUpsList
             owner={{ clientId: id }}
@@ -151,8 +151,8 @@ export default async function ClientDetailPage({
       color: "blue",
       count: client.documents.length + client.links.length,
       content: (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
-          <DocumentsSection owner={{ clientId: id }} documents={client.documents} />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <DocumentsSection owner={{ clientId: id }} documents={client.documents} paired />
           <ClientLinks clientId={id} links={client.links} />
         </div>
       ),
@@ -175,7 +175,7 @@ export default async function ClientDetailPage({
             count: client.invoices.length + costEntries.length,
             content: (
               <div className="space-y-5">
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                   <InvoicesList
                     clientId={id}
                     invoices={client.invoices}

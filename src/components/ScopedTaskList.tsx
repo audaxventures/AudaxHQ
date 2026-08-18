@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { ChevronDown, Hourglass, Trash2, Plus, UserCircle2 } from "lucide-react";
 import { Input, Select } from "@/components/ui/Field";
 import { SectionPanel } from "@/components/ui/SectionPanel";
@@ -93,32 +93,53 @@ export function ScopedTaskList({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
+  const [showCompleted, setShowCompleted] = useState(false);
   // Action items marked "them" on a meeting note — their commitment, not
   // ours, so they're broken out from the team's own task list below rather
   // than mixed in with it.
   const waitingTasks = tasks.filter((t) => t.ownedBy === "EXTERNAL");
   const ownTasks = tasks.filter((t) => t.ownedBy !== "EXTERNAL");
+  const completedCount = tasks.filter((t) => t.status === "COMPLETED").length;
+  const visibleWaitingTasks = showCompleted ? waitingTasks : waitingTasks.filter((t) => t.status !== "COMPLETED");
+  const visibleOwnTasks = showCompleted ? ownTasks : ownTasks.filter((t) => t.status !== "COMPLETED");
 
   return (
-    <SectionPanel eyebrow="Your tasks" title="What needs done" description="Stay on top of your priorities." tone="burnt">
-      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-3">
-        {waitingTasks.length > 0 && (
+    <SectionPanel
+      eyebrow="Your tasks"
+      title="What needs to be done"
+      description="Stay on top of your priorities."
+      tone="burnt"
+      matchHeight
+      action={
+        completedCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowCompleted((v) => !v)}
+            className="whitespace-nowrap text-xs font-medium text-navy-500 hover:text-navy-700 cursor-pointer"
+          >
+            {showCompleted ? "Hide completed" : `Show completed tasks (${completedCount})`}
+          </button>
+        ) : undefined
+      }
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 mb-3">
+        {visibleWaitingTasks.length > 0 && (
           <div className="mb-3">
             <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gold-600">
               <Hourglass size={12} /> Waiting on them
             </p>
             <ul className="space-y-1 mb-1 divide-y divide-navy-100">
-              {waitingTasks.map((task) => (
+              {visibleWaitingTasks.map((task) => (
                 <TaskRow key={task.id} task={task} owner={owner} today={today} />
               ))}
             </ul>
           </div>
         )}
-        {ownTasks.length === 0 ? (
-          <p className="text-sm text-navy-400">No tasks yet.</p>
+        {visibleOwnTasks.length === 0 ? (
+          <p className="text-sm text-navy-400">{tasks.length === 0 ? "No tasks yet." : "Nothing to show."}</p>
         ) : (
           <ul className="space-y-1 divide-y divide-navy-100">
-            {ownTasks.map((task) => (
+            {visibleOwnTasks.map((task) => (
               <TaskRow key={task.id} task={task} owner={owner} today={today} />
             ))}
           </ul>
@@ -132,7 +153,7 @@ export function ScopedTaskList({
           });
           formRef.current?.reset();
         }}
-        className="border-t border-navy-100/70 pt-3"
+        className="shrink-0 border-t border-navy-100/70 pt-3"
       >
         <Input name="title" placeholder="Add a task…" required className="w-full mb-2" />
         <div className="flex items-center gap-2">

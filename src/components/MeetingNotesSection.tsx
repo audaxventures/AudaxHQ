@@ -91,8 +91,15 @@ export function MeetingNotesSection({
   const monthGroups = groupByMonth(notes, next?.id);
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
-      <SectionPanel eyebrow="Meetings" title="Plan & log" description="Schedule what's ahead, write up what happened." tone="violet">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <SectionPanel
+        eyebrow="Meetings"
+        title="Plan & log"
+        description="Schedule what's ahead, write up what happened."
+        tone="violet"
+        matchHeight
+      >
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="rounded-xl border border-navy-100 bg-white/70 p-4">
           {next ? (
             <div>
@@ -261,14 +268,21 @@ export function MeetingNotesSection({
             </form>
           )}
         </div>
+        </div>
       </SectionPanel>
 
-      <SectionPanel eyebrow="History" title="Past meetings" description="Everything logged so far, most recent first." tone="slate">
-        {monthGroups.length === 0 ? (
-          <p className="text-sm text-navy-400">No past meeting notes yet.</p>
-        ) : (
-          <div className="max-h-[34rem] overflow-y-auto -mx-1 px-1 space-y-5">
-            {monthGroups.map((group) => (
+      <SectionPanel
+        eyebrow="History"
+        title="Past meetings"
+        description="Everything logged so far, most recent first."
+        tone="slate"
+        matchHeight
+      >
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-5">
+          {monthGroups.length === 0 ? (
+            <p className="text-sm text-navy-400">No past meeting notes yet.</p>
+          ) : (
+            monthGroups.map((group) => (
               <div key={group.monthKey}>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-400">{group.label}</p>
                 <ul>
@@ -301,9 +315,9 @@ export function MeetingNotesSection({
                   ))}
                 </ul>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </SectionPanel>
 
       {selectedNote && (

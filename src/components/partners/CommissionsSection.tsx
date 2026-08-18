@@ -4,6 +4,7 @@ import { useRef, useTransition } from "react";
 import { Trash2, Plus, CheckCircle2 } from "lucide-react";
 import { Input, Select, Textarea } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
+import { SectionPanel } from "@/components/ui/SectionPanel";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Lead, PartnerCommission } from "@/lib/types";
@@ -88,7 +89,7 @@ export function CommissionsSection({
   const paid = commissions.filter((c) => c.status === "PAID").reduce((sum, c) => sum + Number(c.amount), 0);
 
   return (
-    <div>
+    <SectionPanel eyebrow="Finance" title="Commissions" description="What's owed and paid on referrals from this partner." tone="gold">
       <div className="mb-5 grid grid-cols-3 gap-3 rounded-xl border border-navy-100 bg-cream-50 px-4 py-3">
         <div>
           <p className="font-heading text-xl font-medium text-sage-700">{formatCurrency(revenueGenerated)}</p>
@@ -161,6 +162,6 @@ export function CommissionsSection({
           <Plus size={16} /> Add commission
         </button>
       </form>
-    </div>
+    </SectionPanel>
   );
 }

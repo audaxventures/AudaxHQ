@@ -12,36 +12,46 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
   const [, startTransition] = useTransition();
 
   return (
-    <SectionPanel eyebrow="Links" title="Quick links" description="Shared docs, boards, anything worth a bookmark." tone="sage">
-      {links.length > 0 && (
-        <ul className="max-h-[22rem] overflow-y-auto -mx-1 px-1 space-y-1.5 mb-3">
-          {links.map((link) => (
-            <li key={link.id} className="group flex items-center gap-2 text-sm">
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 text-burnt-600 hover:text-burnt-700 hover:underline underline-offset-2 truncate"
-              >
-                <ExternalLink size={13} className="shrink-0" />
-                {link.label}
-              </a>
-              <button
-                type="button"
-                onClick={() =>
-                  startTransition(() => {
-                    void deleteClientLink(clientId, link.id);
-                  })
-                }
-                className="opacity-0 group-hover:opacity-100 text-navy-300 hover:text-brick-600 transition-opacity cursor-pointer"
-                aria-label="Remove link"
-              >
-                <X size={13} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <SectionPanel
+      eyebrow="Links"
+      title="Quick links"
+      description="Shared docs, boards, anything worth a bookmark."
+      tone="sage"
+      matchHeight
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 mb-3">
+        {links.length === 0 ? (
+          <p className="text-sm text-navy-400">No links yet.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {links.map((link) => (
+              <li key={link.id} className="group flex items-center gap-2 text-sm">
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-burnt-600 hover:text-burnt-700 hover:underline underline-offset-2 truncate"
+                >
+                  <ExternalLink size={13} className="shrink-0" />
+                  {link.label}
+                </a>
+                <button
+                  type="button"
+                  onClick={() =>
+                    startTransition(() => {
+                      void deleteClientLink(clientId, link.id);
+                    })
+                  }
+                  className="opacity-0 group-hover:opacity-100 text-navy-300 hover:text-brick-600 transition-opacity cursor-pointer"
+                  aria-label="Remove link"
+                >
+                  <X size={13} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <form
         ref={formRef}
         action={(formData) => {
@@ -50,7 +60,7 @@ export function ClientLinks({ clientId, links }: { clientId: string; links: Clie
           });
           formRef.current?.reset();
         }}
-        className="flex flex-col gap-2 border-t border-navy-100/70 pt-3 sm:flex-row sm:items-center"
+        className="shrink-0 flex flex-col gap-2 border-t border-navy-100/70 pt-3 sm:flex-row sm:items-center"
       >
         <Input name="label" placeholder="Label" required className="sm:w-24" />
         <div className="flex items-center gap-2">

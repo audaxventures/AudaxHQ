@@ -323,13 +323,13 @@ export function InvoicesList({
     .reduce((sum, i) => sum + Number(i.amount), 0);
 
   return (
-    <SectionPanel eyebrow="Invoices" title="Billing" description={description} tone="gold" className={className}>
-      <div className="grid grid-cols-3 gap-3 mb-5">
+    <SectionPanel eyebrow="Invoices" title="Billing" description={description} tone="gold" className={className} matchHeight>
+      <div className="shrink-0 grid grid-cols-3 gap-3 mb-5">
         <TotalStat label="Invoiced to date" value={invoicedTotal} />
         <TotalStat label="Paid to date" value={paidTotal} />
         <TotalStat label="Remaining" value={remaining} />
       </div>
-      <div className="max-h-[26rem] overflow-y-auto -mx-1 px-1 space-y-2 mb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-2 mb-4">
         {invoices.length === 0 ? (
           <p className="text-sm text-navy-400">No invoices yet.</p>
         ) : (
@@ -338,7 +338,7 @@ export function InvoicesList({
           ))
         )}
       </div>
-      <div className="border-t border-navy-100/70 pt-3">
+      <div className="shrink-0 border-t border-navy-100/70 pt-3">
         <AddInvoiceForm clientId={clientId} defaultHourlyRate={defaultHourlyRate} />
       </div>
     </SectionPanel>

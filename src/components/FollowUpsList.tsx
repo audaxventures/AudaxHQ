@@ -188,14 +188,34 @@ export function FollowUpsList({
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
   const [addError, setAddError] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
   const upcoming = followUps.filter((f) => f.status === "UPCOMING");
   const completed = followUps.filter((f) => f.status === "COMPLETED");
 
   return (
-    <SectionPanel eyebrow="Follow-ups" title="What's next" description="Track and follow up on important next steps." tone="violet">
-      <div className="max-h-[22rem] overflow-y-auto -mx-1 px-1 mb-3">
+    <SectionPanel
+      eyebrow="Follow-ups"
+      title="What's next"
+      description="Track and follow up on important next steps."
+      tone="violet"
+      matchHeight
+      action={
+        completed.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowCompleted((v) => !v)}
+            className="whitespace-nowrap text-xs font-medium text-navy-500 hover:text-navy-700 cursor-pointer"
+          >
+            {showCompleted ? "Hide completed" : `Show completed follow-ups (${completed.length})`}
+          </button>
+        ) : undefined
+      }
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 mb-3">
         {followUps.length === 0 ? (
           <p className="text-sm text-navy-400">No follow-ups yet.</p>
+        ) : upcoming.length === 0 && !showCompleted ? (
+          <p className="text-sm text-navy-400">Nothing to show.</p>
         ) : (
           <ul className="space-y-0.5">
             {upcoming.map((f) => (
@@ -208,16 +228,17 @@ export function FollowUpsList({
                 currentAssigneeId={currentAssigneeId}
               />
             ))}
-            {completed.map((f) => (
-              <FollowUpRow
-                key={f.id}
-                followUp={f}
-                owner={owner}
-                today={today}
-                assignOptions={assignOptions}
-                currentAssigneeId={currentAssigneeId}
-              />
-            ))}
+            {showCompleted &&
+              completed.map((f) => (
+                <FollowUpRow
+                  key={f.id}
+                  followUp={f}
+                  owner={owner}
+                  today={today}
+                  assignOptions={assignOptions}
+                  currentAssigneeId={currentAssigneeId}
+                />
+              ))}
           </ul>
         )}
       </div>
@@ -234,7 +255,7 @@ export function FollowUpsList({
             }
           });
         }}
-        className="flex flex-wrap items-end gap-2 border-t border-navy-100/70 pt-3"
+        className="shrink-0 flex flex-wrap items-end gap-2 border-t border-navy-100/70 pt-3"
       >
         <FieldGroup className="flex-1 min-w-[10rem]">
           <Label htmlFor="followup-label">Follow-up</Label>

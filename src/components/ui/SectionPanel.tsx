@@ -3,6 +3,14 @@ import { cn } from "@/lib/cn";
 import { Card } from "@/components/ui/Card";
 import { TONE_TEXT_CLASSES, type IconTone } from "@/lib/tone";
 
+// Shared by every paired-column panel across the app (Tasks/Follow-ups,
+// Documents/Links, Invoices/Unbilled hours, the two Meeting Notes columns)
+// so two panels sitting side by side always resolve to the same footprint —
+// never "whichever one happens to have more content today" — regardless of
+// which tab or record type they're on. Content beyond it scrolls internally
+// rather than growing the card.
+const MATCH_HEIGHT_CLASS = "h-full max-h-[32rem]";
+
 /**
  * The self-contained "panel" every record-detail tab is built from — a
  * tone-tinted card with an eyebrow/title/description header and a quiet
@@ -19,6 +27,7 @@ export function SectionPanel({
   action,
   children,
   className,
+  matchHeight = false,
 }: {
   eyebrow: string;
   title: string;
@@ -27,9 +36,14 @@ export function SectionPanel({
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Set on every panel in a paired-columns row — pins this panel to the shared height budget and turns its content area into a flex column so a scrollable list can grow to fill it and a form can stay pinned at the bottom, the same as its sibling regardless of how much either one holds. */
+  matchHeight?: boolean;
 }) {
   return (
-    <Card tone={tone} className={cn("relative overflow-hidden p-5 sm:p-6", className)}>
+    <Card
+      tone={tone}
+      className={cn("relative overflow-hidden p-5 sm:p-6", matchHeight && cn(MATCH_HEIGHT_CLASS, "flex flex-col"), className)}
+    >
       <div
         aria-hidden
         className={cn(
@@ -37,7 +51,7 @@ export function SectionPanel({
           TONE_TEXT_CLASSES[tone]
         )}
       />
-      <div className="relative mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className={cn("relative mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2", matchHeight && "shrink-0")}>
         <div>
           <p className={cn("text-[11px] font-semibold uppercase tracking-wider", TONE_TEXT_CLASSES[tone])}>{eyebrow}</p>
           <h3 className="mt-1 font-heading text-xl font-bold text-navy-900">{title}</h3>
@@ -45,7 +59,7 @@ export function SectionPanel({
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
-      <div className="relative">{children}</div>
+      <div className={cn("relative", matchHeight && "flex flex-1 flex-col min-h-0")}>{children}</div>
     </Card>
   );
 }

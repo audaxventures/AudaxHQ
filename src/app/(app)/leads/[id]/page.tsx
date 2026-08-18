@@ -99,22 +99,16 @@ export default async function LeadDetailPage({
       color: "burnt",
       count: lead.followUps.length + myTasks.length,
       content: (
-        <>
-          <div>
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Your tasks</h4>
-            <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
-          </div>
-          <div className="mt-8 border-t-2 border-navy-100 pt-6">
-            <h4 className="mb-3 font-heading text-base font-bold text-navy-900">Follow-ups</h4>
-            <FollowUpsList
-              owner={{ leadId: id }}
-              followUps={lead.followUps}
-              today={today}
-              assignOptions={assignOptions}
-              currentAssigneeId={currentAssigneeId}
-            />
-          </div>
-        </>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
+          <FollowUpsList
+            owner={{ leadId: id }}
+            followUps={lead.followUps}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
+        </div>
       ),
     },
     {
