@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Badge, PartnerStatusBadge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/format";
 import { entityColorClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
@@ -20,7 +20,7 @@ export function PartnerGridCard({ partner }: { partner: PartnerSummary }) {
         {partner.contactName && <p className="text-sm text-navy-400 truncate">{partner.contactName}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={partner.active ? "sage" : "slate"}>{partner.active ? "Active" : "Inactive"}</Badge>
+        <PartnerStatusBadge status={partner.status} />
         <Badge tone="navy">
           {partner.referralCount} referral{partner.referralCount === 1 ? "" : "s"}
         </Badge>

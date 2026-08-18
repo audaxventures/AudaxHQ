@@ -293,6 +293,8 @@ export interface LeadWithRelations extends Lead {
 
 export type CommissionStatus = "OWED" | "PAID";
 
+export type PartnerStatus = "ACTIVE" | "POTENTIAL" | "INACTIVE";
+
 /** A strategic referral partner — not a client or a lead. Referrals they send in are tracked as ordinary leads tagged via Lead.referredByPartnerId, reusing the full pipeline. */
 export interface Partner {
   id: string;
@@ -302,7 +304,7 @@ export interface Partner {
   contactPhone: string | null;
   /** Free text — commission/fee arrangements vary too much per partner to model as structured rules. */
   commissionTerms: string | null;
-  active: boolean;
+  status: PartnerStatus;
   color: EntityColor | null;
   createdAt: string;
   updatedAt: string;
@@ -672,6 +674,14 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "WON",
   "LOST",
 ];
+
+export const PARTNER_STATUS_LABELS: Record<PartnerStatus, string> = {
+  ACTIVE: "Active",
+  POTENTIAL: "Potential",
+  INACTIVE: "Inactive",
+};
+
+export const PARTNER_STATUS_ORDER: PartnerStatus[] = ["ACTIVE", "POTENTIAL", "INACTIVE"];
 
 export const PROSPECT_STATUS_LABELS: Record<ProspectStatus, string> = {
   NEW: "New",

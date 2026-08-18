@@ -6,6 +6,7 @@ import type {
   InvoiceAgeBracket,
   InvoiceStatus,
   LeadStatus,
+  PartnerStatus,
   ProspectStatus,
   TaskStatus,
   TaskType,
@@ -100,6 +101,22 @@ const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
 
 export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   return <Badge tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Badge>;
+}
+
+const PARTNER_STATUS_TONE: Record<PartnerStatus, Tone> = {
+  ACTIVE: "sage",
+  POTENTIAL: "gold",
+  INACTIVE: "slate",
+};
+
+const PARTNER_STATUS_LABEL: Record<PartnerStatus, string> = {
+  ACTIVE: "Active",
+  POTENTIAL: "Potential",
+  INACTIVE: "Inactive",
+};
+
+export function PartnerStatusBadge({ status }: { status: PartnerStatus }) {
+  return <Badge tone={PARTNER_STATUS_TONE[status]}>{PARTNER_STATUS_LABEL[status]}</Badge>;
 }
 
 // "navy" is deliberately not used here — its -100 background (#e9ecf2) is

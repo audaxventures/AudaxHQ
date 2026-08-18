@@ -9,7 +9,7 @@ import * as teamMembers from "@/lib/data/teamMembers";
 import { requireOwner, requirePartnerAccess } from "@/lib/currentUser";
 import { resolveAssignedTeamMemberId, selfId, actorDisplayName } from "@/lib/assign";
 import { extractMentionIds } from "@/lib/mentions";
-import type { CommissionStatus, CurrentUser, EntityColor } from "@/lib/types";
+import type { CommissionStatus, CurrentUser, EntityColor, PartnerStatus } from "@/lib/types";
 
 const partnerSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -62,18 +62,18 @@ export async function setPartnerColor(id: string, color: EntityColor | null) {
   revalidatePath("/partners");
 }
 
-export async function setPartnerActive(id: string, active: boolean) {
+export async function setPartnerStatus(id: string, status: PartnerStatus) {
   const user = await requirePartnerAccess(id);
-  await partners.setPartnerActive(id, user.businessId, active);
+  await partners.setPartnerStatus(id, user.businessId, status);
   revalidatePath(`/partners/${id}`);
   revalidatePath("/partners");
 }
 
-/** Hard-deletes only when the partner has no referrals or commission history to lose; otherwise archives it (setPartnerActive(false)) so that history stays intact. */
+/** Hard-deletes only when the partner has no referrals or commission history to lose; otherwise archives it (status "INACTIVE") so that history stays intact. */
 export async function deletePartner(id: string) {
   const user = await requirePartnerAccess(id);
   if (await partners.partnerHasHistory(id, user.businessId)) {
-    await partners.setPartnerActive(id, user.businessId, false);
+    await partners.setPartnerStatus(id, user.businessId, "INACTIVE");
   } else {
     await partners.deletePartner(id, user.businessId);
   }

@@ -4,14 +4,14 @@ import { getPartner } from "@/lib/data/partners";
 import { listTasks } from "@/lib/data/todos";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
-import { deletePartner, setPartnerActive, setPartnerColor } from "@/app/(app)/partners/actions";
+import { deletePartner, setPartnerColor } from "@/app/(app)/partners/actions";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { RecordSectionTabs, type SectionTab } from "@/components/ui/RecordSectionTabs";
 import { BackLink } from "@/components/ui/BackLink";
-import { Badge } from "@/components/ui/Badge";
 import { EntityColorPicker } from "@/components/ui/EntityColorPicker";
 import { PartnerForm } from "@/components/partners/PartnerForm";
+import { PartnerStatusSelect } from "@/components/partners/PartnerStatusSelect";
 import { ReferredLeadsList } from "@/components/partners/ReferredLeadsList";
 import { CommissionsSection } from "@/components/partners/CommissionsSection";
 import { EmailSection } from "@/components/EmailSection";
@@ -44,7 +44,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const currentAssigneeId = selfId(user);
   const owner = { type: "PARTNER" as const, partnerId: id };
   const boundDeletePartner = deletePartner.bind(null, id);
-  const boundSetActive = setPartnerActive.bind(null, id);
   // Partners have no per-team-member access list to check against (like
   // leads, unlike clients) — every active, login-enabled team member is
   // eligible to be @mentioned.
@@ -144,15 +143,10 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           {partner.contactName && <p className="mt-1 text-navy-500">{partner.contactName}</p>}
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <EntityColorPicker color={partner.color} onSelect={setPartnerColor.bind(null, id)} />
-            <Badge tone={partner.active ? "sage" : "slate"}>{partner.active ? "Active" : "Inactive"}</Badge>
+            <PartnerStatusSelect partnerId={id} status={partner.status} />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <form action={boundSetActive.bind(null, !partner.active)}>
-            <Button variant="secondary" size="sm" type="submit">
-              {partner.active ? "Mark inactive" : "Mark active"}
-            </Button>
-          </form>
           <form action={boundDeletePartner}>
             <Button variant="danger" size="sm" type="submit">
               Delete

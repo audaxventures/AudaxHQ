@@ -50,7 +50,7 @@ export function LeadForm({
   const sourceOptions = selectableSources.map((s) => ({ value: s.id, label: s.name }));
   const fallbackSourceId = selectableSources.find((s) => s.isFallback)?.id;
   const selectableTeamMembers = teamMembers.filter((t) => t.active || t.id === lead?.leadOwnerTeamMemberId);
-  const selectablePartners = partners.filter((p) => p.active || p.id === lead?.referredByPartnerId);
+  const selectablePartners = partners.filter((p) => p.status !== "INACTIVE" || p.id === lead?.referredByPartnerId);
   const compact = variant === "compact";
   const fieldIcon = (icon: LucideIcon) => (compact ? undefined : icon);
 

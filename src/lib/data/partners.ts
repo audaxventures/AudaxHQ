@@ -2,7 +2,7 @@ import { sql } from "@/lib/db";
 import { listFollowUpsForPartner } from "@/lib/data/followups";
 import { listMeetingNotes } from "@/lib/data/meetingnotes";
 import { listDocumentsForPartner } from "@/lib/data/documents";
-import type { CommissionStatus, EntityColor, Lead, Partner, PartnerCommission, PartnerNote, PartnerWithRelations } from "@/lib/types";
+import type { CommissionStatus, EntityColor, Lead, Partner, PartnerCommission, PartnerNote, PartnerStatus, PartnerWithRelations } from "@/lib/types";
 
 function mapPartner(row: Record<string, unknown>): Partner {
   return {
@@ -12,7 +12,7 @@ function mapPartner(row: Record<string, unknown>): Partner {
     contactEmail: row.contact_email as string | null,
     contactPhone: row.contact_phone as string | null,
     commissionTerms: row.commission_terms as string | null,
-    active: row.active as boolean,
+    status: row.status as PartnerStatus,
     color: row.color as EntityColor | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
@@ -72,9 +72,9 @@ export async function listPartners(businessId: string, opts: { includeInactive?:
     left join partner_commissions pc on pc.partner_id = p.id
     left join revenue_by_partner rbp on rbp.partner_id = p.id
     where p.business_id = ${businessId}
-      and (${opts.includeInactive ?? false} or p.active)
+      and (${opts.includeInactive ?? false} or p.status <> 'INACTIVE')
     group by p.id, rbp.revenue
-    order by p.active desc, p.company_name asc
+    order by case p.status when 'ACTIVE' then 0 when 'POTENTIAL' then 1 else 2 end, p.company_name asc
   `;
   return rows.map((r) => {
     const row = r as Record<string, unknown>;
@@ -224,11 +224,11 @@ export async function setPartnerColor(id: string, businessId: string, color: Ent
   await sql`update partners set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
-export async function setPartnerActive(id: string, businessId: string, active: boolean): Promise<void> {
-  await sql`update partners set active = ${active}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
+export async function setPartnerStatus(id: string, businessId: string, status: PartnerStatus): Promise<void> {
+  await sql`update partners set status = ${status}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
 }
 
-/** Whether it's safe to hard-delete: no referrals and no commission history to lose. Callers should fall back to setPartnerActive(false) (archive) when this is false. */
+/** Whether it's safe to hard-delete: no referrals and no commission history to lose. Callers should fall back to setPartnerStatus(id, businessId, "INACTIVE") (archive) when this is false. */
 export async function partnerHasHistory(id: string, businessId: string): Promise<boolean> {
   const rows = await sql`
     select
