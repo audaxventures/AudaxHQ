@@ -12,11 +12,13 @@ export default async function NotificationSettingsPage() {
           notifyTaskAssigned: user.business.ownerNotifyTaskAssigned,
           notifyFollowUpAssigned: user.business.ownerNotifyFollowUpAssigned,
           notifyMention: user.business.ownerNotifyMention,
+          notifyDailyBrief: user.business.ownerNotifyDailyBrief,
         }
       : {
           notifyTaskAssigned: user.teamMember.notifyTaskAssigned,
           notifyFollowUpAssigned: user.teamMember.notifyFollowUpAssigned,
           notifyMention: user.teamMember.notifyMention,
+          notifyDailyBrief: user.teamMember.notifyDailyBrief,
         };
 
   return (

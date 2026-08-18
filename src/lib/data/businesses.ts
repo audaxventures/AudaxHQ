@@ -29,6 +29,9 @@ function mapBusiness(row: Record<string, unknown>): Business {
     ownerNotifyTaskAssigned: row.owner_notify_task_assigned as boolean,
     ownerNotifyFollowUpAssigned: row.owner_notify_followup_assigned as boolean,
     ownerNotifyMention: row.owner_notify_mention as boolean,
+    ownerNotifyDailyBrief: row.owner_notify_daily_brief as boolean,
+    dailyBriefSendHour: Number(row.daily_brief_send_hour),
+    dailyBriefLastSentDate: row.daily_brief_last_sent_date as string | null,
   };
 }
 
@@ -142,6 +145,7 @@ export interface OwnerNotificationPreferencesInput {
   ownerNotifyTaskAssigned: boolean;
   ownerNotifyFollowUpAssigned: boolean;
   ownerNotifyMention: boolean;
+  ownerNotifyDailyBrief: boolean;
 }
 
 /** Self-service — the owner's own email notification preferences, set from Settings > Notifications (see (app)/settings/notifications/page.tsx). Mirrors updateTeamMemberNotificationPreferences for every other recipient. */
@@ -153,7 +157,35 @@ export async function updateOwnerNotificationPreferences(
     update businesses
     set owner_notify_task_assigned = ${input.ownerNotifyTaskAssigned},
         owner_notify_followup_assigned = ${input.ownerNotifyFollowUpAssigned},
-        owner_notify_mention = ${input.ownerNotifyMention}
+        owner_notify_mention = ${input.ownerNotifyMention},
+        owner_notify_daily_brief = ${input.ownerNotifyDailyBrief}
+    where id = ${businessId}
+  `;
+}
+
+/**
+ * Every business whose local time is currently within its Daily Brief send
+ * hour AND hasn't already had its brief sent today (in its own timezone) —
+ * the candidate set the hourly cron trigger (see api/cron/daily-brief)
+ * iterates. Computed with a straight SQL timezone conversion rather than
+ * pulling every business into Node and checking there, since this needs to
+ * run against every business's own IANA timezone at once.
+ */
+export async function listBusinessesDueForDailyBrief(): Promise<Business[]> {
+  const rows = await sql`
+    select * from businesses
+    where suspended_at is null
+      and extract(hour from now() at time zone timezone) = daily_brief_send_hour
+      and (daily_brief_last_sent_date is null or daily_brief_last_sent_date < (now() at time zone timezone)::date)
+  `;
+  return rows.map((r) => mapBusiness(r as Record<string, unknown>));
+}
+
+/** Marks today (in the business's own timezone) as the last date its Daily Brief batch went out — the guard listBusinessesDueForDailyBrief checks. */
+export async function markDailyBriefSent(businessId: string): Promise<void> {
+  await sql`
+    update businesses
+    set daily_brief_last_sent_date = (now() at time zone timezone)::date
     where id = ${businessId}
   `;
 }

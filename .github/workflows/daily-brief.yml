@@ -1,0 +1,30 @@
+name: Daily Brief
+
+# Hourly trigger for the Daily Brief email (see
+# src/app/api/cron/daily-brief/route.ts). This app has no cron of its own
+# and Vercel's free tier only allows a once-daily invocation — hitting the
+# route hourly instead lets it check every business's own timezone and only
+# actually send once it's that business's configured morning hour, without
+# needing a paid Vercel plan. GitHub's schedule trigger isn't to-the-minute
+# precise (it can slip by a few minutes under load), which is fine for a
+# "morning" email but worth knowing.
+#
+# Requires two repo secrets (Settings > Secrets and variables > Actions):
+#   APP_BASE_URL           e.g. https://app.verclara.io
+#   DAILY_BRIEF_CRON_SECRET  same value as the DAILY_BRIEF_CRON_SECRET env
+#                            var set on the Vercel deployment
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the Daily Brief cron route
+        run: |
+          curl --fail --show-error --silent \
+            -H "Authorization: Bearer ${{ secrets.DAILY_BRIEF_CRON_SECRET }}" \
+            "${{ secrets.APP_BASE_URL }}/api/cron/daily-brief"

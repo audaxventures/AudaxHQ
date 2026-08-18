@@ -17,6 +17,7 @@ function mapTeamMember(row: Record<string, unknown>): TeamMember {
     notifyTaskAssigned: row.notify_task_assigned as boolean,
     notifyFollowUpAssigned: row.notify_followup_assigned as boolean,
     notifyMention: row.notify_mention as boolean,
+    notifyDailyBrief: row.notify_daily_brief as boolean,
   };
 }
 
@@ -90,6 +91,7 @@ export interface NotificationPreferencesInput {
   notifyTaskAssigned: boolean;
   notifyFollowUpAssigned: boolean;
   notifyMention: boolean;
+  notifyDailyBrief: boolean;
 }
 
 /** Self-service — a team member's own email notification preferences, set from Settings > Notifications (see (app)/settings/notifications/page.tsx). */
@@ -102,7 +104,8 @@ export async function updateTeamMemberNotificationPreferences(
     update team_members
     set notify_task_assigned = ${input.notifyTaskAssigned},
         notify_followup_assigned = ${input.notifyFollowUpAssigned},
-        notify_mention = ${input.notifyMention}
+        notify_mention = ${input.notifyMention},
+        notify_daily_brief = ${input.notifyDailyBrief}
     where id = ${id} and business_id = ${businessId}
   `;
 }

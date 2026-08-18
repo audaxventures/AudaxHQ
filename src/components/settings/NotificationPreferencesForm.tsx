@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckSquare, Flag, AtSign } from "lucide-react";
+import { CheckSquare, Flag, AtSign, Sunrise } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { updateNotificationPreferences } from "@/app/(app)/settings/actions";
+import { updateNotificationPreferences, sendTestDailyBrief } from "@/app/(app)/settings/actions";
 
 interface Prefs {
   notifyTaskAssigned: boolean;
   notifyFollowUpAssigned: boolean;
   notifyMention: boolean;
+  notifyDailyBrief: boolean;
 }
 
 const EVENTS: { key: keyof Prefs; icon: typeof CheckSquare; label: string; description: string }[] = [
@@ -29,6 +30,12 @@ const EVENTS: { key: keyof Prefs; icon: typeof CheckSquare; label: string; descr
     icon: AtSign,
     label: "Mentioned in a note",
     description: "Email me when someone @mentions me in a note.",
+  },
+  {
+    key: "notifyDailyBrief",
+    icon: Sunrise,
+    label: "Daily Brief",
+    description: "A morning email with what's overdue, due today, and coming up next.",
   },
 ];
 
@@ -82,6 +89,33 @@ export function NotificationPreferencesForm({ email, prefs }: { email: string | 
           {saved && !pending && <p className="text-sm text-sage-600">Saved.</p>}
         </div>
       </form>
+      <TestBriefButton disabled={!email} />
+    </div>
+  );
+}
+
+function TestBriefButton({ disabled }: { disabled: boolean }) {
+  const [pending, startTransition] = useTransition();
+  const [sent, setSent] = useState(false);
+
+  return (
+    <div className="mt-6 border-t border-navy-100 pt-5">
+      <p className="text-xs text-navy-500">See what the Daily Brief looks like before trusting it every morning.</p>
+      <button
+        type="button"
+        disabled={disabled || pending}
+        onClick={() => {
+          setSent(false);
+          startTransition(async () => {
+            await sendTestDailyBrief();
+            setSent(true);
+          });
+        }}
+        className="mt-2 rounded-lg border border-navy-200 px-3.5 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:bg-navy-100 disabled:opacity-40 cursor-pointer"
+      >
+        {pending ? "Sending…" : "Send me a test Daily Brief"}
+      </button>
+      {sent && !pending && <p className="mt-2 text-sm text-sage-600">Sent — check your inbox.</p>}
     </div>
   );
 }

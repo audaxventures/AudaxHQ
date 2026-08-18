@@ -413,6 +413,8 @@ export interface TeamMember {
   notifyTaskAssigned: boolean;
   notifyFollowUpAssigned: boolean;
   notifyMention: boolean;
+  /** Whether this team member wants the morning Daily Brief (see migration 049) — the send hour/timezone/last-sent tracking live on Business, since a brief batch fires once per business, not per recipient. */
+  notifyDailyBrief: boolean;
 }
 
 /**
@@ -537,6 +539,10 @@ export interface Business {
   ownerNotifyTaskAssigned: boolean;
   ownerNotifyFollowUpAssigned: boolean;
   ownerNotifyMention: boolean;
+  /** Daily Brief settings (see migration 049) — one batch per business per day, sent to every opted-in user (owner + team members) once daily_brief_send_hour matches the business's local hour. daily_brief_last_sent_date guards against the hourly trigger double-sending the same day's batch. */
+  ownerNotifyDailyBrief: boolean;
+  dailyBriefSendHour: number;
+  dailyBriefLastSentDate: string | null;
 }
 
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";

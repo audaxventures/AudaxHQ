@@ -9,6 +9,7 @@ import * as leadSources from "@/lib/data/leadSources";
 import * as todoTypes from "@/lib/data/todoTypes";
 import * as feedback from "@/lib/data/feedback";
 import * as teamMembers from "@/lib/data/teamMembers";
+import { sendDailyBriefToRecipient } from "@/lib/data/dailyBrief";
 import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
 import { requireOwner, requireOwnerIgnoringBilling, requireCurrentUser } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
@@ -145,17 +146,32 @@ export async function updateNotificationPreferences(formData: FormData) {
     notifyTaskAssigned: formData.get("notifyTaskAssigned") === "on",
     notifyFollowUpAssigned: formData.get("notifyFollowUpAssigned") === "on",
     notifyMention: formData.get("notifyMention") === "on",
+    notifyDailyBrief: formData.get("notifyDailyBrief") === "on",
   };
   if (user.role === "OWNER") {
     await businesses.updateOwnerNotificationPreferences(user.businessId, {
       ownerNotifyTaskAssigned: prefs.notifyTaskAssigned,
       ownerNotifyFollowUpAssigned: prefs.notifyFollowUpAssigned,
       ownerNotifyMention: prefs.notifyMention,
+      ownerNotifyDailyBrief: prefs.notifyDailyBrief,
     });
   } else {
     await teamMembers.updateTeamMemberNotificationPreferences(user.teamMember.id, user.businessId, prefs);
   }
   revalidatePath("/settings/notifications");
+}
+
+/** Sends the current user their own Daily Brief right now, outside the hourly schedule — the "Send me a test Daily Brief" button in Settings > Notifications, so someone can see it before trusting it every morning. */
+export async function sendTestDailyBrief() {
+  const user = await requireCurrentUser();
+  const email = user.role === "OWNER" ? user.business.ownerEmail : user.teamMember.email;
+  if (!email) return;
+  const today = await businesses.getBusinessToday(user.businessId);
+  const recipient =
+    user.role === "OWNER"
+      ? { teamMemberId: null, email, name: user.business.ownerName }
+      : { teamMemberId: user.teamMember.id, email, name: user.teamMember.name };
+  await sendDailyBriefToRecipient(user.businessId, today, recipient);
 }
 
 /** The owner's tag color (their linked team_members row) — shown wherever they're tagged, e.g. the Lead Owner tag on the Leads page. */

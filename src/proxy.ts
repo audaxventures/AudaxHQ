@@ -82,8 +82,12 @@ export const config = {
   // doesn't exist and would 404. Enumerating filenames one at a time here
   // has bitten us before (sidebar.png/login.png 404ing on marketing hosts
   // because they weren't on the old list) — exclude the whole class instead.
-  // api/webhooks is excluded too — Stripe's webhook requests carry no
-  // session cookie (they're server-to-server), so gating them here would
-  // bounce every delivery to /login instead of reaching the route handler.
-  matcher: ["/((?!_next/static|_next/image|login|signup|api/webhooks|.*\\..*).*)"],
+  // api/webhooks and api/cron are excluded too — Stripe's webhook requests
+  // and the hourly Daily Brief trigger (see api/cron/daily-brief/route.ts)
+  // both carry no session cookie (they're server-to-server), so gating them
+  // here would bounce every delivery to /login instead of reaching the
+  // route handler. Both routes do their own auth (webhook signature / cron
+  // shared secret) — this exclusion only skips the session gate, not
+  // authorization entirely.
+  matcher: ["/((?!_next/static|_next/image|login|signup|api/webhooks|api/cron|.*\\..*).*)"],
 };
