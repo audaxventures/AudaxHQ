@@ -735,11 +735,13 @@ function formatBriefDate(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-/** Masthead dateline — "TUESDAY, AUGUST 18", the newsletter-issue-date convention this template borrows from print. */
-function formatBriefDateline(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`)
-    .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
-    .toUpperCase();
+/** Masthead dateline, split into "TUESDAY" / "AUGUST 18" — the newsletter-issue-date convention this template borrows from print, stacked on two explicit lines so it never mid-word wraps on a narrow screen. */
+function formatBriefDatelineParts(iso: string): { weekday: string; monthDay: string } {
+  const date = new Date(`${iso}T00:00:00Z`);
+  return {
+    weekday: date.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase(),
+    monthDay: date.toLocaleDateString("en-US", { month: "long", day: "numeric" }).toUpperCase(),
+  };
 }
 
 export interface DailyBriefEmailItem {
@@ -793,14 +795,13 @@ export async function sendDailyBriefEmail(params: {
   const supportEmail = "info@audaxventures.ca";
   const hasUrgent = params.overdue.length > 0 || params.dueToday.length > 0;
 
-  const subject = hasUrgent
-    ? [
-        params.overdue.length > 0 ? `${params.overdue.length} overdue` : null,
-        params.dueToday.length > 0 ? `${params.dueToday.length} due today` : null,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "nothing due today";
+  const subjectDate = new Date(`${params.today}T00:00:00Z`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const dateline = formatBriefDatelineParts(params.today);
 
   function itemsSection(title: string, char: string, color: { bg: string; fg: string }, items: DailyBriefEmailItem[], showDate: boolean): string {
     if (items.length === 0) return "";
@@ -876,8 +877,9 @@ export async function sendDailyBriefEmail(params: {
                 <td style="vertical-align: middle;">
                   <img src="${APP_URL}/hqlogo.png" width="160" height="53" alt="Verclara" style="display: block;" />
                 </td>
-                <td style="vertical-align: middle; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #8291ac;">
-                  ${formatBriefDateline(params.today)}
+                <td style="vertical-align: middle; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #8291ac; white-space: nowrap;">
+                  <p style="margin: 0;">${dateline.weekday}</p>
+                  <p style="margin: 3px 0 0;">${dateline.monthDay}</p>
                 </td>
               </tr>
             </table>
@@ -903,11 +905,11 @@ export async function sendDailyBriefEmail(params: {
             <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
               <tr>
                 <td style="border-radius: 10px; background: #be5a1e;">
-                  <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">Open Verclara &rarr;</a>
+                  <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none; white-space: nowrap;">Open Verclara &rarr;</a>
                 </td>
-                <td style="padding-left: 14px; font-size: 13px; color: #7c8aa3;">Everything above is one click away.</td>
               </tr>
             </table>
+            <p style="margin: 12px 0 0; font-size: 13px; color: #7c8aa3;">Everything above is one click away.</p>
           </td>
         </tr>
         <tr>
@@ -915,7 +917,7 @@ export async function sendDailyBriefEmail(params: {
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td style="width: 40px; vertical-align: top;">
-                  <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #101d33; color: #fdfbf6; font-size: 14px;">&#9742;</span>
+                  <span style="display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 50%; background: #101d33; color: #fdfbf6; font-size: 14px;">&#10003;</span>
                 </td>
                 <td style="vertical-align: top; padding-left: 6px;">
                   <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #101d33;">However today goes, we're glad you're keeping things moving.</p>
@@ -924,11 +926,9 @@ export async function sendDailyBriefEmail(params: {
                     <a href="mailto:${supportEmail}" style="color: #be5a1e; text-decoration: none;">${supportEmail}</a>.
                   </p>
                 </td>
-                <td style="vertical-align: bottom; text-align: right; padding-left: 12px; white-space: nowrap;">
-                  <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: #4c5f82;">The Verclara Team</span>
-                </td>
               </tr>
             </table>
+            <p style="margin: 12px 0 0; text-align: right; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 14px; color: #4c5f82;">The Verclara Team</p>
           </td>
         </tr>
         <tr>
@@ -961,7 +961,7 @@ export async function sendDailyBriefEmail(params: {
     body: JSON.stringify({
       from,
       to: params.to,
-      subject: `Your Daily Brief: ${subject}`,
+      subject: `Your Daily Brief: ${subjectDate}`,
       html,
     }),
   });
