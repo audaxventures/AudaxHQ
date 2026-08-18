@@ -5,14 +5,14 @@ import { Clock, MapPin, NotebookPen, Plus, Users } from "lucide-react";
 import { Input, Label, FieldGroup, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { SectionPanel } from "@/components/ui/SectionPanel";
-import { RichTextEditor, RichTextView } from "@/components/ui/RichTextEditor";
-import { ActionItemsQuickAdd } from "@/components/meetingnotes/ActionItemsQuickAdd";
+import { RichTextView } from "@/components/ui/RichTextEditor";
 import { AddToCalendarLinks } from "@/components/meetingnotes/AddToCalendarLinks";
+import { AddMeetingNoteDrawer } from "@/components/meetingnotes/AddMeetingNoteDrawer";
 import { TimezoneField } from "@/components/meetingnotes/TimezoneField";
 import { formatDate, formatDateInput, formatMonthYear, formatTime } from "@/lib/format";
 import { timezoneAbbreviation } from "@/lib/timezone";
 import type { MeetingNote } from "@/lib/types";
-import { createScopedMeetingNote, scheduleMeeting } from "@/lib/actions/meetingnotes";
+import { scheduleMeeting } from "@/lib/actions/meetingnotes";
 import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
 
 /** "2:00 PM" + " EST" when a timezone is set, else just the time — shared by the next-meeting summary and the notes list. */
@@ -76,16 +76,11 @@ export function MeetingNotesSection({
   senderFirstName: string;
   defaultTimezone: string;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const scheduleFormRef = useRef<HTMLFormElement>(null);
-  const [, startTransition] = useTransition();
   const [, startScheduleTransition] = useTransition();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
-  // Bumped after each successful add to force the RichTextEditors to remount
-  // and clear — form.reset() doesn't touch contentEditable content.
-  const [formKey, setFormKey] = useState(0);
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
   const next = nextUpcomingMeeting(notes, today);
   const monthGroups = groupByMonth(notes, next?.id);
@@ -200,76 +195,18 @@ export function MeetingNotesSection({
         <div className="mt-4">
           <button
             type="button"
-            onClick={() => setShowAddNote((v) => !v)}
+            onClick={() => setShowAddNote(true)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-700 hover:text-violet-800 cursor-pointer"
           >
-            <NotebookPen size={15} /> {showAddNote ? "Cancel" : "Log a meeting note"}
+            <NotebookPen size={15} /> Log a meeting note
           </button>
-          {showAddNote && (
-            <form
-              ref={formRef}
-              action={(formData) => {
-                startTransition(async () => {
-                  await createScopedMeetingNote(owner, formData);
-                });
-                formRef.current?.reset();
-                setFormKey((k) => k + 1);
-                setShowAddNote(false);
-              }}
-              className="space-y-3 mt-3 border-t border-navy-100 pt-3"
-            >
-              <FieldGroup>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" placeholder="e.g. Kickoff call, Q3 check-in…" />
-              </FieldGroup>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <FieldGroup className="min-w-0">
-                  <Label htmlFor="meetingDate">Meeting date</Label>
-                  <Input id="meetingDate" name="meetingDate" type="date" required className="min-w-0" />
-                </FieldGroup>
-                <FieldGroup className="min-w-0">
-                  <Label htmlFor="startTime">Time (optional)</Label>
-                  <Input id="startTime" name="startTime" type="time" className="min-w-0" />
-                </FieldGroup>
-              </div>
-              <FieldGroup>
-                <Label htmlFor="attendees">Attendees</Label>
-                <Input id="attendees" name="attendees" placeholder="Jane, Bob…" />
-              </FieldGroup>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <TimezoneField defaultValue={defaultTimezone} />
-                <FieldGroup>
-                  <Label htmlFor="location">Location (optional)</Label>
-                  <Input id="location" name="location" placeholder="Zoom, address, phone call…" icon={MapPin} />
-                </FieldGroup>
-              </div>
-              <FieldGroup>
-                <Label htmlFor="agenda">Agenda</Label>
-                <RichTextEditor key={`agenda-${formKey}`} id="agenda" name="agenda" rows={2} placeholder="What's planned for this meeting…" />
-              </FieldGroup>
-              <FieldGroup>
-                <Label htmlFor="notes">Notes</Label>
-                <RichTextEditor key={`notes-${formKey}`} id="notes" name="notes" rows={3} placeholder="What was discussed…" />
-              </FieldGroup>
-              <FieldGroup>
-                <Label>Action items</Label>
-                <ActionItemsQuickAdd
-                  key={`actionItems-${formKey}`}
-                  name="actionItems"
-                  theirLabel={owner.type === "CLIENT" ? "Client" : owner.type === "LEAD" ? "Lead" : "Partner"}
-                />
-              </FieldGroup>
-              <button
-                type="submit"
-                className="rounded-lg bg-navy-900 px-3.5 py-1.5 text-sm font-medium text-cream-50 hover:bg-navy-800 cursor-pointer transition-colors"
-              >
-                Save meeting note
-              </button>
-            </form>
-          )}
         </div>
         </div>
       </SectionPanel>
+
+      {showAddNote && (
+        <AddMeetingNoteDrawer owner={owner} defaultTimezone={defaultTimezone} onClose={() => setShowAddNote(false)} />
+      )}
 
       <SectionPanel
         eyebrow="History"
