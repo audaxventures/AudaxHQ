@@ -19,9 +19,9 @@ const UNASSIGNED_OWNER_TOKEN = "unassigned";
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; view?: string; sources?: string; owners?: string }>;
+  searchParams: Promise<{ status?: string; view?: string; sources?: string; owners?: string; q?: string }>;
 }) {
-  const { status, view, sources, owners } = await searchParams;
+  const { status, view, sources, owners, q } = await searchParams;
   const isGrid = view === "grid";
   const user = await requireCurrentUser();
   const sourceIds = sources ? sources.split(",").filter(Boolean) : [];
@@ -35,6 +35,7 @@ export default async function LeadsPage({
       sourceIds,
       leadOwnerIds,
       includeUnassignedOwner,
+      search: q,
     }),
     listConvertedLeads(user.businessId),
     listLostLeads(user.businessId),
@@ -66,6 +67,7 @@ export default async function LeadsPage({
             leadSources={leadSources}
             owners={owners}
             teamMembers={teamMembers}
+            q={q}
           />
         </div>
         <div className="flex shrink-0 items-center gap-3">

@@ -15,9 +15,9 @@ const UNASSIGNED_OWNER_TOKEN = "unassigned";
 export default async function ProspectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; industry?: string; owners?: string; sort?: string }>;
+  searchParams: Promise<{ status?: string; industry?: string; owners?: string; sort?: string; q?: string }>;
 }) {
-  const { status, industry, owners, sort } = await searchParams;
+  const { status, industry, owners, sort, q } = await searchParams;
   const user = await requireCurrentUser();
   const ownerValues = owners ? owners.split(",").filter(Boolean) : [];
   const includeUnassignedOwner = ownerValues.includes(UNASSIGNED_OWNER_TOKEN);
@@ -30,6 +30,7 @@ export default async function ProspectsPage({
       ownerIds,
       includeUnassignedOwner,
       sort: (sort || undefined) as ProspectSort | undefined,
+      search: q,
     }),
     listDistinctIndustries(user.businessId),
     listTeamMembers(user.businessId),
@@ -57,6 +58,7 @@ export default async function ProspectsPage({
           owners={owners}
           teamMembers={teamMembers}
           sort={sort}
+          q={q}
         />
       </div>
 

@@ -1,8 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Target, Tag, UserCheck } from "lucide-react";
-import { Label, Select, FieldGroup } from "@/components/ui/Field";
+import { Search, Target, Tag, UserCheck } from "lucide-react";
+import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { ViewToggle } from "@/components/ui/ViewToggle";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_ORDER, type LeadSource, type TeamMember } from "@/lib/types";
 
@@ -16,6 +17,7 @@ export function LeadFilterBar({
   leadSources,
   owners,
   teamMembers,
+  q,
 }: {
   status?: string;
   view?: string;
@@ -23,11 +25,14 @@ export function LeadFilterBar({
   leadSources: LeadSource[];
   owners?: string;
   teamMembers: TeamMember[];
+  q?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const isGrid = view === "grid";
-  const current: Record<string, string | undefined> = { status, view, sources, owners };
+  const current: Record<string, string | undefined> = { status, view, sources, owners, q };
+  const [searchValue, setSearchValue] = useState(q ?? "");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function update(key: string, value: string) {
     const params = new URLSearchParams();
@@ -37,6 +42,12 @@ export function LeadFilterBar({
     if (value) params.set(key, value);
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  function handleSearchChange(value: string) {
+    setSearchValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => update("q", value), 400);
   }
 
   function buildViewHref(value: string | undefined) {
@@ -51,6 +62,18 @@ export function LeadFilterBar({
 
   return (
     <div className="flex flex-wrap items-end gap-4">
+      <div className="min-w-[220px] flex-[1.5]">
+        <FieldGroup>
+          <Label htmlFor="filter-search">Search</Label>
+          <Input
+            id="filter-search"
+            placeholder="Business or contact name…"
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            icon={Search}
+          />
+        </FieldGroup>
+      </div>
       <div className="min-w-[180px] flex-1">
         <FieldGroup>
           <Label htmlFor="filter-status">Pipeline Status</Label>

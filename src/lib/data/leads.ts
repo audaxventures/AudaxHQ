@@ -69,6 +69,8 @@ export interface LeadFilters {
    * history, like the data export.
    */
   includeLost?: boolean;
+  /** Matches against company name or contact name (case-insensitive, substring). */
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -80,6 +82,7 @@ export async function listLeads(
   const sourceIds = filters.sourceIds && filters.sourceIds.length > 0 ? filters.sourceIds : null;
   const leadOwnerIds = filters.leadOwnerIds && filters.leadOwnerIds.length > 0 ? filters.leadOwnerIds : null;
   const includeUnassignedOwner = filters.includeUnassignedOwner ?? false;
+  const searchPattern = filters.search ? `%${filters.search}%` : null;
   const rows = await sql`
     select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color,
       rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color, f.next_date as next_follow_up_date
@@ -104,6 +107,11 @@ export async function listLeads(
       )
       and (${filters.converted === "include"} or l.converted_client_id is null)
       and (${filters.includeLost === true} or l.status <> 'LOST')
+      and (
+        ${searchPattern}::text is null
+        or l.company_name ilike ${searchPattern}
+        or l.contact_name ilike ${searchPattern}
+      )
     order by
       case when l.hot then 0 else 1 end asc,
       case when f.next_date is null then 1 else 0 end asc,

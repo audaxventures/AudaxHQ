@@ -1,8 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleDot, Building2, UserCheck, ArrowDownAZ } from "lucide-react";
-import { Label, Select, FieldGroup } from "@/components/ui/Field";
+import { CircleDot, Building2, Search, UserCheck, ArrowDownAZ } from "lucide-react";
+import { Input, Label, Select, FieldGroup } from "@/components/ui/Field";
 import { PROSPECT_STATUS_LABELS, PROSPECT_STATUS_ORDER, type TeamMember } from "@/lib/types";
 
 /** Sentinel for the Owner dropdown's "no owner set" option — safe alongside real uuids, which never equal this literal string. */
@@ -23,6 +24,7 @@ export function ProspectFilterBar({
   owners,
   teamMembers,
   sort,
+  q,
 }: {
   status?: string;
   industry?: string;
@@ -30,10 +32,13 @@ export function ProspectFilterBar({
   owners?: string;
   teamMembers: TeamMember[];
   sort?: string;
+  q?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const current: Record<string, string | undefined> = { status, industry, owners, sort };
+  const current: Record<string, string | undefined> = { status, industry, owners, sort, q };
+  const [searchValue, setSearchValue] = useState(q ?? "");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function update(key: string, value: string) {
     const params = new URLSearchParams();
@@ -45,8 +50,26 @@ export function ProspectFilterBar({
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
+  function handleSearchChange(value: string) {
+    setSearchValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => update("q", value), 400);
+  }
+
   return (
     <div className="flex flex-wrap items-end gap-4">
+      <div className="min-w-[220px] flex-[1.5]">
+        <FieldGroup>
+          <Label htmlFor="filter-search">Search</Label>
+          <Input
+            id="filter-search"
+            placeholder="Business or contact name…"
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            icon={Search}
+          />
+        </FieldGroup>
+      </div>
       <div className="min-w-[180px] flex-1">
         <FieldGroup>
           <Label htmlFor="filter-status">Status</Label>
