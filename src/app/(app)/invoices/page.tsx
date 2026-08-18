@@ -99,7 +99,7 @@ export default async function RevenuePage({
       <PageHeader
         icon={Receipt}
         tone="burnt"
-        eyebrow="Finance"
+        eyebrow="Finance & Time"
         title="Revenue Tracking"
         description="How much you're billing, collecting, and still owed — by client and by type of work."
       />

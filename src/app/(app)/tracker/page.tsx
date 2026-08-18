@@ -155,9 +155,9 @@ export default async function TrackerPage({
       <PageHeader
         icon={Clock}
         tone="navy"
-        eyebrow="Finance"
+        eyebrow="Finance & Time"
         title="Hour & Cost Tracker"
-        description="Log hours and expenses against clients and leads — see profitability on each client's Finance tab"
+        description="Log hours and expenses against clients and leads — see profitability on each client's Finance & Time tab"
         action={
           <div className="flex items-center gap-3">
             {isOwner && (

@@ -169,7 +169,7 @@ export default async function ClientDetailPage({
       ? [
           {
             key: "finance",
-            label: "Finance",
+            label: "Finance & Time",
             icon: <DollarSign size={15} />,
             color: "gold" as const,
             count: client.invoices.length + costEntries.length,

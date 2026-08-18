@@ -17,8 +17,8 @@ export const NAV_LINKS = [
   { href: "/follow-ups", label: "Follow-ups", icon: "followUps", group: "Operations" },
   {
     href: "/invoices",
-    label: "Finance",
-    tabLabel: "Finance",
+    label: "Finance & Time",
+    tabLabel: "Finance & Time",
     icon: "finance",
     group: "Operations",
     // Revenue Tracking and Hour & Cost Tracker live under one Finance nav
