@@ -10,7 +10,7 @@ import * as todoTypes from "@/lib/data/todoTypes";
 import * as feedback from "@/lib/data/feedback";
 import * as teamMembers from "@/lib/data/teamMembers";
 import { isCorrectPasscodeHash, hashPasscode } from "@/lib/auth";
-import { requireOwner, requireOwnerIgnoringBilling } from "@/lib/currentUser";
+import { requireOwner, requireOwnerIgnoringBilling, requireCurrentUser } from "@/lib/currentUser";
 import { supabase, BUSINESS_ASSETS_BUCKET } from "@/lib/storage";
 import { MAX_LOGO_SIZE_BYTES, isAllowedLogoExtension, newLogoStoragePath } from "@/lib/businessLogo";
 import { createCheckoutSession, createPortalSession, createStripeCustomer } from "@/lib/stripe";
@@ -131,6 +131,31 @@ export async function updateProfile(formData: FormData) {
   // Timezone changes what "today" is computed as almost everywhere in the
   // app, not just this settings page — revalidate the whole (app) section.
   revalidatePath("/", "layout");
+}
+
+/**
+ * Self-service — updates the current user's own email notification
+ * preferences (see migration 048). Owner writes to businesses, team member
+ * writes to their own team_members row; each role can only ever touch its
+ * own preferences here, there's no "set this for someone else" path.
+ */
+export async function updateNotificationPreferences(formData: FormData) {
+  const user = await requireCurrentUser();
+  const prefs = {
+    notifyTaskAssigned: formData.get("notifyTaskAssigned") === "on",
+    notifyFollowUpAssigned: formData.get("notifyFollowUpAssigned") === "on",
+    notifyMention: formData.get("notifyMention") === "on",
+  };
+  if (user.role === "OWNER") {
+    await businesses.updateOwnerNotificationPreferences(user.businessId, {
+      ownerNotifyTaskAssigned: prefs.notifyTaskAssigned,
+      ownerNotifyFollowUpAssigned: prefs.notifyFollowUpAssigned,
+      ownerNotifyMention: prefs.notifyMention,
+    });
+  } else {
+    await teamMembers.updateTeamMemberNotificationPreferences(user.teamMember.id, user.businessId, prefs);
+  }
+  revalidatePath("/settings/notifications");
 }
 
 /** The owner's tag color (their linked team_members row) — shown wherever they're tagged, e.g. the Lead Owner tag on the Leads page. */

@@ -2,6 +2,8 @@
 // transactional emails are sent today, so a full SDK isn't worth the extra
 // dependency.
 
+import { appPath, APP_URL } from "@/lib/site";
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 function resendApiKey(): string {
@@ -528,6 +530,176 @@ export async function sendContactFormEmail(name: string, fromEmail: string, mess
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`Failed to send contact form email (${res.status}): ${body || res.statusText}`);
+  }
+}
+
+export type NotificationEmailType = "TASK_ASSIGNED" | "FOLLOW_UP_ASSIGNED" | "MENTION";
+
+const NOTIFICATION_EMAIL_CONFIG: Record<
+  NotificationEmailType,
+  { icon: string; iconBg: string; iconFg: string; eyebrow: string; subject: string }
+> = {
+  TASK_ASSIGNED: {
+    icon: "&#10003;",
+    iconBg: "#e1ebe2",
+    iconFg: "#3f6c4c",
+    eyebrow: "New task assigned",
+    subject: "You've been assigned a task",
+  },
+  FOLLOW_UP_ASSIGNED: {
+    icon: "&#9873;",
+    iconBg: "#f2e4c6",
+    iconFg: "#a87423",
+    eyebrow: "New follow-up assigned",
+    subject: "You've been assigned a follow-up",
+  },
+  MENTION: {
+    icon: "@",
+    iconBg: "#ede9fe",
+    iconFg: "#7c3aed",
+    eyebrow: "You were mentioned",
+    subject: "You were mentioned in a note",
+  },
+};
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * The shared template behind every "assigned to you" / "mentioned you"
+ * email — see notifyTaskAssignee/notifyFollowUpAssignee/notifyMentionedTeamMembers
+ * (actions/tasks.ts, actions/followups.ts, (app)/clients|leads|partners/actions.ts)
+ * for the callers, all routed through createNotification()
+ * (lib/data/notifications.ts) so this only has to be wired up in one place.
+ * `message` is the same human-readable sentence already stored on the
+ * in-app notification row, so the email and the bell icon never say
+ * different things about the same event.
+ */
+export async function sendNotificationEmail(params: {
+  to: string;
+  recipientName: string;
+  type: NotificationEmailType;
+  message: string;
+  link: string;
+}): Promise<void> {
+  const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
+  const firstName = params.recipientName.trim().split(/\s+/)[0] || params.recipientName;
+  const config = NOTIFICATION_EMAIL_CONFIG[params.type];
+  const actionUrl = appPath(params.link);
+  const preferencesUrl = appPath("/settings/notifications");
+  const supportEmail = "info@audaxventures.ca";
+
+  const html = `
+    <div style="background: #f8f2e6; padding: 32px 16px; font-family: Helvetica, Arial, sans-serif;">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin: 0 auto;">
+        <tr>
+          <td style="background: #ffffff; border-radius: 20px 20px 0 0; padding: 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="vertical-align: middle;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 8px;">
+                        <img src="${APP_URL}/favicon.png" width="24" height="24" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 700; color: #101d33;">Verclara</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td style="text-align: right; font-size: 13px; color: #4c5f82;">
+                  Need help? <a href="mailto:${supportEmail}" style="color: #be5a1e; text-decoration: none; font-weight: 600;">Contact our team &rarr;</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #ffffff; padding: 8px 32px 32px;">
+            <p style="margin: 0 0 16px; font-size: 15px; color: #101d33;">Hi <span style="font-weight: 700;">${escapeHtml(firstName)}</span>,</p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background: #f7f5f0; border-radius: 14px;">
+              <tr>
+                <td style="padding: 24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width: 44px; vertical-align: top;">
+                        <span style="display: inline-block; width: 36px; height: 36px; line-height: 36px; text-align: center; border-radius: 50%; background: ${config.iconBg}; color: ${config.iconFg}; font-size: 16px; font-weight: 700;">${config.icon}</span>
+                      </td>
+                      <td style="vertical-align: top; padding-left: 6px;">
+                        <p style="margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: ${config.iconFg};">${config.eyebrow}</p>
+                        <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #101d33;">${escapeHtml(params.message)}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
+              <tr>
+                <td style="border-radius: 10px; background: #101d33;">
+                  <a href="${actionUrl}" style="display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600; color: #fdfbf6; text-decoration: none;">View in Verclara &rarr;</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; padding: 20px 32px;">
+            <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #aeb8cb;">
+              You're receiving this because email notifications are on for this event type.
+              <a href="${preferencesUrl}" style="color: #7c8aa3; text-decoration: underline;">Manage your notification preferences</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #fdfbf6; border-radius: 0 0 20px 20px; padding: 0 32px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #e9ecf2; padding-top: 16px;">
+              <tr>
+                <td>
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="vertical-align: middle; padding-right: 6px;">
+                        <img src="${APP_URL}/favicon.png" width="18" height="18" alt="" style="display: block; border-radius: 50%;" />
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <span style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; color: #101d33;">Verclara</span>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin: 6px 0 0; font-size: 12px; color: #7c8aa3;">The Business Operating System for Service Businesses.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 16px; font-size: 11px; color: #aeb8cb;">&copy; ${new Date().getFullYear()} Audax Ventures Inc. All rights reserved.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: params.to,
+      subject: config.subject,
+      html,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to send notification email (${res.status}): ${body || res.statusText}`);
   }
 }
 

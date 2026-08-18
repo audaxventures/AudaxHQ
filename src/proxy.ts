@@ -16,7 +16,10 @@ const OWNER_ONLY_PATH_PREFIXES = ["/invoices", "/settings", "/admin", "/api/expo
 // land on the billing page specifically — a lapsed subscription redirects
 // the whole workspace there (see (app)/layout.tsx), owner or not, and the
 // page itself renders a read-only view for anyone who isn't the owner.
-const TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS = ["/settings/billing"];
+// /settings/notifications is the same kind of exception, for a different
+// reason: it's self-service (see migration 048) — every user manages their
+// own email notification preferences there, not just the owner's.
+const TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS = ["/settings/billing", "/settings/notifications"];
 
 // Hostnames that serve the public marketing site (src/app/site/*) instead of
 // the app. Requests here are rewritten to /site/* and never reach the

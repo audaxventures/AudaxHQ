@@ -14,6 +14,9 @@ function mapTeamMember(row: Record<string, unknown>): TeamMember {
     hasLogin: row.passcode_hash != null,
     color: (row.color as EntityColor | null) ?? null,
     hasPartnersAccess: row.has_partners_access as boolean,
+    notifyTaskAssigned: row.notify_task_assigned as boolean,
+    notifyFollowUpAssigned: row.notify_followup_assigned as boolean,
+    notifyMention: row.notify_mention as boolean,
   };
 }
 
@@ -81,6 +84,27 @@ export async function setTeamMemberColor(id: string, businessId: string, color: 
 
 export async function setTeamMemberPartnersAccess(id: string, businessId: string, hasAccess: boolean): Promise<void> {
   await sql`update team_members set has_partners_access = ${hasAccess} where id = ${id} and business_id = ${businessId}`;
+}
+
+export interface NotificationPreferencesInput {
+  notifyTaskAssigned: boolean;
+  notifyFollowUpAssigned: boolean;
+  notifyMention: boolean;
+}
+
+/** Self-service — a team member's own email notification preferences, set from Settings > Notifications (see (app)/settings/notifications/page.tsx). */
+export async function updateTeamMemberNotificationPreferences(
+  id: string,
+  businessId: string,
+  input: NotificationPreferencesInput
+): Promise<void> {
+  await sql`
+    update team_members
+    set notify_task_assigned = ${input.notifyTaskAssigned},
+        notify_followup_assigned = ${input.notifyFollowUpAssigned},
+        notify_mention = ${input.notifyMention}
+    where id = ${id} and business_id = ${businessId}
+  `;
 }
 
 /** Time entries are the one record type that never disappears silently — they feed cost/profitability reporting. */

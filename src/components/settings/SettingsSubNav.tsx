@@ -15,6 +15,7 @@ import {
   Shield,
   Upload,
   MessageSquare,
+  Bell,
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import { Card } from "@/components/ui/Card";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/profile", label: "Profile", icon: User },
+  { href: "/settings/notifications", label: "Notifications", icon: Bell },
   { href: "/settings/business", label: "Business Info", icon: Building2 },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/team-members", label: "Team Members", icon: Users },

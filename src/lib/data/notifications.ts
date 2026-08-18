@@ -1,5 +1,35 @@
 import { sql } from "@/lib/db";
+import { getBusiness } from "@/lib/data/businesses";
+import { getTeamMember } from "@/lib/data/teamMembers";
+import { sendNotificationEmail } from "@/lib/email";
 import type { Notification, NotificationType, RightNowItem } from "@/lib/types";
+
+/** Whether the recipient wants an email for this notification type, and where to send it — null means no email should go out (no address on file, or they've turned this type off). */
+async function resolveEmailRecipient(
+  businessId: string,
+  recipientTeamMemberId: string | null,
+  type: NotificationType
+): Promise<{ to: string; name: string } | null> {
+  if (recipientTeamMemberId === null) {
+    const business = await getBusiness(businessId);
+    const wantsEmail =
+      type === "TASK_ASSIGNED"
+        ? business.ownerNotifyTaskAssigned
+        : type === "FOLLOW_UP_ASSIGNED"
+          ? business.ownerNotifyFollowUpAssigned
+          : business.ownerNotifyMention;
+    return wantsEmail ? { to: business.ownerEmail, name: business.ownerName } : null;
+  }
+  const teamMember = await getTeamMember(recipientTeamMemberId, businessId);
+  if (!teamMember || !teamMember.email) return null;
+  const wantsEmail =
+    type === "TASK_ASSIGNED"
+      ? teamMember.notifyTaskAssigned
+      : type === "FOLLOW_UP_ASSIGNED"
+        ? teamMember.notifyFollowUpAssigned
+        : teamMember.notifyMention;
+  return wantsEmail ? { to: teamMember.email, name: teamMember.name } : null;
+}
 
 interface NotificationRow {
   id: string;
@@ -27,6 +57,13 @@ function mapNotification(row: NotificationRow): Notification {
  * in this app, so this is the only way a row ever lands here.
  * `recipientTeamMemberId` follows the null-means-owner convention used
  * everywhere else (assigned_to_team_member_id).
+ *
+ * Also fires the matching email, best-effort — every caller already screens
+ * out self-notifications before reaching here, so this only has to check
+ * the recipient's own preference (see migration 048) and that they have an
+ * email on file. A Resend failure is logged, never thrown: losing the email
+ * copy of a notification must not roll back the task/follow-up/note action
+ * that triggered it, and the in-app bell icon already has the row.
  */
 export async function createNotification(
   businessId: string,
@@ -39,6 +76,15 @@ export async function createNotification(
     insert into notifications (business_id, recipient_team_member_id, type, message, link)
     values (${businessId}, ${recipientTeamMemberId}, ${type}, ${message}, ${link})
   `;
+
+  try {
+    const recipient = await resolveEmailRecipient(businessId, recipientTeamMemberId, type);
+    if (recipient) {
+      await sendNotificationEmail({ to: recipient.to, recipientName: recipient.name, type, message, link });
+    }
+  } catch (e) {
+    console.error("Failed to send notification email:", e);
+  }
 }
 
 export interface NotificationSnapshot {

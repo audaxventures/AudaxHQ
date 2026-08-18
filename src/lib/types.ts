@@ -409,6 +409,10 @@ export interface TeamMember {
   color: EntityColor | null;
   /** Whether this team member can see the Partners section — owner-only by default, granted per team member (see migration 046). Always effectively true for the owner regardless of this field, which only exists on team_members rows. */
   hasPartnersAccess: boolean;
+  /** Email notification preferences (see migration 048) — all default true. The owner's equivalents live on Business, not here, since the owner isn't guaranteed a linked team_members row. */
+  notifyTaskAssigned: boolean;
+  notifyFollowUpAssigned: boolean;
+  notifyMention: boolean;
 }
 
 /**
@@ -529,6 +533,10 @@ export interface Business {
   billingInterval: BillingInterval | null;
   createdAt: string;
   updatedAt: string;
+  /** The owner's own email notification preferences (see migration 048) — all default true. Mirrors TeamMember's notify* fields, which cover every other recipient. */
+  ownerNotifyTaskAssigned: boolean;
+  ownerNotifyFollowUpAssigned: boolean;
+  ownerNotifyMention: boolean;
 }
 
 export type FixedCostCategory = "SOFTWARE_TOOLS" | "CONTRACTOR" | "LICENSING" | "OTHER";

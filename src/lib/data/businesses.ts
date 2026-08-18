@@ -26,6 +26,9 @@ function mapBusiness(row: Record<string, unknown>): Business {
     billingInterval: row.billing_interval as BillingInterval | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    ownerNotifyTaskAssigned: row.owner_notify_task_assigned as boolean,
+    ownerNotifyFollowUpAssigned: row.owner_notify_followup_assigned as boolean,
+    ownerNotifyMention: row.owner_notify_mention as boolean,
   };
 }
 
@@ -133,6 +136,26 @@ export async function updateBusinessOwnerProfile(
 
 export async function updateBusinessName(businessId: string, name: string): Promise<void> {
   await sql`update businesses set name = ${name}, updated_at = now() where id = ${businessId}`;
+}
+
+export interface OwnerNotificationPreferencesInput {
+  ownerNotifyTaskAssigned: boolean;
+  ownerNotifyFollowUpAssigned: boolean;
+  ownerNotifyMention: boolean;
+}
+
+/** Self-service — the owner's own email notification preferences, set from Settings > Notifications (see (app)/settings/notifications/page.tsx). Mirrors updateTeamMemberNotificationPreferences for every other recipient. */
+export async function updateOwnerNotificationPreferences(
+  businessId: string,
+  input: OwnerNotificationPreferencesInput
+): Promise<void> {
+  await sql`
+    update businesses
+    set owner_notify_task_assigned = ${input.ownerNotifyTaskAssigned},
+        owner_notify_followup_assigned = ${input.ownerNotifyFollowUpAssigned},
+        owner_notify_mention = ${input.ownerNotifyMention}
+    where id = ${businessId}
+  `;
 }
 
 /** Marks the first-login welcome popup as seen — see migration 023. */
