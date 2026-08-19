@@ -16,7 +16,13 @@ export const fieldBase =
 // the plain-textfield sizing algorithm, which does respect width — same
 // box model as a normal text input (like the field below it). The native
 // picker icon is a separate shadow part and keeps working regardless.
-const temporalFieldFix = "block [-webkit-appearance:textfield] [-moz-appearance:textfield]";
+// max-w-40 is a second, belt-and-suspenders layer on top of that: a field
+// left at the default w-full (standalone in a single-column form, or in a
+// 2-col grid that collapses to one column on a narrow phone) has nothing
+// stopping it from stretching to the full row width, which is exactly the
+// layout this Safari bug bites hardest in — so every date/time field gets
+// capped at a sensible width regardless of what container it lands in.
+const temporalFieldFix = "block max-w-40 [-webkit-appearance:textfield] [-moz-appearance:textfield]";
 
 export function Input({
   icon: Icon,
