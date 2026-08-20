@@ -36,6 +36,14 @@ export interface ProspectFilters {
   includeUnassignedOwner?: boolean;
   search?: string;
   sort?: ProspectSort;
+  /**
+   * Prospects that have already been converted to a lead are, from this
+   * point on, worked on as a lead — they default to hidden everywhere a
+   * prospect list is used to pick something to act on, mirroring how
+   * listLeads hides already-client-converted leads by default. Pass
+   * "include" for views that need full history.
+   */
+  converted?: "exclude" | "include";
 }
 
 /**
@@ -108,6 +116,7 @@ export async function listProspects(
         or p.business_name ilike ${searchPattern}
         or p.email ilike ${searchPattern}
       )
+      and (${filters.converted === "include"} or p.status <> 'CONVERTED')
     order by
       case when p.hot then 0 else 1 end asc,
       case when ${sort} = 'next_follow_up' and f.next_date is null then 1 else 0 end asc,
@@ -127,6 +136,18 @@ export async function listProspects(
       nextFollowUpDate: r.next_follow_up_date as string | null,
     };
   });
+}
+
+/** Prospects already converted to a lead — hidden from the main prospects list by default, surfaced only via the Converted drawer. */
+export async function listConvertedProspects(businessId: string): Promise<Prospect[]> {
+  const rows = await sql`
+    select p.*, tm.name as owner_name, tm.color as owner_color
+    from prospects p
+    left join team_members tm on tm.id = p.owner_team_member_id
+    where p.business_id = ${businessId} and p.status = 'CONVERTED'
+    order by p.updated_at desc
+  `;
+  return rows.map((row) => mapProspect(row as Record<string, unknown>));
 }
 
 /** Distinct industries already in use — populates the Industry filter dropdown without a separate managed lookup table. */

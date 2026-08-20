@@ -2,7 +2,8 @@ import { UserSearch } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProspectFilterBar } from "@/components/prospects/ProspectFilterBar";
 import { ProspectsWorkspace } from "@/components/prospects/ProspectsWorkspace";
-import { listDistinctIndustries, listProspects } from "@/lib/data/prospects";
+import { ConvertedProspectsDrawer } from "@/components/prospects/ConvertedProspectsDrawer";
+import { listConvertedProspects, listDistinctIndustries, listProspects } from "@/lib/data/prospects";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
 import { requireCurrentUser } from "@/lib/currentUser";
@@ -23,7 +24,7 @@ export default async function ProspectsPage({
   const includeUnassignedOwner = ownerValues.includes(UNASSIGNED_OWNER_TOKEN);
   const ownerIds = ownerValues.filter((v) => v !== UNASSIGNED_OWNER_TOKEN);
 
-  const [prospects, industries, teamMembers, today] = await Promise.all([
+  const [prospects, convertedProspects, industries, teamMembers, today] = await Promise.all([
     listProspects(user.businessId, {
       status: status as ProspectStatus | undefined,
       industry,
@@ -32,6 +33,7 @@ export default async function ProspectsPage({
       sort: (sort || undefined) as ProspectSort | undefined,
       search: q,
     }),
+    listConvertedProspects(user.businessId),
     listDistinctIndustries(user.businessId),
     listTeamMembers(user.businessId),
     getBusinessToday(user.businessId),
@@ -50,16 +52,21 @@ export default async function ProspectsPage({
         description="People worth reaching out to, before they become a lead"
       />
 
-      <div className="mb-6">
-        <ProspectFilterBar
-          status={status}
-          industry={industry}
-          industries={industries}
-          owners={owners}
-          teamMembers={teamMembers}
-          sort={sort}
-          q={q}
-        />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-[280px] flex-1">
+          <ProspectFilterBar
+            status={status}
+            industry={industry}
+            industries={industries}
+            owners={owners}
+            teamMembers={teamMembers}
+            sort={sort}
+            q={q}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <ConvertedProspectsDrawer prospects={convertedProspects} />
+        </div>
       </div>
 
       <ProspectsWorkspace

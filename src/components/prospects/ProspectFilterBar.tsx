@@ -75,7 +75,7 @@ export function ProspectFilterBar({
           <Label htmlFor="filter-status">Status</Label>
           <Select id="filter-status" value={status ?? ""} onChange={(e) => update("status", e.target.value)} icon={CircleDot}>
             <option value="">All statuses</option>
-            {PROSPECT_STATUS_ORDER.map((s) => (
+            {PROSPECT_STATUS_ORDER.filter((s) => s !== "CONVERTED").map((s) => (
               <option key={s} value={s}>
                 {PROSPECT_STATUS_LABELS[s]}
               </option>
