@@ -164,4 +164,12 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-08-17",
     readingMinutes: 5,
   },
+  {
+    slug: "kpis-for-solo-consultants",
+    title: "The KPIs Every Solo Consultant and Small Agency Should Actually Track",
+    description: "Most of the numbers you could track don't matter — here's the short list that actually tells you how the business is doing.",
+    category: "KPIs & Metrics",
+    publishedAt: "2026-08-24",
+    readingMinutes: 5,
+  },
 ];
