@@ -57,11 +57,20 @@ export function SidebarNavList({
           );
         })}
       </nav>
-      {role === "OWNER" && (
-        <div className="relative mt-1 border-t border-navy-300/20 pt-1">
-          <NavLink href="/settings" label="Settings" icon="settings" onClick={onNavigate} collapsed={collapsed} />
-        </div>
-      )}
+      <div className="relative mt-1 border-t border-navy-300/20 pt-1">
+        {/* Settings is mostly owner-only, but Notifications (and Billing)
+            are explicitly self-service for a team member too (see
+            proxy.ts's TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS) — send them
+            straight there instead of /settings, which just redirects to
+            the owner-only Profile tab they can't reach. */}
+        <NavLink
+          href={role === "OWNER" ? "/settings" : "/settings/notifications"}
+          label="Settings"
+          icon="settings"
+          onClick={onNavigate}
+          collapsed={collapsed}
+        />
+      </div>
       {isAdmin && (
         <div className="relative mt-1 border-t border-navy-300/20 pt-1">
           <NavLink href="/admin" label="Admin" icon="admin" onClick={onNavigate} collapsed={collapsed} />

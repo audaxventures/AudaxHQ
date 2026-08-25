@@ -21,6 +21,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Card } from "@/components/ui/Card";
+import type { SessionRole } from "@/lib/types";
+
+// Mirrors proxy.ts's TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS — the only two
+// settings pages a team member can actually land on without bouncing back
+// to / (Notifications and Billing are both self-service, everything else
+// here is owner-only).
+const TEAM_MEMBER_HREFS = new Set(["/settings/notifications", "/settings/billing"]);
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/profile", label: "Profile", icon: User },
@@ -38,12 +45,13 @@ const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
-export function SettingsSubNav() {
+export function SettingsSubNav({ role }: { role: SessionRole }) {
   const pathname = usePathname();
+  const tabs = role === "OWNER" ? TABS : TABS.filter((tab) => TEAM_MEMBER_HREFS.has(tab.href));
   return (
     <Card className="p-2">
       <nav className="flex flex-col gap-0.5">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = pathname === tab.href;
           const Icon = tab.icon;
           return (

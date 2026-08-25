@@ -39,15 +39,13 @@ export function MobileTopBar({
           {businessName}
         </p>
         <div className="flex items-center gap-1">
-          {role === "OWNER" && (
-            <Link
-              href="/settings"
-              aria-label="Settings"
-              className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
-            >
-              <Settings size={18} strokeWidth={1.75} />
-            </Link>
-          )}
+          <Link
+            href={role === "OWNER" ? "/settings" : "/settings/notifications"}
+            aria-label="Settings"
+            className="flex items-center justify-center rounded-full p-2 text-navy-300 hover:bg-navy-800/60 hover:text-cream-100"
+          >
+            <Settings size={18} strokeWidth={1.75} />
+          </Link>
           <form action="/api/logout" method="post">
             <button
               type="submit"
