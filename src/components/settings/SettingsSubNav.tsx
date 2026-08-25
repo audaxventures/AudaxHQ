@@ -23,11 +23,12 @@ import { cn } from "@/lib/cn";
 import { Card } from "@/components/ui/Card";
 import type { SessionRole } from "@/lib/types";
 
-// Mirrors proxy.ts's TEAM_MEMBER_ACCESSIBLE_EXCEPTIONS — the only two
-// settings pages a team member can actually land on without bouncing back
-// to / (Notifications and Billing are both self-service, everything else
-// here is owner-only).
-const TEAM_MEMBER_HREFS = new Set(["/settings/notifications", "/settings/billing"]);
+// The settings tabs a team member should actually see. Notifications and
+// Access (their own password) are self-service. Billing is deliberately
+// left out here even though proxy.ts still lets them land on that route —
+// it's only reachable as a forced redirect when the workspace's
+// subscription lapses, not something a team member should browse to.
+const TEAM_MEMBER_HREFS = new Set(["/settings/notifications", "/settings/passcode"]);
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/settings/profile", label: "Profile", icon: User },

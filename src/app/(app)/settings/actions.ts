@@ -270,6 +270,30 @@ export async function changePasscode(formData: FormData): Promise<ActionResult> 
   return { error: null };
 }
 
+/** Self-service — a team member changing their own password, same shape as changePasscode above but scoped to their own team_members row instead of the owner's business-level credentials. */
+export async function changeTeamMemberPasscode(formData: FormData): Promise<ActionResult> {
+  const user = await requireCurrentUser();
+  if (user.role !== "TEAM_MEMBER") throw new Error("Not authorized.");
+  const currentPasscode = String(formData.get("currentPasscode") ?? "");
+  const newPasscode = String(formData.get("newPasscode") ?? "");
+  const confirmPasscode = String(formData.get("confirmPasscode") ?? "");
+
+  const creds = await teamMembers.getTeamMemberCredentials(user.teamMember.id);
+  if (!creds || !isCorrectPasscodeHash(currentPasscode, creds.hash, creds.salt)) {
+    return { error: "Current password is incorrect." };
+  }
+  if (newPasscode.length < 4) {
+    return { error: "New password must be at least 4 characters." };
+  }
+  if (newPasscode !== confirmPasscode) {
+    return { error: "New password and confirmation don't match." };
+  }
+
+  await teamMembers.setTeamMemberPasscode(user.teamMember.id, newPasscode);
+  revalidatePath("/settings/passcode");
+  return { error: null };
+}
+
 /** Dismisses the first-login welcome popup for good — see migration 023. */
 export async function dismissOnboarding() {
   const user = await requireOwner();

@@ -8,7 +8,12 @@ import { changePasscode } from "@/app/(app)/settings/actions";
 
 const passwordIconClassName = "text-navy-400 hover:text-navy-600";
 
-export function PasscodeForm() {
+/** Defaults to the owner's own action — the Settings > Password page passes changeTeamMemberPasscode instead for a team member, same shape, scoped to their own record. */
+export function PasscodeForm({
+  action = changePasscode,
+}: {
+  action?: (formData: FormData) => Promise<{ error: string | null }>;
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -21,7 +26,7 @@ export function PasscodeForm() {
         setError(null);
         setSaved(false);
         startTransition(async () => {
-          const result = await changePasscode(formData);
+          const result = await action(formData);
           if (result.error) {
             setError(result.error);
           } else {
