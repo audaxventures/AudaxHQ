@@ -260,6 +260,15 @@ export async function convertProspectToLead(prospectId: string, businessId: stri
     where id = ${prospectId} and business_id = ${businessId}
   `;
 
+  // Follow-ups stay open items, not history to snapshot like the activity
+  // log below — they need to keep pointing at something that still shows
+  // up on the Follow-ups page, so they move to the new lead instead of
+  // being left attached to a prospect nothing links to anymore.
+  await sql`
+    update follow_ups set lead_id = ${lead.id}, prospect_id = null, updated_at = now()
+    where prospect_id = ${prospectId} and business_id = ${businessId}
+  `;
+
   const activity = await sql`
     select type, body, created_at, logged_by_team_member_id from prospect_activity
     where prospect_id = ${prospectId} and business_id = ${businessId}

@@ -26,7 +26,7 @@ export default async function FollowUpsPage() {
         tone="burnt"
         eyebrow="Follow-ups"
         title="Follow-ups"
-        description="What's coming up and what's overdue, across every client and lead"
+        description="What's coming up and what's overdue, across every prospect, lead, client, and partner"
       />
       <FollowUpsWorkspace followUps={followUps} assignOptions={assignOptions} currentAssigneeId={currentAssigneeId} />
     </div>

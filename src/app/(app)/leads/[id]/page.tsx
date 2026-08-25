@@ -16,7 +16,8 @@ import { listTeamMembers } from "@/lib/data/teamMembers";
 import { listWorkCategories } from "@/lib/data/workCategories";
 import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { mentionOptions } from "@/lib/mentions";
-import { deleteLead, convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
+import { convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
+import { DeleteLeadButton } from "@/components/leads/DeleteLeadButton";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { RecordSectionTabs, type SectionTab } from "@/components/ui/RecordSectionTabs";
@@ -87,7 +88,6 @@ export default async function LeadDetailPage({
   const assignOptions = buildAssignOptions(user, teamMembers);
   const currentAssigneeId = selfId(user);
 
-  const boundDeleteLead = deleteLead.bind(null, id);
   const boundConvert = convertLeadToClient.bind(null, id);
   const owner = { type: "LEAD" as const, leadId: id };
 
@@ -222,11 +222,7 @@ export default async function LeadDetailPage({
               View client <ArrowRight size={15} />
             </LinkButton>
           )}
-          <form action={boundDeleteLead}>
-            <Button variant="danger" size="sm" type="submit">
-              Delete
-            </Button>
-          </form>
+          <DeleteLeadButton leadId={id} companyName={lead.companyName} />
         </div>
       </div>
 

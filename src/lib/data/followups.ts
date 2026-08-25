@@ -61,7 +61,7 @@ export async function listFollowUpsForProspect(prospectId: string, businessId: s
 
 export interface HotFollowUp extends FollowUp {
   ownerName: string;
-  ownerKind: "client" | "lead" | "prospect";
+  ownerKind: "client" | "lead" | "prospect" | "partner";
   isOverdue: boolean;
 }
 
@@ -125,15 +125,20 @@ export async function listAllFollowUps(
     select
       f.id, f.client_id, f.lead_id, f.partner_id, f.prospect_id, f.label, f.date, f.status, f.created_at, f.updated_at,
       f.assigned_to_team_member_id,
-      coalesce(c.company_name, l.company_name, pr.name) as owner_name,
-      case when f.client_id is not null then 'client' when f.lead_id is not null then 'lead' else 'prospect' end as owner_kind,
+      coalesce(c.company_name, l.company_name, p.company_name, pr.name) as owner_name,
+      case
+        when f.client_id is not null then 'client'
+        when f.lead_id is not null then 'lead'
+        when f.partner_id is not null then 'partner'
+        else 'prospect'
+      end as owner_kind,
       f.status = 'UPCOMING' and f.date < ${today}::date as is_overdue
     from follow_ups f
     left join clients c on c.id = f.client_id
     left join leads l on l.id = f.lead_id
+    left join partners p on p.id = f.partner_id
     left join prospects pr on pr.id = f.prospect_id
     where f.business_id = ${businessId}
-      and f.partner_id is null
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
         or f.client_id is null

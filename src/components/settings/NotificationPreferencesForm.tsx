@@ -52,9 +52,25 @@ export function NotificationPreferencesForm({ email, prefs }: { email: string | 
         </p>
       )}
       <form
-        action={(formData) => {
+        onSubmit={(e) => {
+          // Built from `values` state, not read off the DOM via `new
+          // FormData(e.currentTarget)` — passing the form's own action prop
+          // a function puts React into its Actions lifecycle, which calls
+          // the native form.reset() once the action resolves. That reset
+          // operates on the raw DOM nodes and un-checks nothing (checkboxes
+          // go back to their original defaultChecked), which then silently
+          // desyncs from `values` since nothing about `values` itself
+          // changed to trigger a re-render that would fix it back up. Using
+          // onSubmit + preventDefault instead of the action prop sidesteps
+          // that lifecycle entirely, so nothing ever resets the checkboxes
+          // out from under React's state.
+          e.preventDefault();
           setSaved(false);
           startTransition(async () => {
+            const formData = new FormData();
+            for (const { key } of EVENTS) {
+              if (values[key]) formData.set(key, "on");
+            }
             await updateNotificationPreferences(formData);
             setSaved(true);
           });

@@ -338,6 +338,14 @@ export async function convertLeadToClient(leadId: string, businessId: string, to
 
   await sql`update leads set converted_client_id = ${client.id}, updated_at = now() where id = ${leadId} and business_id = ${businessId}`;
 
+  // Same reasoning as convertProspectToLead: follow-ups are open items, not
+  // history, so they move to the new client rather than staying attached to
+  // a lead that's no longer the thing being worked.
+  await sql`
+    update follow_ups set client_id = ${client.id}, lead_id = null, updated_at = now()
+    where lead_id = ${leadId} and business_id = ${businessId}
+  `;
+
   await sql`insert into client_notes (client_id, business_id, body) values (${client.id}, ${businessId}, ${"Converted from lead — activity history below carried over."})`;
 
   const leadNotes = await sql`select body, created_at, author_team_member_id from lead_notes where lead_id = ${leadId} and business_id = ${businessId} order by created_at asc`;

@@ -111,7 +111,6 @@ export async function deleteLead(id: string) {
   await leads.deleteLead(id, user.businessId);
   revalidatePath("/leads");
   revalidatePath("/");
-  redirect("/leads");
 }
 
 /** Fires a "mentioned you" notification for each valid @mention in a note body — never for a self-mention, and only for team members who actually exist in this business (a raw @[Name](id) token in a direct POST could otherwise be forged). Mirrors notifyTaskAssignee in actions/tasks.ts. */

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, UserCircle2 } from "lucide-react";
+import { CalendarClock, CheckCircle2, ListFilter, UserCircle2 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
@@ -14,17 +14,26 @@ import { assigneeSelectValue } from "@/lib/assign";
 import type { HotFollowUp } from "@/lib/data/followups";
 
 const ALL_ASSIGNEES = "ALL";
+const ALL_TYPES = "ALL";
 
 type AssignOption = { value: string; label: string };
 
 function ownerOf(followUp: HotFollowUp) {
   if (followUp.ownerKind === "client") return { href: `/clients/${followUp.clientId}`, id: { clientId: followUp.clientId! } };
   if (followUp.ownerKind === "lead") return { href: `/leads/${followUp.leadId}`, id: { leadId: followUp.leadId! } };
+  if (followUp.ownerKind === "partner") return { href: `/partners/${followUp.partnerId}`, id: { partnerId: followUp.partnerId! } };
   // Prospects have no detail page — the list page reads this and
   // auto-opens the drawer for that prospect (see ?open= handling on
   // /prospects).
   return { href: `/prospects?open=${followUp.prospectId}`, id: { prospectId: followUp.prospectId! } };
 }
+
+const TYPE_FILTERS: { value: HotFollowUp["ownerKind"]; label: string }[] = [
+  { value: "prospect", label: "Prospect" },
+  { value: "lead", label: "Lead" },
+  { value: "client", label: "Client" },
+  { value: "partner", label: "Partner" },
+];
 
 function FollowUpRow({
   followUp,
@@ -121,11 +130,11 @@ export function FollowUpsWorkspace({
 }) {
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false);
   const [assigneeFilter, setAssigneeFilter] = useState(ALL_ASSIGNEES);
+  const [typeFilter, setTypeFilter] = useState<HotFollowUp["ownerKind"] | typeof ALL_TYPES>(ALL_TYPES);
 
-  const visibleFollowUps =
-    assigneeFilter === ALL_ASSIGNEES
-      ? followUps
-      : followUps.filter((f) => assigneeSelectValue(f.assignedToTeamMemberId, currentAssigneeId) === assigneeFilter);
+  const visibleFollowUps = followUps
+    .filter((f) => assigneeFilter === ALL_ASSIGNEES || assigneeSelectValue(f.assignedToTeamMemberId, currentAssigneeId) === assigneeFilter)
+    .filter((f) => typeFilter === ALL_TYPES || f.ownerKind === typeFilter);
 
   const byDateAsc = (a: HotFollowUp, b: HotFollowUp) => new Date(a.date).getTime() - new Date(b.date).getTime();
   const upcoming = visibleFollowUps.filter((f) => f.status === "UPCOMING" && !f.isOverdue).sort(byDateAsc);
@@ -137,6 +146,20 @@ export function FollowUpsWorkspace({
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-end gap-2">
+        <Select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as HotFollowUp["ownerKind"] | typeof ALL_TYPES)}
+          icon={ListFilter}
+          aria-label="Filter by type"
+          className="w-auto min-w-[9rem]"
+        >
+          <option value={ALL_TYPES}>All types</option>
+          {TYPE_FILTERS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
         {assignOptions.length > 1 && (
           <Select
             value={assigneeFilter}
