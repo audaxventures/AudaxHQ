@@ -81,10 +81,6 @@ export default async function LeadDetailPage({
     null
   );
 
-  // Every to-do board is private — a lead's Tasks panel only ever shows the
-  // current viewer's own to-dos for that lead, never a colleague's.
-  const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
-  const myTasks = lead.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
   const assignOptions = buildAssignOptions(user, teamMembers);
   const currentAssigneeId = selfId(user);
 
@@ -97,10 +93,16 @@ export default async function LeadDetailPage({
       label: "Tasks & Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
-      count: lead.followUps.length + myTasks.length,
+      count: lead.followUps.length + lead.tasks.length,
       content: (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
+          <ScopedTaskList
+            owner={owner}
+            tasks={lead.tasks}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
           <FollowUpsList
             owner={{ leadId: id }}
             followUps={lead.followUps}

@@ -70,7 +70,13 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
       count: partner.followUps.length,
       content: (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <ScopedTaskList owner={owner} tasks={tasks} today={today} assignOptions={assignOptions} />
+          <ScopedTaskList
+            owner={owner}
+            tasks={tasks}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
           <FollowUpsList
             owner={{ partnerId: id }}
             followUps={partner.followUps}

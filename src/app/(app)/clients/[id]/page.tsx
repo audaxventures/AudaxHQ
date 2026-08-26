@@ -86,10 +86,6 @@ export default async function ClientDetailPage({
     accessTeamMemberIds
   );
 
-  // Every to-do board is private — a client's Tasks panel only ever shows
-  // the current viewer's own to-dos for that client, never a colleague's.
-  const selfAssigneeId = user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
-  const myTasks = client.tasks.filter((t) => t.assignedToTeamMemberId === selfAssigneeId);
   const assignOptions = buildAssignOptions(user, teamMembers);
   const currentAssigneeId = selfId(user);
 
@@ -114,10 +110,16 @@ export default async function ClientDetailPage({
       label: "Tasks & Follow-ups",
       icon: <CalendarClock size={15} />,
       color: "burnt",
-      count: client.followUps.length + myTasks.length,
+      count: client.followUps.length + client.tasks.length,
       content: (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <ScopedTaskList owner={owner} tasks={myTasks} today={today} assignOptions={assignOptions} />
+          <ScopedTaskList
+            owner={owner}
+            tasks={client.tasks}
+            today={today}
+            assignOptions={assignOptions}
+            currentAssigneeId={currentAssigneeId}
+          />
           <FollowUpsList
             owner={{ clientId: id }}
             followUps={client.followUps}

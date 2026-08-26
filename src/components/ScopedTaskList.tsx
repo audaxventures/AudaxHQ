@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { ChevronDown, Hourglass, Trash2, Plus, UserCircle2 } from "lucide-react";
+import { ChevronDown, Hourglass, Send, Trash2, Plus, UserCircle2 } from "lucide-react";
 import { Input, Select } from "@/components/ui/Field";
 import { SectionPanel } from "@/components/ui/SectionPanel";
 import { TONE_CLASSES, TASK_STATUS_TONE } from "@/components/ui/Badge";
@@ -10,6 +10,7 @@ import { formatDate, isOverdue } from "@/lib/format";
 import type { Task, TaskStatus } from "@/lib/types";
 import { TASK_STATUS_LABELS, TASK_STATUS_ORDER } from "@/lib/types";
 import { createScopedTask, deleteTask, setTaskStatus } from "@/lib/actions/tasks";
+import { assigneeSelectValue } from "@/lib/assign";
 
 type Owner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
 type AssignOption = { value: string; label: string };
@@ -20,10 +21,27 @@ function ownerIds(owner: Owner) {
   return { clientId: null, leadId: null, partnerId: owner.partnerId };
 }
 
-function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: string }) {
+function TaskRow({
+  task,
+  owner,
+  today,
+  assignOptions,
+  currentAssigneeId,
+}: {
+  task: Task;
+  owner: Owner;
+  today: string;
+  assignOptions: AssignOption[];
+  currentAssigneeId: string | null;
+}) {
   const [, startTransition] = useTransition();
   const { clientId, leadId, partnerId } = ownerIds(owner);
   const overdue = task.status !== "COMPLETED" && isOverdue(task.dueDate, today);
+  const assigneeValue = assigneeSelectValue(task.assignedToTeamMemberId, currentAssigneeId);
+  // Unset for a task assigned to the viewer themselves — matches TaskCard's
+  // "To {name}" chip on the To-Do board, which only shows on cards not on
+  // the viewer's own board.
+  const assignedToLabel = assigneeValue === "" ? null : (assignOptions.find((o) => o.value === assigneeValue)?.label ?? "someone");
 
   return (
     <li className="group rounded-lg px-2 py-2 -mx-2 hover:bg-cream-100/60">
@@ -45,6 +63,11 @@ function TaskRow({ task, owner, today }: { task: Task; owner: Owner; today: stri
           <Trash2 size={14} />
         </button>
       </div>
+      {assignedToLabel && (
+        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-600">
+          <Send size={11} /> To {assignedToLabel}
+        </span>
+      )}
       <div className="mt-1.5 flex items-center gap-2">
         <span className={cn("flex-1 text-xs min-w-0", overdue ? "text-brick-600 font-medium" : "text-navy-400")}>
           {task.dueDate ? `${overdue ? "Overdue: " : "Due "}${formatDate(task.dueDate)}` : ""}
@@ -84,12 +107,16 @@ export function ScopedTaskList({
   tasks,
   today,
   assignOptions,
+  currentAssigneeId,
 }: {
   owner: Owner;
+  /** Every task for this record, regardless of who it's assigned to — a task handed off to a teammate still needs to show up here, just labeled with who it went to (see assignedToLabel in TaskRow). */
   tasks: Task[];
   today: string;
   /** Who a new task can be assigned to — "Me" plus whoever else is on the team. The field is hidden when there's nobody else to assign to (a solo business), same as FollowUpsList's add-row. */
   assignOptions: AssignOption[];
+  /** The viewer's own board identity — null for the owner, a team member's id otherwise. Used to tell "your" tasks apart from ones you merely created but handed off. */
+  currentAssigneeId: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
@@ -130,7 +157,14 @@ export function ScopedTaskList({
             </p>
             <ul className="space-y-1 mb-1 divide-y divide-navy-100">
               {visibleWaitingTasks.map((task) => (
-                <TaskRow key={task.id} task={task} owner={owner} today={today} />
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  owner={owner}
+                  today={today}
+                  assignOptions={assignOptions}
+                  currentAssigneeId={currentAssigneeId}
+                />
               ))}
             </ul>
           </div>
@@ -140,7 +174,14 @@ export function ScopedTaskList({
         ) : (
           <ul className="space-y-1 divide-y divide-navy-100">
             {visibleOwnTasks.map((task) => (
-              <TaskRow key={task.id} task={task} owner={owner} today={today} />
+              <TaskRow
+                key={task.id}
+                task={task}
+                owner={owner}
+                today={today}
+                assignOptions={assignOptions}
+                currentAssigneeId={currentAssigneeId}
+              />
             ))}
           </ul>
         )}
