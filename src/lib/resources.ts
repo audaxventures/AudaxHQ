@@ -172,4 +172,13 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     publishedAt: "2026-08-24",
     readingMinutes: 5,
   },
+  {
+    slug: "hiring-subcontractors",
+    title: "How to Hire Subcontractors Without Losing Control of Client Quality",
+    description:
+      "Bringing on subcontractors solves a capacity problem and creates a quality-control one — here's how to do it without either one costing you the client.",
+    category: "Subcontractors",
+    publishedAt: "2026-08-27",
+    readingMinutes: 6,
+  },
 ];
