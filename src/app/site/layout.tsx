@@ -39,7 +39,7 @@ const structuredData = {
       name: "Audax Ventures",
       url: `https://${marketingHost}`,
       logo: `https://${marketingHost}/hqlogo.png`,
-      email: "info@audaxventures.ca",
+      email: "info@verclara.io",
     },
     {
       "@type": "SoftwareApplication",

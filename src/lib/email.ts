@@ -27,7 +27,7 @@ export async function sendPasscodeResetEmail(to: string, name: string, resetUrl:
   const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
   const firstName = name.trim().split(/\s+/)[0] || name;
   const origin = new URL(resetUrl).origin;
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "info@verclara.io";
   const supportMailto = `mailto:${supportEmail}`;
 
   const passcodeDots = Array.from({ length: 6 })
@@ -210,7 +210,7 @@ export async function sendTeamMemberInviteEmail(
   const from = process.env.RESEND_FROM_EMAIL || "Verclara <onboarding@resend.dev>";
   const firstName = memberName.trim().split(/\s+/)[0] || memberName;
   const origin = new URL(inviteUrl).origin;
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "info@verclara.io";
   const supportMailto = `mailto:${supportEmail}`;
 
   const html = `
@@ -380,7 +380,7 @@ export async function sendWelcomeEmail(to: string, ownerName: string, businessNa
   const firstName = ownerName.trim().split(/\s+/)[0] || ownerName;
   const origin = new URL(appUrl).origin;
   const previewImageUrl = `${origin}/demodashboardweb.png`;
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "info@verclara.io";
 
   const stepsHtml = WELCOME_STEPS.map(
     (step, i) => `
@@ -588,7 +588,7 @@ export async function sendNotificationEmail(params: {
   const config = NOTIFICATION_EMAIL_CONFIG[params.type];
   const actionUrl = appPath(params.link);
   const preferencesUrl = appPath("/settings/notifications");
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "info@verclara.io";
 
   const html = `
     <div style="background: #f8f2e6; padding: 32px 16px; font-family: Helvetica, Arial, sans-serif;">
@@ -792,7 +792,7 @@ export async function sendDailyBriefEmail(params: {
   const firstName = params.recipientName.trim().split(/\s+/)[0] || params.recipientName;
   const dashboardUrl = appPath("/");
   const preferencesUrl = appPath("/settings/notifications");
-  const supportEmail = "info@audaxventures.ca";
+  const supportEmail = "info@verclara.io";
   const hasUrgent = params.overdue.length > 0 || params.dueToday.length > 0;
 
   const subjectDate = new Date(`${params.today}T00:00:00Z`).toLocaleDateString("en-US", {

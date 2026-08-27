@@ -33,13 +33,13 @@ export default function ContactPage() {
               message and we’ll get back to you directly.
             </p>
             <a
-              href="mailto:info@audaxventures.ca"
+              href="mailto:info@verclara.io"
               className="mt-8 inline-flex items-center gap-3 text-sm font-medium text-navy-700 transition-colors hover:text-burnt-600"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-navy-100 bg-white text-navy-500">
                 <Mail size={16} />
               </span>
-              info@audaxventures.ca
+              info@verclara.io
             </a>
             <p className="mt-6 text-sm text-navy-500">Prefer to talk it through live?</p>
             <a

@@ -76,8 +76,8 @@ export function MarketingFooter() {
                 </li>
               ))}
               <li>
-                <a href="mailto:info@audaxventures.ca" className="text-sm text-navy-200 transition-colors hover:text-cream-50">
-                  info@audaxventures.ca
+                <a href="mailto:info@verclara.io" className="text-sm text-navy-200 transition-colors hover:text-cream-50">
+                  info@verclara.io
                 </a>
               </li>
             </ul>

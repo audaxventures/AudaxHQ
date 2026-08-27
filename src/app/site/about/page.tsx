@@ -258,11 +258,11 @@ const FAQ_ITEMS = [
   {
     question: "How do I get help if I'm stuck?",
     answer:
-      "New workspaces get a short getting-started walkthrough and a welcome email with pointers on where to start. Beyond that, email info@audaxventures.ca and we'll help directly.",
+      "New workspaces get a short getting-started walkthrough and a welcome email with pointers on where to start. Beyond that, email info@verclara.io and we'll help directly.",
   },
   {
     question: "What if I want to close my account?",
-    answer: "Email us at info@audaxventures.ca and we'll take care of it for you.",
+    answer: "Email us at info@verclara.io and we'll take care of it for you.",
   },
   {
     question: "Is Verclara a CRM?",
