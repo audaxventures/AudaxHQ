@@ -4,10 +4,15 @@ name: Daily Brief
 # src/app/api/cron/daily-brief/route.ts). This app has no cron of its own
 # and Vercel's free tier only allows a once-daily invocation — hitting the
 # route hourly instead lets it check every business's own timezone and only
-# actually send once it's that business's configured morning hour, without
-# needing a paid Vercel plan. GitHub's schedule trigger isn't to-the-minute
-# precise (it can slip by a few minutes under load), which is fine for a
-# "morning" email but worth knowing.
+# actually send once it's past that business's configured morning hour,
+# without needing a paid Vercel plan. GitHub's schedule trigger is
+# best-effort under load: in practice it doesn't just slip by a few minutes,
+# it can skip whole hours (observed gaps between consecutive runs of 2-8+
+# hours instead of the configured 1). listBusinessesDueForDailyBrief is
+# written to tolerate that (see its comment) — it catches up on the next run
+# rather than requiring an exact-hour hit — so a business is never
+# permanently skipped for the day just because its one matching hour didn't
+# fire.
 #
 # Requires two repo secrets (Settings > Secrets and variables > Actions):
 #   APP_BASE_URL           e.g. https://app.verclara.io

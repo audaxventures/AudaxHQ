@@ -6,13 +6,16 @@ import { sendDailyBriefToRecipient } from "@/lib/data/dailyBrief";
 import { todayInTimezone } from "@/lib/timezone";
 
 /**
- * Hit hourly by an external scheduler (see .github/workflows/daily-brief.yml
- * — this app has no cron of its own, see migration 032's header comment),
- * not Vercel Cron: Vercel's free tier only allows a once-daily invocation,
- * which can't respect each business's own timezone. Checking every business
- * every hour and only acting on the ones whose local time currently matches
- * their configured send hour gets per-timezone delivery without needing a
- * paid plan — see listBusinessesDueForDailyBrief for the actual filter.
+ * Hit roughly hourly by an external scheduler (see
+ * .github/workflows/daily-brief.yml — this app has no cron of its own, see
+ * migration 032's header comment), not Vercel Cron: Vercel's free tier only
+ * allows a once-daily invocation, which can't respect each business's own
+ * timezone. Checking every business every hour and only acting on the ones
+ * whose local time has reached their configured send hour gets per-timezone
+ * delivery without needing a paid plan — see listBusinessesDueForDailyBrief
+ * for the actual filter, including why it's "hour has passed" rather than
+ * "hour matches exactly" (GitHub's schedule trigger skips hours outright
+ * under load, not just slips by a few minutes).
  */
 export async function GET(request: NextRequest) {
   const secret = request.headers.get("authorization");
