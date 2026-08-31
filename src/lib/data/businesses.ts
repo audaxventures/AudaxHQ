@@ -164,18 +164,31 @@ export async function updateOwnerNotificationPreferences(
 }
 
 /**
- * Every business whose local time is currently within its Daily Brief send
- * hour AND hasn't already had its brief sent today (in its own timezone) —
- * the candidate set the hourly cron trigger (see api/cron/daily-brief)
- * iterates. Computed with a straight SQL timezone conversion rather than
- * pulling every business into Node and checking there, since this needs to
- * run against every business's own IANA timezone at once.
+ * Every business whose local time has reached (or passed) its Daily Brief
+ * send hour AND hasn't already had its brief sent today (in its own
+ * timezone) — the candidate set the hourly cron trigger (see
+ * api/cron/daily-brief) iterates. Computed with a straight SQL timezone
+ * conversion rather than pulling every business into Node and checking
+ * there, since this needs to run against every business's own IANA
+ * timezone at once.
+ *
+ * Deliberately ">=" rather than "=" on the hour: GitHub Actions' `schedule`
+ * trigger (see .github/workflows/daily-brief.yml) is best-effort and can
+ * skip hours entirely under queue load, not just slip by a few minutes —
+ * observed gaps between consecutive runs have run anywhere from ~2 to 8+
+ * hours instead of the configured 1. An exact-hour match would silently
+ * drop a business's brief for the day whenever its one matching hour got
+ * skipped, with no way to catch up until the next day (and no guarantee
+ * that hour wouldn't be skipped too). ">=" plus the daily_brief_last_sent_date
+ * guard below makes this self-healing: whichever hour the cron actually
+ * runs in next, it still catches anyone whose send hour has already passed
+ * and hasn't been sent yet today, without ever double-sending.
  */
 export async function listBusinessesDueForDailyBrief(): Promise<Business[]> {
   const rows = await sql`
     select * from businesses
     where suspended_at is null
-      and extract(hour from now() at time zone timezone) = daily_brief_send_hour
+      and extract(hour from now() at time zone timezone) >= daily_brief_send_hour
       and (daily_brief_last_sent_date is null or daily_brief_last_sent_date < (now() at time zone timezone)::date)
   `;
   return rows.map((r) => mapBusiness(r as Record<string, unknown>));
