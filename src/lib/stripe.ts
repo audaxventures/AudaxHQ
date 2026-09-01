@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import type { BusinessTier } from "@/lib/types";
+import type { BusinessTier, SubscriptionStatus } from "@/lib/types";
 
 const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -138,6 +138,26 @@ export async function createPortalSession(customerId: string, returnUrl: string)
     return_url: returnUrl,
   });
   return session.url;
+}
+
+/** Narrows Stripe's own (wider) status set down to the four we actually store/gate on — see migration 042's check constraint. Shared by the webhook handler and by the free-coupon signup path, which syncs a freshly-created subscription onto the business row directly rather than waiting on the webhook (see createFreeSubscription's callers). */
+export function toSubscriptionStatus(stripeStatus: Stripe.Subscription.Status): SubscriptionStatus {
+  switch (stripeStatus) {
+    case "trialing":
+      return "trialing";
+    case "active":
+      return "active";
+    case "past_due":
+    case "unpaid":
+    case "incomplete":
+      return "past_due";
+    case "canceled":
+    case "incomplete_expired":
+    case "paused":
+      return "canceled";
+    default:
+      return "canceled";
+  }
 }
 
 /** Reverse-lookup from a Stripe Price id back to which tier it belongs to — used by the webhook handler, which only gets Price ids off the Subscription object, not the tier name. */
