@@ -127,12 +127,16 @@ export function SignupForm({
 
   // A full navigation, not router.push: the session cookie was just set by
   // the action's response, and a plain top-level navigation is guaranteed to
-  // send it (see the comment in signup/actions.ts).
+  // send it (see the comment in signup/actions.ts). redirectUrl is the
+  // free-coupon path (straight into the app, no card needed); checkoutUrl
+  // is everyone else (off to Stripe's hosted page to collect one).
   useEffect(() => {
-    if (state.checkoutUrl) {
+    if (state.redirectUrl) {
+      window.location.href = state.redirectUrl;
+    } else if (state.checkoutUrl) {
       window.location.href = state.checkoutUrl;
     }
-  }, [state.checkoutUrl]);
+  }, [state.redirectUrl, state.checkoutUrl]);
 
   const [tier, setTier] = useState<BusinessTier>(initialTier);
   const [interval, setInterval] = useState<BillingInterval>(initialInterval);
@@ -230,13 +234,28 @@ export function SignupForm({
           ))}
         </select>
       </div>
+      <div>
+        <label htmlFor="couponCode" className={labelClasses}>
+          Coupon code <span className="normal-case text-navy-500">(optional)</span>
+        </label>
+        <input
+          id="couponCode"
+          name="couponCode"
+          type="text"
+          autoCapitalize="characters"
+          className={inputClasses}
+          placeholder="Have a code? Enter it here"
+        />
+      </div>
       {state.error && (
         <p className="text-sm text-brick-100" role="alert">
           {state.error}
         </p>
       )}
       <SubmitButton />
-      <p className="text-center text-xs text-navy-400">You&rsquo;ll enter payment details on the next step.</p>
+      <p className="text-center text-xs text-navy-400">
+        You&rsquo;ll enter payment details on the next step, unless your coupon covers 100% of the cost.
+      </p>
       <p className="text-center text-sm text-navy-300">
         Already have a workspace?{" "}
         <Link href="/login" className="font-medium text-burnt-400 hover:text-burnt-300">
