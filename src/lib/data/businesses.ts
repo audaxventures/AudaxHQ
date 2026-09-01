@@ -24,6 +24,7 @@ function mapBusiness(row: Record<string, unknown>): Business {
     subscriptionStatus: row.subscription_status as SubscriptionStatus | null,
     trialEndsAt: row.trial_ends_at as string | null,
     billingInterval: row.billing_interval as BillingInterval | null,
+    signupCouponCode: row.signup_coupon_code as string | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     ownerNotifyTaskAssigned: row.owner_notify_task_assigned as boolean,
@@ -216,6 +217,17 @@ export async function setOwnerTeamMember(businessId: string, teamMemberId: strin
 /** Set once, right after signup — see createStripeCustomer in src/lib/stripe.ts. */
 export async function setStripeCustomerId(businessId: string, stripeCustomerId: string): Promise<void> {
   await sql`update businesses set stripe_customer_id = ${stripeCustomerId} where id = ${businessId}`;
+}
+
+/**
+ * Set once, right after a free-coupon signup provisions the workspace (see
+ * the promotionCodeId branch in signup/actions.ts) — never set for a normal
+ * paid signup. This is what lets the admin dashboard (and MRR) tell a
+ * complimentary account apart from a real paying customer, since both land
+ * on subscription_status='active' with a real stripe_customer_id.
+ */
+export async function setSignupCouponCode(businessId: string, code: string): Promise<void> {
+  await sql`update businesses set signup_coupon_code = ${code} where id = ${businessId}`;
 }
 
 /**

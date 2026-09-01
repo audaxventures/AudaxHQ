@@ -92,14 +92,16 @@ export async function createCheckoutSession(input: {
 
 /**
  * Looks up a customer-entered code against Stripe's Promotion Codes and
- * returns its id only if it resolves to an active, redeemable coupon that
- * is 100% off forever — the one case signup skips Checkout (and card
- * collection) for entirely. Any other code (partial discount, limited
- * duration, expired, unknown) returns null so the caller falls back to the
- * normal card-collecting Checkout flow, where allow_promotion_codes lets
- * the customer enter it there instead.
+ * returns its id (plus Stripe's own canonical casing of the code, for
+ * storing/displaying — see businesses.setSignupCouponCode) only if it
+ * resolves to an active, redeemable coupon that is 100% off forever — the
+ * one case signup skips Checkout (and card collection) for entirely. Any
+ * other code (partial discount, limited duration, expired, unknown) returns
+ * null so the caller falls back to the normal card-collecting Checkout
+ * flow, where allow_promotion_codes lets the customer enter it there
+ * instead.
  */
-export async function resolveFreeForeverPromotionCode(code: string): Promise<string | null> {
+export async function resolveFreeForeverPromotionCode(code: string): Promise<{ id: string; code: string } | null> {
   const trimmed = code.trim();
   if (!trimmed) return null;
   const result = await stripe.promotionCodes.list({
@@ -113,7 +115,7 @@ export async function resolveFreeForeverPromotionCode(code: string): Promise<str
   const coupon = promotionCode.promotion.coupon;
   if (!coupon || typeof coupon === "string") return null;
   if (!coupon.valid || coupon.percent_off !== 100 || coupon.duration !== "forever") return null;
-  return promotionCode.id;
+  return { id: promotionCode.id, code: promotionCode.code };
 }
 
 /**

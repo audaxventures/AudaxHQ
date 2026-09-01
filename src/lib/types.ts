@@ -535,6 +535,8 @@ export interface Business {
   /** When the 7-day trial ends — set from the Subscription object by the webhook, purely informational (Stripe itself transitions status out of 'trialing' when it passes, we don't compute this locally). */
   trialEndsAt: string | null;
   billingInterval: BillingInterval | null;
+  /** The 100%-off-forever promo code this workspace signed up with (see resolveFreeForeverPromotionCode in lib/stripe.ts), or null for a normal paid signup. Both land on subscriptionStatus 'active' with a real stripeCustomerId, so this is the only thing that tells a complimentary account apart from a real paying customer — see getPlatformStats' MRR calculation, which excludes any workspace with this set. */
+  signupCouponCode: string | null;
   createdAt: string;
   updatedAt: string;
   /** The owner's own email notification preferences (see migration 048) — all default true. Mirrors TeamMember's notify* fields, which cover every other recipient. */

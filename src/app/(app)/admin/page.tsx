@@ -70,6 +70,7 @@ export default async function AdminOverviewPage() {
       newSignups30d: 0,
       mrr: 0,
       trialingCount: 0,
+      freeCouponCount: 0,
     }),
     settle(getGrowthSeries(), []),
     settle(getPlatformActivityCounts(), { clients: 0, leads: 0, tasks: 0, followUps: 0, meetingNotes: 0 }),
@@ -90,13 +91,14 @@ export default async function AdminOverviewPage() {
       {revenueResult.error && <SectionError message={`Revenue chart: ${revenueResult.error}`} />}
       {workspacesResult.error && <SectionError message={`Workspace list: ${workspacesResult.error}`} />}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
         <StatTile label="Active workspaces" value={String(stats.activeWorkspaces)} tone="sage" />
         <StatTile label="Suspended" value={String(stats.suspendedWorkspaces)} tone="burnt" />
         <StatTile label="Total users" value={String(stats.totalUsers)} tone="navy" />
         <StatTile label="New signups (30d)" value={String(stats.newSignups30d)} tone="slate" />
-        <StatTile label="MRR" value={formatCurrency(stats.mrr)} tone="gold" />
+        <StatTile label="MRR" value={formatCurrency(stats.mrr)} subtext="Excludes free/coupon accounts" tone="gold" />
         <StatTile label="On free trial" value={String(stats.trialingCount)} tone="gold" />
+        <StatTile label="Free (coupon)" value={String(stats.freeCouponCount)} subtext="Not counted in MRR" tone="violet" />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -136,7 +138,10 @@ export default async function AdminOverviewPage() {
                   className="flex flex-col gap-3 rounded-2xl bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,29,51,0.04),0_8px_24px_-16px_rgba(16,29,51,0.15)] sm:flex-row sm:items-center"
                 >
                   <Link href={`/admin/workspace/${ws.id}`} className="min-w-0 flex-1 hover:opacity-80">
-                    <p className="font-heading text-base font-medium text-navy-900">{ws.name}</p>
+                    <p className="flex flex-wrap items-center gap-2 font-heading text-base font-medium text-navy-900">
+                      {ws.name}
+                      {ws.signupCouponCode && <Badge tone="violet">Free ({ws.signupCouponCode})</Badge>}
+                    </p>
                     <p className="text-sm text-navy-500">
                       {ws.ownerName} · {ws.ownerEmail}
                     </p>

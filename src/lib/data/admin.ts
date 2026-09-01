@@ -21,18 +21,25 @@ export interface PlatformStats {
    * Monthly recurring revenue, in dollars — derived from businesses.tier/
    * billing_interval for every workspace with subscription_status 'active'
    * or 'past_due' (still a live subscription in Stripe's eyes, just mid
-   * payment-retry) AND a real stripe_customer_id, using the same per-tier
-   * prices src/lib/pricing.ts shows everywhere else, normalized to a
-   * monthly figure for annual plans. The stripe_customer_id check matters:
-   * migration 042 backfilled every pre-existing workspace to 'active' with
+   * payment-retry), a real stripe_customer_id, AND no signup_coupon_code,
+   * using the same per-tier prices src/lib/pricing.ts shows everywhere
+   * else, normalized to a monthly figure for annual plans. Two kinds of
+   * non-paying workspace must not inflate this: the stripe_customer_id
+   * check excludes migration 042's pre-existing backfill to 'active' with
    * no Stripe customer at all (grandfathered/comped access, same
-   * isComplimentary check BillingPanel.tsx uses) — those never paid a
-   * cent and must not inflate MRR. Deliberately excludes 'trialing' too —
-   * no money has actually been collected yet, see trialingCount below.
+   * isComplimentary check BillingPanel.tsx uses), and the
+   * signup_coupon_code check excludes a 100%-off-forever coupon signup
+   * (see freeCouponCount below) — that one *does* have a real Stripe
+   * customer and an 'active' status, so without this check it would
+   * otherwise be counted as full-price revenue. Deliberately excludes
+   * 'trialing' too — no money has actually been collected yet, see
+   * trialingCount below.
    */
   mrr: number;
   /** Workspaces currently mid-trial (subscription_status = 'trialing') — not yet counted in mrr since nothing's been charged. */
   trialingCount: number;
+  /** Every workspace that signed up with a 100%-off-forever promo code (businesses.signup_coupon_code is not null, see migration 051) — excluded from mrr regardless of current subscription_status, so this is the platform's actual comp/promo count, not just an "active" subset of it. */
+  freeCouponCount: number;
 }
 
 const MONTHLY_PRICE_BY_TIER: Record<BusinessTier, number> = Object.fromEntries(
@@ -43,7 +50,7 @@ const ANNUAL_MONTHLY_PRICE_BY_TIER: Record<BusinessTier, number> = Object.fromEn
 ) as Record<BusinessTier, number>;
 
 export async function getPlatformStats(): Promise<PlatformStats> {
-  const [workspaceRows, userRows, billingRows, trialRows] = await Promise.all([
+  const [workspaceRows, userRows, billingRows, trialRows, freeCouponRows] = await Promise.all([
     sql`
       select
         count(*)::int as total,
@@ -56,14 +63,18 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     sql`
       select tier, billing_interval, count(*)::int as n
       from businesses
-      where subscription_status in ('active', 'past_due') and stripe_customer_id is not null
+      where subscription_status in ('active', 'past_due')
+        and stripe_customer_id is not null
+        and signup_coupon_code is null
       group by tier, billing_interval
     `,
     sql`select count(*)::int as n from businesses where subscription_status = 'trialing'`,
+    sql`select count(*)::int as n from businesses where signup_coupon_code is not null`,
   ]);
   const w = workspaceRows[0] as Record<string, unknown>;
   const u = userRows[0] as Record<string, unknown>;
   const t = trialRows[0] as Record<string, unknown>;
+  const fc = freeCouponRows[0] as Record<string, unknown>;
 
   let mrr = 0;
   for (const row of billingRows as Record<string, unknown>[]) {
@@ -82,6 +93,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     newSignups30d: w.new_30d as number,
     mrr,
     trialingCount: t.n as number,
+    freeCouponCount: fc.n as number,
   };
 }
 
@@ -251,6 +263,8 @@ export interface AdminWorkspaceSummary {
   tier: BusinessTier;
   teamMemberCount: number;
   clientCount: number;
+  /** Non-null means this workspace signed up with a 100%-off-forever promo code (see migration 051) — a complimentary account, not a paying customer, even though its own subscriptionStatus reads 'active' just like a real one. */
+  signupCouponCode: string | null;
 }
 
 function mapWorkspaceSummary(row: Record<string, unknown>): AdminWorkspaceSummary {
@@ -264,6 +278,7 @@ function mapWorkspaceSummary(row: Record<string, unknown>): AdminWorkspaceSummar
     tier: row.tier as BusinessTier,
     teamMemberCount: Number(row.team_member_count),
     clientCount: Number(row.client_count),
+    signupCouponCode: row.signup_coupon_code as string | null,
   };
 }
 
@@ -272,6 +287,7 @@ export async function listWorkspaces(): Promise<AdminWorkspaceSummary[]> {
   const rows = await sql`
     select
       b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at, b.tier,
+      b.signup_coupon_code,
       coalesce(tm.team_member_count, 0) as team_member_count,
       coalesce(c.client_count, 0) as client_count
     from businesses b
@@ -302,6 +318,7 @@ export async function getWorkspaceDetail(businessId: string): Promise<AdminWorks
   const rows = await sql`
     select
       b.id, b.name, b.owner_name, b.owner_email, b.created_at, b.suspended_at, b.tier,
+      b.signup_coupon_code,
       b.stripe_customer_id, b.subscription_status, b.billing_interval, b.trial_ends_at,
       coalesce(tm.n, 0) as team_member_count,
       coalesce(c.n, 0) as client_count,
