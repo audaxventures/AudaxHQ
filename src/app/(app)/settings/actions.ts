@@ -326,11 +326,14 @@ function currentOrigin(host: string | null): string {
 }
 
 /**
- * Starts (or restarts) a subscription — used both by a brand-new signup
- * that never completed Checkout and by an existing workspace switching
- * tier/interval outside the self-serve portal. Creates a Stripe customer
- * first if this workspace somehow doesn't have one yet (very old
- * early-access workspaces backfilled by migration 042).
+ * Starts (or restarts) a subscription for an existing workspace — a
+ * canceled subscription reactivating, or switching tier/interval outside
+ * the self-serve portal. Creates a Stripe customer first if this workspace
+ * somehow doesn't have one yet (very old early-access workspaces backfilled
+ * by migration 042). Unlike a brand-new signup (signup/actions.ts), this
+ * workspace already exists, so the session carries { businessId } metadata
+ * and the plain webhook sync path (not provisionBusinessFromCheckoutSession)
+ * picks it up.
  */
 export async function startSubscriptionCheckout(tier: BusinessTier, interval: BillingInterval) {
   const user = await requireOwnerIgnoringBilling();
@@ -343,12 +346,12 @@ export async function startSubscriptionCheckout(tier: BusinessTier, interval: Bi
   }
 
   const checkoutUrl = await createCheckoutSession({
-    businessId: user.businessId,
     customerId,
     tier,
     interval,
     successUrl: `${origin}/settings/billing?checkout=success`,
     cancelUrl: `${origin}/settings/billing?checkout=canceled`,
+    metadata: { businessId: user.businessId },
   });
   redirect(checkoutUrl);
 }
