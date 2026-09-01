@@ -2,13 +2,14 @@
 
 import { cookies, headers } from "next/headers";
 import { createSessionToken, hashPasscode, SESSION_COOKIE_NAME } from "@/lib/auth";
-import { createBusiness, setStripeCustomerId } from "@/lib/data/businesses";
+import { createBusiness, setStripeCustomerId, updateSubscriptionFromStripe } from "@/lib/data/businesses";
 import { sendWelcomeEmail } from "@/lib/email";
 import {
   createCheckoutSession,
   createFreeSubscription,
   createStripeCustomer,
   resolveFreeForeverPromotionCode,
+  toSubscriptionStatus,
 } from "@/lib/stripe";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import type { BillingInterval, BusinessTier } from "@/lib/types";
@@ -103,12 +104,26 @@ export async function signup(
   // where allow_promotion_codes lets the customer enter it there instead.
   const promotionCodeId = couponCode ? await resolveFreeForeverPromotionCode(couponCode) : null;
   if (promotionCodeId) {
-    await createFreeSubscription({
+    const subscription = await createFreeSubscription({
       businessId,
       customerId: stripeCustomerId,
       tier,
       interval,
       promotionCodeId,
+    });
+    // Sync the business row ourselves instead of waiting on the webhook:
+    // this redirects straight back into the (app) layout's billing gate on
+    // the very next request, with no Stripe-hosted page in between to buy
+    // the webhook's network round trip time to land first (unlike the
+    // Checkout flow, where filling out a card form gives it that time).
+    // Without this, the gate would see subscriptionStatus still null and
+    // block the workspace until the webhook eventually caught up.
+    await updateSubscriptionFromStripe(businessId, {
+      stripeSubscriptionId: subscription.id,
+      subscriptionStatus: toSubscriptionStatus(subscription.status),
+      tier,
+      billingInterval: interval,
+      trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
     });
     try {
       await sendWelcomeEmail(ownerEmail, ownerName, businessName, `${origin}/login`);

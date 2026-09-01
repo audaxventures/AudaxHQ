@@ -1,31 +1,10 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { stripe, tierForPriceId, intervalForPriceId } from "@/lib/stripe";
+import { stripe, tierForPriceId, intervalForPriceId, toSubscriptionStatus } from "@/lib/stripe";
 import { findBusinessByStripeCustomerId, getBusiness, updateSubscriptionFromStripe } from "@/lib/data/businesses";
 import { sendWelcomeEmail } from "@/lib/email";
-import type { SubscriptionStatus } from "@/lib/types";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-/** Narrows Stripe's own (wider) status set down to the four we actually store/gate on — see migration 042's check constraint. */
-function toSubscriptionStatus(stripeStatus: Stripe.Subscription.Status): SubscriptionStatus {
-  switch (stripeStatus) {
-    case "trialing":
-      return "trialing";
-    case "active":
-      return "active";
-    case "past_due":
-    case "unpaid":
-    case "incomplete":
-      return "past_due";
-    case "canceled":
-    case "incomplete_expired":
-    case "paused":
-      return "canceled";
-    default:
-      return "canceled";
-  }
-}
 
 /** businessId always comes off subscription_data.metadata (set at Checkout time in createCheckoutSession) — a stripe_customer_id lookup is only a fallback for subscriptions that somehow lack it. */
 async function resolveBusinessId(subscription: Stripe.Subscription): Promise<string | null> {

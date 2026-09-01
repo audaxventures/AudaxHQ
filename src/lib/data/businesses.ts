@@ -219,9 +219,15 @@ export async function setStripeCustomerId(businessId: string, stripeCustomerId: 
 }
 
 /**
- * The only writer of subscription state — called exclusively from the
- * Stripe webhook handler (src/app/api/webhooks/stripe/route.ts), never
- * from a client-facing action, since these fields gate access to the app.
+ * The only writer of subscription state. Called from the Stripe webhook
+ * handler (src/app/api/webhooks/stripe/route.ts) for every normal
+ * subscription change, and once more from the free-coupon signup path
+ * (src/app/signup/actions.ts) — that path can't wait on the webhook's
+ * network round trip before redirecting into the app, so it syncs the
+ * Stripe Subscription object it just created (not client-supplied data)
+ * onto the business row itself. Never call this with status derived from
+ * anything a client sent directly, since these fields gate access to the
+ * app.
  */
 export async function updateSubscriptionFromStripe(
   businessId: string,
