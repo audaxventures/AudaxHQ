@@ -79,6 +79,58 @@ export async function createCheckoutSession(input: {
   return session.url;
 }
 
+/**
+ * Looks up a customer-entered code against Stripe's Promotion Codes and
+ * returns its id only if it resolves to an active, redeemable coupon that
+ * is 100% off forever — the one case signup skips Checkout (and card
+ * collection) for entirely. Any other code (partial discount, limited
+ * duration, expired, unknown) returns null so the caller falls back to the
+ * normal card-collecting Checkout flow, where allow_promotion_codes lets
+ * the customer enter it there instead.
+ */
+export async function resolveFreeForeverPromotionCode(code: string): Promise<string | null> {
+  const trimmed = code.trim();
+  if (!trimmed) return null;
+  const result = await stripe.promotionCodes.list({
+    code: trimmed,
+    active: true,
+    limit: 1,
+    expand: ["data.promotion.coupon"],
+  });
+  const promotionCode = result.data[0];
+  if (!promotionCode) return null;
+  const coupon = promotionCode.promotion.coupon;
+  if (!coupon || typeof coupon === "string") return null;
+  if (!coupon.valid || coupon.percent_off !== 100 || coupon.duration !== "forever") return null;
+  return promotionCode.id;
+}
+
+/**
+ * Creates a subscription directly against the Stripe API, bypassing
+ * Checkout — the only case that's safe for is a verified 100%-off-forever
+ * promotion code (see resolveFreeForeverPromotionCode): every invoice this
+ * subscription ever generates is fully discounted, so Stripe never needs a
+ * card on file. No trial_period_days here (unlike createCheckoutSession) —
+ * the subscription goes straight to "active" rather than "trialing", since
+ * there's no future charge for the billing UI to warn about. The webhook's
+ * customer.subscription.created handler is what syncs this onto the
+ * business row, same as every other subscription change.
+ */
+export async function createFreeSubscription(input: {
+  businessId: string;
+  customerId: string;
+  tier: BusinessTier;
+  interval: BillingInterval;
+  promotionCodeId: string;
+}): Promise<Stripe.Subscription> {
+  return stripe.subscriptions.create({
+    customer: input.customerId,
+    items: [{ price: priceIdFor(input.tier, input.interval) }],
+    discounts: [{ promotion_code: input.promotionCodeId }],
+    metadata: { businessId: input.businessId },
+  });
+}
+
 /** Stripe's hosted self-serve page for upgrading/downgrading tier, switching monthly/annual, updating a card, or canceling — used by the "Manage billing" button on Settings > Billing. */
 export async function createPortalSession(customerId: string, returnUrl: string): Promise<string> {
   const session = await stripe.billingPortal.sessions.create({
