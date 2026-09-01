@@ -50,30 +50,41 @@ export async function createStripeCustomer(businessId: string, email: string, na
  * immediately, card is collected upfront (converts better than a
  * card-free trial and avoids a second "come back and pay" flow), and
  * promo codes are enabled so the discount-code field shows up for free.
- * The webhook (checkout.session.completed / customer.subscription.updated)
- * is what actually syncs tier/subscription_status onto the business row —
- * this only ever redirects the browser to Stripe's hosted page.
+ *
+ * Two callers, two shapes: an existing workspace restarting/switching its
+ * subscription (settings/actions.ts's startSubscriptionCheckout) already
+ * has a Stripe customer and passes customerId with { businessId } metadata;
+ * a brand-new signup (signup/actions.ts) has no business row yet — on
+ * purpose, see the comment there — so it passes customerEmail instead
+ * (Stripe creates the Customer itself once Checkout completes) along with
+ * the pending signup's own fields as metadata. Either way, this only ever
+ * redirects the browser to Stripe's hosted page; nothing here writes to
+ * our database. What happens after Checkout completes depends on which
+ * metadata shape success_url's handler finds — see
+ * provisionBusinessFromCheckoutSession (new signup) vs. the webhook's
+ * plain syncSubscription (existing workspace).
  */
 export async function createCheckoutSession(input: {
-  businessId: string;
-  customerId: string;
   tier: BusinessTier;
   interval: BillingInterval;
   successUrl: string;
   cancelUrl: string;
+  metadata: Record<string, string>;
+  customerId?: string;
+  customerEmail?: string;
 }): Promise<string> {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer: input.customerId,
+    ...(input.customerId ? { customer: input.customerId } : { customer_email: input.customerEmail }),
     line_items: [{ price: priceIdFor(input.tier, input.interval), quantity: 1 }],
     subscription_data: {
       trial_period_days: TRIAL_PERIOD_DAYS,
-      metadata: { businessId: input.businessId },
+      metadata: input.metadata,
     },
     allow_promotion_codes: true,
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
-    metadata: { businessId: input.businessId },
+    metadata: input.metadata,
   });
   if (!session.url) throw new Error("Stripe did not return a Checkout URL.");
   return session.url;

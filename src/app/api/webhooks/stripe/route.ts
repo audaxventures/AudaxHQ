@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe, tierForPriceId, intervalForPriceId, toSubscriptionStatus } from "@/lib/stripe";
 import { findBusinessByStripeCustomerId, getBusiness, updateSubscriptionFromStripe } from "@/lib/data/businesses";
+import { provisionBusinessFromCheckoutSession } from "@/lib/signupFulfillment";
 import { sendWelcomeEmail } from "@/lib/email";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -79,6 +80,20 @@ export async function POST(request: Request): Promise<NextResponse> {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription" && typeof session.subscription === "string") {
           const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          const host = request.headers.get("host");
+          const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
+          const loginUrl = `${protocol}://${host}/login`;
+
+          // A brand-new signup (signup/actions.ts) never created a business
+          // row up front — this is the backup path that provisions one from
+          // the session's pending-signup metadata in case the browser never
+          // made it back to api/signup/complete (closed tab, network drop).
+          // Returns null for every other kind of session (e.g. an existing
+          // workspace's startSubscriptionCheckout), which falls through to
+          // the plain sync path below exactly as before.
+          const provisionedBusinessId = await provisionBusinessFromCheckoutSession(session, subscription, loginUrl);
+          if (provisionedBusinessId) break;
+
           const businessId = await syncSubscription(subscription);
           // Fires exactly here, not at signup — this is the first point a
           // trial has actually started (card confirmed, Checkout completed),
@@ -88,9 +103,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (businessId) {
             try {
               const business = await getBusiness(businessId);
-              const host = request.headers.get("host");
-              const protocol = host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https";
-              await sendWelcomeEmail(business.ownerEmail, business.ownerName, business.name, `${protocol}://${host}/login`);
+              await sendWelcomeEmail(business.ownerEmail, business.ownerName, business.name, loginUrl);
             } catch (e) {
               console.error("Failed to send welcome email:", e);
             }
