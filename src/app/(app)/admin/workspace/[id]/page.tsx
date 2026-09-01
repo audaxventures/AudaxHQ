@@ -72,6 +72,9 @@ export default async function AdminWorkspaceDetailPage({ params }: { params: Pro
 
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-navy-100 bg-cream-50 px-4 py-3">
           <SubscriptionStatusBadge status={workspace.subscriptionStatus} />
+          {workspace.signupCouponCode && (
+            <Badge tone="violet">Free via coupon: {workspace.signupCouponCode}</Badge>
+          )}
           {workspace.billingInterval && (
             <span className="text-xs text-navy-500">{workspace.billingInterval === "annual" ? "Billed annually" : "Billed monthly"}</span>
           )}

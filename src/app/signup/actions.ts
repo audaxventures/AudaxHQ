@@ -2,7 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { createSessionToken, hashPasscode, SESSION_COOKIE_NAME } from "@/lib/auth";
-import { createBusiness, setStripeCustomerId, updateSubscriptionFromStripe } from "@/lib/data/businesses";
+import { createBusiness, setSignupCouponCode, setStripeCustomerId, updateSubscriptionFromStripe } from "@/lib/data/businesses";
 import { lookupAccountEmail } from "@/lib/data/accountEmails";
 import { sendWelcomeEmail } from "@/lib/email";
 import {
@@ -81,8 +81,8 @@ export async function signup(
   // workspace immediately, right here, and skips Stripe Checkout (and card
   // collection) entirely. Every other signup — see the paid branch below —
   // provisions nothing at all until Checkout actually completes.
-  const promotionCodeId = couponCode ? await resolveFreeForeverPromotionCode(couponCode) : null;
-  if (promotionCodeId) {
+  const freeCoupon = couponCode ? await resolveFreeForeverPromotionCode(couponCode) : null;
+  if (freeCoupon) {
     let businessId: string;
     try {
       const business = await createBusiness({
@@ -101,6 +101,16 @@ export async function signup(
       throw e;
     }
 
+    // Best-effort: this is what tells the admin dashboard a complimentary
+    // account apart from a real paying customer (see setSignupCouponCode's
+    // comment) — worth logging loudly if it fails, but never worth failing
+    // the signup itself over.
+    try {
+      await setSignupCouponCode(businessId, freeCoupon.code);
+    } catch (e) {
+      console.error("Failed to record signup coupon code:", e);
+    }
+
     const stripeCustomerId = await createStripeCustomer(businessId, ownerEmail, businessName);
     await setStripeCustomerId(businessId, stripeCustomerId);
 
@@ -109,7 +119,7 @@ export async function signup(
       customerId: stripeCustomerId,
       tier,
       interval,
-      promotionCodeId,
+      promotionCodeId: freeCoupon.id,
     });
     // Sync the business row ourselves instead of waiting on the webhook:
     // this redirects straight back into the (app) layout's billing gate on
