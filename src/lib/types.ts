@@ -167,6 +167,8 @@ export interface NoteFolder {
   id: string;
   name: string;
   parentId: string | null;
+  /** Picked colour (migration 053) — null uses the automatic colour from the folder's name. Never teal. */
+  color: EntityColor | null;
 }
 
 /** Whose action item this is — 'TEAM' shows up on the workspace's own to-do board; 'EXTERNAL' is the client/lead's own commitment and stays attached to the meeting note only. */

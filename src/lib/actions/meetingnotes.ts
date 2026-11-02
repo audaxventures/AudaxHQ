@@ -10,7 +10,8 @@ import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
 import { sendMeetingNotePdfEmail } from "@/lib/email";
 import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
 import { meetingNotePdfFilename } from "@/lib/pdf/filename";
-import type { CurrentUser, MeetingNote, TaskOwner } from "@/lib/types";
+import { FOLDER_COLORS } from "@/components/meetingnotes/noteColors";
+import type { CurrentUser, EntityColor, MeetingNote, TaskOwner } from "@/lib/types";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null, partnerId?: string | null) {
   revalidatePath("/meeting-notes");
@@ -365,6 +366,13 @@ export async function renameNoteFolder(id: string, name: string) {
   const trimmed = name.trim().slice(0, 80);
   if (!trimmed) return;
   await meetingNotes.renameNoteFolder(id, user.businessId, selfId(user), trimmed);
+  revalidatePath("/meeting-notes");
+}
+
+export async function setNoteFolderColor(id: string, color: EntityColor | null) {
+  const user = await requireCurrentUser();
+  if (color !== null && !FOLDER_COLORS.includes(color)) throw new Error("That colour isn't available for folders.");
+  await meetingNotes.setNoteFolderColor(id, user.businessId, selfId(user), color);
   revalidatePath("/meeting-notes");
 }
 

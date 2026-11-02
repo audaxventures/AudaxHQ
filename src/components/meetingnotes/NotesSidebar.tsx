@@ -3,11 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Folder, FolderPlus, MoreHorizontal, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Folder, FolderPlus, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { createNoteFolder, deleteNoteFolder, renameNoteFolder } from "@/lib/actions/meetingnotes";
+import { createNoteFolder, deleteNoteFolder, renameNoteFolder, setNoteFolderColor } from "@/lib/actions/meetingnotes";
 import { orderFolders } from "@/components/meetingnotes/NoteFields";
-import { HUES, VIEW_HUES, hueFor, type HueClasses } from "@/components/meetingnotes/noteColors";
+import { FOLDER_COLORS, HUES, VIEW_HUES, folderHue, hueFor, type HueClasses } from "@/components/meetingnotes/noteColors";
+import { ENTITY_COLOR_LABELS, type EntityColor } from "@/lib/types";
 import { VIEW_META, notesHref, type NotesCounts, type NotesView } from "@/components/meetingnotes/notesNav";
 import type { NoteFolder } from "@/lib/types";
 
@@ -102,6 +103,11 @@ function NotesLibrary({
     startTransition(() => renameNoteFolder(folder.id, name));
   }
 
+  function recolor(folder: NoteFolder, color: EntityColor | null) {
+    setMenuFor(null);
+    startTransition(() => setNoteFolderColor(folder.id, color));
+  }
+
   function remove(folder: NoteFolder) {
     setMenuFor(null);
     const hasChildren = folders.some((f) => f.parentId === folder.id);
@@ -172,7 +178,7 @@ function NotesLibrary({
                 href={notesHref(current, { folder: folder.id, view: undefined })}
                 active={current.folder === folder.id}
                 icon={Folder}
-                hue={hueFor(folder.name)}
+                hue={folderHue(folder)}
                 label={folder.name}
                 count={counts.folders[folder.id] ?? 0}
                 indent={depth === 1}
@@ -187,7 +193,36 @@ function NotesLibrary({
                     <MoreHorizontal size={14} />
                   </button>
                   {menuFor === folder.id && (
-                    <div className="absolute right-0 z-20 mt-1 w-40 rounded-lg border border-navy-100 bg-white py-1 text-sm text-navy-700 shadow-lg">
+                    <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-navy-100 bg-white py-1 text-sm text-navy-700 shadow-lg">
+                      <div className="border-b border-navy-100 px-3 pb-2.5 pt-1.5">
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-navy-400">Colour</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => recolor(folder, null)}
+                            title="Automatic"
+                            aria-label="Automatic colour"
+                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-dashed border-navy-300 bg-cream-50 text-navy-500"
+                          >
+                            {!folder.color && <Check size={12} />}
+                          </button>
+                          {FOLDER_COLORS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => recolor(folder, c)}
+                              title={ENTITY_COLOR_LABELS[c]}
+                              aria-label={ENTITY_COLOR_LABELS[c]}
+                              className={cn(
+                                "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-white transition-transform hover:scale-110",
+                                HUES[c].solid
+                              )}
+                            >
+                              {folder.color === c && <Check size={12} strokeWidth={3} />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       {depth === 0 && (
                         <button
                           type="button"
@@ -313,6 +348,7 @@ export function NotesMobileNav({
   activeView,
   showPartners,
   activeFolderName,
+  activeFolderColorClass,
 }: {
   folders: NoteFolder[];
   counts: NotesCounts;
@@ -320,6 +356,8 @@ export function NotesMobileNav({
   activeView: NotesView | null;
   showPartners: boolean;
   activeFolderName: string | null;
+  /** Text colour class for the open folder's icon. */
+  activeFolderColorClass?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -352,7 +390,7 @@ export function NotesMobileNav({
           className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-sm text-navy-700"
           aria-expanded={open}
         >
-          <Folder size={15} className={activeFolderName ? hueFor(activeFolderName).text : "text-navy-400"} />
+          <Folder size={15} className={activeFolderColorClass ?? "text-navy-400"} />
           <span className="font-medium">{activeFolderName ?? "Folders & tags"}</span>
           <ChevronDown size={15} className={cn("ml-auto text-navy-400 transition-transform", open && "rotate-180")} />
         </button>

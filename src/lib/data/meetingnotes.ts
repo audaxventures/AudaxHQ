@@ -268,26 +268,31 @@ export async function deleteMeetingNote(id: string, businessId: string): Promise
 // Folders and tags — personal to each person (teamMemberId null = owner).
 // ---------------------------------------------------------------------------
 
-export async function listNoteFolders(businessId: string, teamMemberId: string | null): Promise<NoteFolder[]> {
-  const rows = await sql`
-    select id, name, parent_id from note_folders
-    where business_id = ${businessId} and team_member_id is not distinct from ${teamMemberId}::uuid
-    order by lower(name) asc
-  `;
-  return (rows as Record<string, unknown>[]).map((r) => ({
+function mapFolder(r: Record<string, unknown>): NoteFolder {
+  return {
     id: r.id as string,
     name: r.name as string,
     parentId: (r.parent_id as string | null) ?? null,
-  }));
+    color: (r.color as EntityColor | null) ?? null,
+  };
+}
+
+export async function listNoteFolders(businessId: string, teamMemberId: string | null): Promise<NoteFolder[]> {
+  const rows = await sql`
+    select id, name, parent_id, color from note_folders
+    where business_id = ${businessId} and team_member_id is not distinct from ${teamMemberId}::uuid
+    order by lower(name) asc
+  `;
+  return (rows as Record<string, unknown>[]).map(mapFolder);
 }
 
 export async function getNoteFolder(id: string, businessId: string, teamMemberId: string | null): Promise<NoteFolder | null> {
   const rows = await sql`
-    select id, name, parent_id from note_folders
+    select id, name, parent_id, color from note_folders
     where id = ${id} and business_id = ${businessId} and team_member_id is not distinct from ${teamMemberId}::uuid
   `;
   const r = rows[0] as Record<string, unknown> | undefined;
-  return r ? { id: r.id as string, name: r.name as string, parentId: (r.parent_id as string | null) ?? null } : null;
+  return r ? mapFolder(r) : null;
 }
 
 export async function createNoteFolder(
@@ -307,6 +312,18 @@ export async function createNoteFolder(
 export async function renameNoteFolder(id: string, businessId: string, teamMemberId: string | null, name: string): Promise<void> {
   await sql`
     update note_folders set name = ${name}
+    where id = ${id} and business_id = ${businessId} and team_member_id is not distinct from ${teamMemberId}::uuid
+  `;
+}
+
+export async function setNoteFolderColor(
+  id: string,
+  businessId: string,
+  teamMemberId: string | null,
+  color: EntityColor | null
+): Promise<void> {
+  await sql`
+    update note_folders set color = ${color}
     where id = ${id} and business_id = ${businessId} and team_member_id is not distinct from ${teamMemberId}::uuid
   `;
 }
