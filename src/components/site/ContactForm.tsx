@@ -1,17 +1,20 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { submitContactForm, type ContactFormState } from "@/lib/actions/contact";
+import { TurnstileWidget } from "@/components/site/TurnstileWidget";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 const initialState: ContactFormState = { success: false, error: null };
 
-function SubmitButton() {
+function SubmitButton({ blocked }: { blocked: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || blocked}
       className="w-full cursor-pointer rounded-xl bg-burnt-500 px-4 py-3.5 text-sm font-semibold text-cream-50 transition-colors hover:bg-burnt-400 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {pending ? "Sending…" : "Send message"}
@@ -21,6 +24,8 @@ function SubmitButton() {
 
 export function ContactForm() {
   const [state, formAction] = useActionState(submitContactForm, initialState);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const needsTurnstile = Boolean(TURNSTILE_SITE_KEY);
 
   if (state.success) {
     return (
@@ -75,12 +80,17 @@ export function ContactForm() {
           placeholder="Tell us a bit about your business and what you're looking for…"
         />
       </div>
+      {needsTurnstile && (
+        // resetKey={state}: each submit returns a new state object, so a failed
+        // submit gets a fresh token (Turnstile tokens are single-use).
+        <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} resetKey={state} onTokenChange={setTurnstileToken} />
+      )}
       {state.error && (
         <p className="text-sm text-brick-600" role="alert">
           {state.error}
         </p>
       )}
-      <SubmitButton />
+      <SubmitButton blocked={needsTurnstile && !turnstileToken} />
     </form>
   );
 }
