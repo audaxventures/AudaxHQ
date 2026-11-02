@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
+import { BackLink } from "@/components/ui/BackLink";
 import { NewMeetingNoteForm } from "@/components/meetingnotes/NewMeetingNoteForm";
 import { listClients } from "@/lib/data/clients";
 import { listLeads } from "@/lib/data/leads";
@@ -29,25 +29,28 @@ export default async function NewMeetingNotePage({
   const defaultFolderId =
     folders.some((f) => f.id === sp.folder) && !folders.some((f) => f.parentId === sp.folder) ? sp.folder : null;
 
+  // Back/Cancel return to the folder this was opened from, if any.
+  const backHref = folders.some((f) => f.id === sp.folder) ? `/meeting-notes?folder=${sp.folder}` : "/meeting-notes";
+
   return (
     <div>
+      <BackLink href={backHref} label="Back to notes" />
       <PageHeader
         eyebrow="Notes"
         title="New note"
-        description="Write a private note, or log a meeting with a client or lead."
+        description="Capture a private note, or log a meeting with a client or lead."
       />
-      <Card className="p-6 max-w-3xl">
-        <NewMeetingNoteForm
-          clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
-          leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
-          defaultTimezone={user.business.timezone}
-          folders={folders}
-          knownTags={knownTags}
-          todoTypes={todoTypes.map((t) => ({ id: t.id, name: t.name }))}
-          today={todayDateStr(user.business.timezone)}
-          defaultFolderId={defaultFolderId}
-        />
-      </Card>
+      <NewMeetingNoteForm
+        clients={clients.map((c) => ({ id: c.id, companyName: c.companyName }))}
+        leads={leads.map((l) => ({ id: l.id, companyName: l.companyName }))}
+        defaultTimezone={user.business.timezone}
+        folders={folders}
+        knownTags={knownTags}
+        todoTypes={todoTypes.map((t) => ({ id: t.id, name: t.name }))}
+        today={todayDateStr(user.business.timezone)}
+        defaultFolderId={defaultFolderId}
+        cancelHref={backHref}
+      />
     </div>
   );
 }
