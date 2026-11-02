@@ -24,7 +24,12 @@ export function orderFolders(folders: NoteFolder[]): { folder: NoteFolder; depth
   return out;
 }
 
-/** Folder + tags pickers. Both are personal to whoever is signed in. */
+/**
+ * Folder + tags pickers. Both are personal to whoever is signed in. A
+ * folder with subfolders shows as a heading only — notes go in its
+ * subfolders. A note already sitting directly in one (from before its
+ * first subfolder was added) keeps that option so saving doesn't move it.
+ */
 export function NoteOrganizeFields({
   folders,
   knownTags,
@@ -42,14 +47,31 @@ export function NoteOrganizeFields({
         <Label htmlFor="note-folder">Folder</Label>
         <Select id="note-folder" name="folderId" defaultValue={defaultFolderId ?? ""} icon={Folder}>
           <option value="">No folder</option>
-          {orderFolders(folders).map(({ folder }) => {
-            const parent = folder.parentId ? folders.find((f) => f.id === folder.parentId) : null;
-            return (
-              <option key={folder.id} value={folder.id}>
-                {parent ? `${parent.name} / ${folder.name}` : folder.name}
-              </option>
-            );
-          })}
+          {folders
+            .filter((f) => !f.parentId)
+            .map((top) => {
+              const children = folders.filter((f) => f.parentId === top.id);
+              if (children.length === 0) {
+                return (
+                  <option key={top.id} value={top.id}>
+                    {top.name}
+                  </option>
+                );
+              }
+              // A folder with subfolders is for sorting only — notes go in its subfolders.
+              return (
+                <optgroup key={top.id} label={top.name}>
+                  {defaultFolderId === top.id && (
+                    <option value={top.id}>{top.name} (pick a subfolder)</option>
+                  )}
+                  {children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
         </Select>
       </FieldGroup>
       <FieldGroup className="min-w-0">
