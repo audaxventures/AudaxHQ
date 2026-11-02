@@ -102,8 +102,8 @@ export function NotesSidebar({
     setMenuFor(null);
     const hasChildren = folders.some((f) => f.parentId === folder.id);
     const message = hasChildren
-      ? `Delete "${folder.name}" and its subfolders? The notes inside won't be deleted — they'll just be unfiled.`
-      : `Delete "${folder.name}"? The notes inside won't be deleted — they'll just be unfiled.`;
+      ? `Delete "${folder.name}" and its subfolders? The notes inside won't be deleted — they'll just be taken out of the folder.`
+      : `Delete "${folder.name}"? The notes inside won't be deleted — they'll just be taken out of the folder.`;
     if (!confirm(message)) return;
     startTransition(async () => {
       await deleteNoteFolder(folder.id);
