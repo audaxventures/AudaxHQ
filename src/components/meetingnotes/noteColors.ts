@@ -4,7 +4,9 @@
  * class strings so Tailwind's compiler can find them.
  */
 
-export type NoteHue = "navy" | "teal" | "burnt" | "sage" | "violet" | "gold" | "blue" | "rose";
+import type { EntityColor, NoteFolder } from "@/lib/types";
+
+export type NoteHue = EntityColor;
 
 export interface HueClasses {
   /** Coloured icon/text. */
@@ -26,7 +28,12 @@ export const HUES: Record<NoteHue, HueClasses> = {
   gold: { text: "text-gold-600", soft: "bg-gold-100", chip: "bg-gold-100 text-gold-600", solid: "bg-gold-600" },
   blue: { text: "text-blue-600", soft: "bg-blue-100", chip: "bg-blue-100 text-blue-600", solid: "bg-blue-600" },
   rose: { text: "text-rose-600", soft: "bg-rose-100", chip: "bg-rose-100 text-rose-600", solid: "bg-rose-600" },
+  slate: { text: "text-slate-600", soft: "bg-slate-100", chip: "bg-slate-100 text-slate-600", solid: "bg-slate-600" },
+  brick: { text: "text-brick-600", soft: "bg-brick-100", chip: "bg-brick-100 text-brick-600", solid: "bg-brick-600" },
 };
+
+/** Colours a folder can be given — everything except teal, which marks private notes. Matches the check in migration 053. */
+export const FOLDER_COLORS: EntityColor[] = ["navy", "slate", "blue", "sage", "burnt", "gold", "brick", "rose", "violet"];
 
 /** Matches the client/lead/partner badge tones used elsewhere in the app (sage / violet / gold). */
 export const VIEW_HUES = {
@@ -46,4 +53,9 @@ export function hueFor(name: string): HueClasses {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return HUES[NAME_HUES[hash % NAME_HUES.length]];
+}
+
+/** A folder's picked colour, or the automatic one from its name. */
+export function folderHue(folder: Pick<NoteFolder, "name" | "color">): HueClasses {
+  return folder.color ? HUES[folder.color] : hueFor(folder.name);
 }

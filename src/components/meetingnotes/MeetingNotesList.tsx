@@ -10,7 +10,7 @@ import { entityColorChipClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
 import type { MeetingNote, NoteFolder } from "@/lib/types";
 import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
-import { hueFor } from "@/components/meetingnotes/noteColors";
+import { folderHue, hueFor } from "@/components/meetingnotes/noteColors";
 
 /** Notes arrive already sorted by date (either direction), so consecutive same-month runs group cleanly without re-sorting. */
 function groupByMonth(notes: MeetingNote[]): { month: string; notes: MeetingNote[] }[] {
@@ -49,7 +49,7 @@ export function MeetingNotesList({
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
   const groups = groupByMonth(notes);
-  const folderNames = new Map((organize?.folders ?? []).map((f) => [f.id, f.name]));
+  const foldersById = new Map((organize?.folders ?? []).map((f) => [f.id, f]));
 
   return (
     <>
@@ -64,7 +64,7 @@ export function MeetingNotesList({
             </div>
             <Card className="divide-y divide-navy-100/80 overflow-hidden bg-white">
               {group.notes.map((note) => {
-                const folderName = note.folderId ? folderNames.get(note.folderId) : undefined;
+                const folder = note.folderId ? foldersById.get(note.folderId) : undefined;
                 const preview = note.notes ?? note.agenda ?? "";
                 return (
                   <button
@@ -109,14 +109,14 @@ export function MeetingNotesList({
                             {note.ownerName}
                           </span>
                         )}
-                        {folderName && (
+                        {folder && (
                           <span
                             className={cn(
                               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                              hueFor(folderName).chip
+                              folderHue(folder).chip
                             )}
                           >
-                            <Folder size={10} /> {folderName}
+                            <Folder size={10} /> {folder.name}
                           </span>
                         )}
                         {note.tags?.map((t) => (

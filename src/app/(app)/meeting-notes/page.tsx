@@ -8,7 +8,7 @@ import { MeetingNotesList } from "@/components/meetingnotes/MeetingNotesList";
 import { NotesMobileNav, NotesSidebar } from "@/components/meetingnotes/NotesSidebar";
 import { NotesToolbar, type OwnerPicker } from "@/components/meetingnotes/NotesToolbar";
 import { DATE_RANGES, VIEW_META, notesHref, type DateRange, type NotesView } from "@/components/meetingnotes/notesNav";
-import { HUES, VIEW_HUES, hueFor } from "@/components/meetingnotes/noteColors";
+import { HUES, VIEW_HUES, folderHue } from "@/components/meetingnotes/noteColors";
 import { listMeetingNotes, listNoteFolders, noteViewerFor } from "@/lib/data/meetingnotes";
 import { listTodoTypes } from "@/lib/data/todoTypes";
 import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
@@ -195,7 +195,7 @@ export default async function MeetingNotesPage({
   const newNoteHref = folder ? `/meeting-notes/new?folder=${folder.id}` : "/meeting-notes/new";
   const knownTags = counts.tags.map((t) => t.name);
 
-  const headingHue = folder ? hueFor(folder.name) : HUES[VIEW_HUES[view]];
+  const headingHue = folder ? folderHue(folder) : HUES[VIEW_HUES[view]];
   const HeadingIcon = folder ? Folder : VIEW_META[view].icon;
   const empty = folder
     ? { title: "Nothing in this folder yet", description: "File a note here from its edit screen, or start a new one." }
@@ -224,6 +224,7 @@ export default async function MeetingNotesPage({
           activeView={activeView}
           showPartners={viewer.canSeePartners}
           activeFolderName={folder ? (parentFolder ? `${parentFolder.name} › ${folder.name}` : folder.name) : null}
+          activeFolderColorClass={folder ? folderHue(folder).text : undefined}
         />
       </div>
 
