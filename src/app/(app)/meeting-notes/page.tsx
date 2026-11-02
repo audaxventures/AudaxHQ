@@ -216,7 +216,7 @@ export default async function MeetingNotesPage({
         tone="burnt"
         eyebrow="Notes"
         title="Notes"
-        description="Meeting notes, board notes, and everything in between"
+        description="Capture ideas, meeting notes and key information"
         action={
           <LinkButton href={newNoteHref}>
             <Plus size={16} /> New note

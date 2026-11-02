@@ -35,14 +35,17 @@ export function NoteOrganizeFields({
   knownTags,
   defaultFolderId,
   defaultTags,
+  stacked = false,
 }: {
   folders: NoteFolder[];
   knownTags: string[];
   defaultFolderId?: string | null;
   defaultTags?: string[];
+  /** One field per row — for narrow side panels. */
+  stacked?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className={stacked ? "space-y-4" : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
       <FieldGroup className="min-w-0">
         <Label htmlFor="note-folder">Folder</Label>
         <Select id="note-folder" name="folderId" defaultValue={defaultFolderId ?? ""} icon={Folder}>
