@@ -127,6 +127,15 @@ export async function countTimeEntries(id: string, businessId: string): Promise<
  * dropping cost history.
  */
 export async function deleteTeamMemberPermanently(id: string, businessId: string): Promise<void> {
+  // Their private notes (migration 052) would cascade anyway, but Postgres
+  // can't null out todos.meeting_note_id and todos.created_by_team_member_id
+  // on the same to-do within one cascade — so a private note with action
+  // items blocks the delete. Removing the notes first avoids that.
+  await sql`
+    delete from meeting_notes
+    where business_id = ${businessId} and author_team_member_id = ${id}
+      and client_id is null and lead_id is null and partner_id is null
+  `;
   await sql`delete from team_members where id = ${id} and business_id = ${businessId}`;
 }
 

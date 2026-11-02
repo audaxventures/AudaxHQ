@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMeetingNoteById } from "@/lib/data/meetingnotes";
-import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
+import { getMeetingNoteById, noteViewerFor } from "@/lib/data/meetingnotes";
 import { getCurrentUser, isBillingBlocked } from "@/lib/currentUser";
 import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
 import { meetingNotePdfFilename } from "@/lib/pdf/filename";
@@ -13,8 +12,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!user || isBillingBlocked(user.business.subscriptionStatus)) return new NextResponse("Not authorized", { status: 403 });
 
   const { id } = await params;
-  const accessibleClientIds = await accessibleClientIdsFor(user);
-  const note = await getMeetingNoteById(id, user.businessId, { accessibleClientIds });
+  const note = await getMeetingNoteById(id, user.businessId, await noteViewerFor(user));
   if (!note) return new NextResponse("Not found", { status: 404 });
 
   const pdf = await renderMeetingNotePdf(note, { name: user.business.name, logoUrl: user.business.logoUrl });

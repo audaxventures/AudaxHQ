@@ -18,8 +18,8 @@ export const QUICK_ACTIONS: QuickAction[] = [
   { href: "/tracker?logTime=1", label: "Log Time", icon: Clock, iconClasses: "bg-blue-100 text-blue-600" },
   {
     href: "/meeting-notes/new",
-    label: "Create Meeting Note",
-    shortLabel: "Meeting Note",
+    label: "Create Note",
+    shortLabel: "Note",
     icon: NotebookPen,
     iconClasses: "bg-gold-100 text-gold-600",
   },

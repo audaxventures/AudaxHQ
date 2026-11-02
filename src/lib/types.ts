@@ -154,6 +154,19 @@ export interface MeetingNote {
   /** Last time this note's branded PDF was emailed out, and to whom — null until the first send. */
   lastEmailedTo: string | null;
   lastEmailedAt: string | null;
+  /** True when the note has no client/lead/partner — only its author can see it (see migration 052). */
+  isPrivate: boolean;
+  /** The viewer's own folder for this note (folders are personal) — only present when listed for a specific viewer. */
+  folderId?: string | null;
+  /** The viewer's own tags on this note (tags are personal) — only present when listed for a specific viewer. */
+  tags?: string[];
+}
+
+/** A personal note folder — see migration 052. parentId is set on subfolders (one level of nesting only). */
+export interface NoteFolder {
+  id: string;
+  name: string;
+  parentId: string | null;
 }
 
 /** Whose action item this is — 'TEAM' shows up on the workspace's own to-do board; 'EXTERNAL' is the client/lead's own commitment and stays attached to the meeting note only. */

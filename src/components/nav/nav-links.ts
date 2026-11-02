@@ -9,7 +9,7 @@ export const NAV_LINKS = [
   { href: "/prospects", label: "Prospects", icon: "prospects", group: "Pipeline" },
   { href: "/leads", label: "Leads", icon: "leads", group: "Pipeline" },
   { href: "/lead-analytics", label: "Insights", icon: "leadAnalytics", group: "Pipeline" },
-  { href: "/meeting-notes", label: "Meeting Notes", tabLabel: "Notes", icon: "meetingNotes", group: "Operations" },
+  { href: "/meeting-notes", label: "Notes", tabLabel: "Notes", icon: "meetingNotes", group: "Operations" },
   // Calendar is intentionally left out of the sidebar for now — the page
   // and route are still live, just not linked, while we figure out
   // whether/how we want to use it. Remove this comment and re-add the

@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import * as meetingNotes from "@/lib/data/meetingnotes";
 import * as todos from "@/lib/data/todos";
+import * as todoTypes from "@/lib/data/todoTypes";
 import { requireClientAccess, requireLeadAccess, requirePartnerAccess, requireCurrentUser } from "@/lib/currentUser";
-import { accessibleClientIdsFor } from "@/lib/data/clientAccess";
 import { sanitizeRichText, isRichTextEmpty } from "@/lib/richtext";
 import { sendMeetingNotePdfEmail } from "@/lib/email";
 import { renderMeetingNotePdf } from "@/lib/pdf/meetingNotePdf";
 import { meetingNotePdfFilename } from "@/lib/pdf/filename";
-import type { CurrentUser, TaskOwner } from "@/lib/types";
+import type { CurrentUser, MeetingNote, TaskOwner } from "@/lib/types";
 
 function revalidateOwner(clientId?: string | null, leadId?: string | null, partnerId?: string | null) {
   revalidatePath("/meeting-notes");
@@ -93,15 +93,26 @@ function parseActionItems(formData: FormData): QueuedActionItem[] {
   }
 }
 
-/** Turns each quick-added action item into a real to-do, linked back to the meeting note and the same client/lead it belongs to. */
+type NoteOwner = { clientId?: string | null; leadId?: string | null; partnerId?: string | null };
+
+/**
+ * Turns each quick-added action item into a real to-do, linked back to the
+ * meeting note and the same client/lead/partner it belongs to. A private
+ * note has no client/lead/partner, so its action items become custom-category
+ * to-dos (todoTypeId, picked on the form) and are always the team's own —
+ * there's no "them" on a private note.
+ */
 async function createActionItemTasks(
   businessId: string,
   meetingNoteId: string,
-  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null },
+  owner: NoteOwner,
   items: QueuedActionItem[],
-  createdByTeamMemberId: string | null
+  createdByTeamMemberId: string | null,
+  todoTypeId: string | null = null
 ): Promise<void> {
-  const type = owner.clientId ? "CLIENT" : owner.leadId ? "LEAD" : "PARTNER";
+  if (items.length === 0) return;
+  const isPrivate = !owner.clientId && !owner.leadId && !owner.partnerId;
+  const type = owner.clientId ? "CLIENT" : owner.leadId ? "LEAD" : owner.partnerId ? "PARTNER" : "CUSTOM";
   for (const item of items) {
     await todos.createActionItemTask(
       businessId,
@@ -109,14 +120,62 @@ async function createActionItemTasks(
         title: item.text,
         dueDate: item.dueDate,
         type,
+        todoTypeId: isPrivate ? todoTypeId : null,
         clientId: owner.clientId ?? null,
         leadId: owner.leadId ?? null,
         partnerId: owner.partnerId ?? null,
         meetingNoteId,
-        ownedBy: item.ownedBy,
+        ownedBy: isPrivate ? "TEAM" : item.ownedBy,
       },
       createdByTeamMemberId
     );
+  }
+}
+
+/** Private-note action items need an active to-do category of this workspace — checked before anything is written. */
+async function assertActionItemCategory(businessId: string, todoTypeId: string | null): Promise<void> {
+  const activeTypes = await todoTypes.listTodoTypes(businessId);
+  if (!todoTypeId || !activeTypes.some((t) => t.id === todoTypeId)) {
+    throw new Error("Pick a to-do category for this note's action items.");
+  }
+}
+
+/**
+ * Folder + tags from the form — each only when its field was actually on
+ * the form (undefined otherwise), so forms without them (e.g. the drawer on
+ * a client page) never wipe someone's filing.
+ */
+function extractOrganizing(formData: FormData): { folderId: string | null | undefined; tags: string[] | undefined } {
+  return {
+    folderId: formData.has("folderId") ? (formData.get("folderId") as string) || null : undefined,
+    tags: formData.has("tags")
+      ? String(formData.get("tags") ?? "")
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : undefined,
+  };
+}
+
+type Organizing = ReturnType<typeof extractOrganizing>;
+
+/** Reads folder + tags off the form and checks the folder is one of the signed-in person's own — before anything is written. */
+async function resolveOrganizing(user: CurrentUser, formData: FormData): Promise<Organizing> {
+  const org = extractOrganizing(formData);
+  if (org.folderId && !(await meetingNotes.getNoteFolder(org.folderId, user.businessId, selfId(user)))) {
+    throw new Error("That folder doesn't exist.");
+  }
+  return org;
+}
+
+/** Folders and tags are personal, so this files/tags the note for whoever is signed in only. */
+async function applyOrganizing(user: CurrentUser, noteId: string, org: Organizing): Promise<void> {
+  const me = selfId(user);
+  if (org.folderId !== undefined) {
+    await meetingNotes.setNoteFolder(noteId, user.businessId, me, org.folderId);
+  }
+  if (org.tags !== undefined) {
+    await meetingNotes.setNoteTags(noteId, user.businessId, me, org.tags);
   }
 }
 
@@ -124,17 +183,30 @@ function selfId(user: CurrentUser): string | null {
   return user.role === "TEAM_MEMBER" ? user.teamMember.id : null;
 }
 
+/**
+ * The Notes page's "New note" form. ownerType PRIVATE (the default) makes a
+ * note with no client/lead — visible only to whoever wrote it, and without
+ * an agenda (private notes are about the notes themselves).
+ */
 export async function createMeetingNote(formData: FormData) {
-  const clientId = (formData.get("clientId") as string) || undefined;
-  const leadId = (formData.get("leadId") as string) || undefined;
+  const ownerType = String(formData.get("ownerType") ?? "PRIVATE");
+  const clientId = ownerType === "CLIENT" ? (formData.get("clientId") as string) || undefined : undefined;
+  const leadId = ownerType === "LEAD" ? (formData.get("leadId") as string) || undefined : undefined;
+  const isPrivate = ownerType === "PRIVATE";
   const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
   const fields = extractRichTextFields(formData);
   const actionItems = parseActionItems(formData);
-  if ((!clientId && !leadId) || !meetingDate || (!fields && actionItems.length === 0)) return;
-  const user = await resolveOwnerAccess({ clientId, leadId });
+  if (!isPrivate && !clientId && !leadId) return;
+  if (!meetingDate) return;
+  if (!fields && actionItems.length === 0 && !(isPrivate && title)) return;
+
+  const user = isPrivate ? await requireCurrentUser() : await resolveOwnerAccess({ clientId, leadId });
   const scheduling = extractSchedulingFields(formData);
+  const todoTypeId = (formData.get("actionItemTodoTypeId") as string) || null;
+  if (isPrivate && actionItems.length > 0) await assertActionItemCategory(user.businessId, todoTypeId);
+  const organizing = await resolveOrganizing(user, formData);
 
   const noteId = await meetingNotes.createMeetingNote(user.businessId, {
     title,
@@ -143,12 +215,16 @@ export async function createMeetingNote(formData: FormData) {
     meetingDate,
     ...scheduling,
     attendees,
-    agenda: fields?.agenda ?? null,
+    agenda: isPrivate ? null : (fields?.agenda ?? null),
     notes: fields?.notes ?? null,
+    authorTeamMemberId: isPrivate ? selfId(user) : null,
   });
-  await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user));
+  await createActionItemTasks(user.businessId, noteId, { clientId, leadId }, actionItems, selfId(user), todoTypeId);
+  await applyOrganizing(user, noteId, organizing);
   revalidateOwner(clientId, leadId);
-  redirect(clientId ? `/clients/${clientId}` : `/leads/${leadId}`);
+  if (clientId) redirect(`/clients/${clientId}`);
+  if (leadId) redirect(`/leads/${leadId}`);
+  redirect(organizing.folderId ? `/meeting-notes?folder=${organizing.folderId}` : "/meeting-notes?view=private");
 }
 
 type ScopedOwner = { type: "CLIENT"; clientId: string } | { type: "LEAD"; leadId: string } | { type: "PARTNER"; partnerId: string };
@@ -216,12 +292,20 @@ export async function scheduleMeeting(owner: ScopedOwner, formData: FormData) {
   revalidateOwner(clientId, leadId, partnerId);
 }
 
-export async function updateMeetingNote(
-  id: string,
-  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null },
-  formData: FormData
-) {
-  const user = await resolveOwnerAccess(owner);
+/**
+ * Looks the note up as the signed-in person sees it — the note's real
+ * client/lead/partner (and, for a private note, its author) come from the
+ * database, never from the caller, so nobody can edit a note they can't see.
+ */
+async function requireVisibleNote(id: string): Promise<{ user: CurrentUser; note: MeetingNote }> {
+  const user = await requireCurrentUser();
+  const note = await meetingNotes.getMeetingNoteById(id, user.businessId, await meetingNotes.noteViewerFor(user));
+  if (!note) throw new Error("Note not found.");
+  return { user, note };
+}
+
+export async function updateMeetingNote(id: string, formData: FormData) {
+  const { user, note } = await requireVisibleNote(id);
   const title = (formData.get("title") as string)?.trim() || null;
   const meetingDate = String(formData.get("meetingDate") ?? "");
   const attendees = (formData.get("attendees") as string) || null;
@@ -232,26 +316,62 @@ export async function updateMeetingNote(
   // happened yet (no agenda/notes) is a legitimate state to save.
   if (!meetingDate) return;
   const scheduling = extractSchedulingFields(formData);
+  const todoTypeId = (formData.get("actionItemTodoTypeId") as string) || null;
+  if (note.isPrivate && actionItems.length > 0) await assertActionItemCategory(user.businessId, todoTypeId);
+  const organizing = await resolveOrganizing(user, formData);
 
   await meetingNotes.updateMeetingNote(id, user.businessId, {
     title,
     meetingDate,
     ...scheduling,
     attendees,
-    agenda: fields?.agenda ?? null,
+    // Private notes have no agenda field on the form — keep whatever is stored.
+    agenda: formData.has("agenda") ? (fields?.agenda ?? null) : note.agenda,
     notes: fields?.notes ?? null,
   });
-  await createActionItemTasks(user.businessId, id, owner, actionItems, selfId(user));
-  revalidateOwner(owner.clientId, owner.leadId, owner.partnerId);
+  const owner = { clientId: note.clientId, leadId: note.leadId, partnerId: note.partnerId };
+  await createActionItemTasks(user.businessId, id, owner, actionItems, selfId(user), todoTypeId);
+  await applyOrganizing(user, id, organizing);
+  revalidateOwner(note.clientId, note.leadId, note.partnerId);
 }
 
-export async function deleteMeetingNote(
-  id: string,
-  owner: { clientId?: string | null; leadId?: string | null; partnerId?: string | null }
-) {
-  const user = await resolveOwnerAccess(owner);
+export async function deleteMeetingNote(id: string) {
+  const { user, note } = await requireVisibleNote(id);
   await meetingNotes.deleteMeetingNote(id, user.businessId);
-  revalidateOwner(owner.clientId, owner.leadId, owner.partnerId);
+  revalidateOwner(note.clientId, note.leadId, note.partnerId);
+}
+
+// ---------------------------------------------------------------------------
+// Folders — personal to whoever is signed in. One level of subfolders.
+// ---------------------------------------------------------------------------
+
+export async function createNoteFolder(name: string, parentId: string | null): Promise<string | null> {
+  const user = await requireCurrentUser();
+  const trimmed = name.trim().slice(0, 80);
+  if (!trimmed) return null;
+  const me = selfId(user);
+  if (parentId) {
+    const parent = await meetingNotes.getNoteFolder(parentId, user.businessId, me);
+    if (!parent) throw new Error("That folder doesn't exist.");
+    if (parent.parentId) throw new Error("Folders can only be nested one level deep.");
+  }
+  const id = await meetingNotes.createNoteFolder(user.businessId, me, trimmed, parentId);
+  revalidatePath("/meeting-notes");
+  return id;
+}
+
+export async function renameNoteFolder(id: string, name: string) {
+  const user = await requireCurrentUser();
+  const trimmed = name.trim().slice(0, 80);
+  if (!trimmed) return;
+  await meetingNotes.renameNoteFolder(id, user.businessId, selfId(user), trimmed);
+  revalidatePath("/meeting-notes");
+}
+
+export async function deleteNoteFolder(id: string) {
+  const user = await requireCurrentUser();
+  await meetingNotes.deleteNoteFolder(id, user.businessId, selfId(user));
+  revalidatePath("/meeting-notes");
 }
 
 export interface SendMeetingNoteEmailState {
@@ -272,10 +392,12 @@ export async function sendMeetingNoteEmail(
   }
 
   const user = await requireCurrentUser();
-  const accessibleClientIds = await accessibleClientIdsFor(user);
-  const note = await meetingNotes.getMeetingNoteById(noteId, user.businessId, { accessibleClientIds });
+  const note = await meetingNotes.getMeetingNoteById(noteId, user.businessId, await meetingNotes.noteViewerFor(user));
   if (!note) {
     return { success: false, error: "Meeting note not found." };
+  }
+  if (note.isPrivate) {
+    return { success: false, error: "Private notes can't be emailed out." };
   }
   if (!note.ownerEmail) {
     return { success: false, error: "This client/lead doesn't have an email on file yet." };

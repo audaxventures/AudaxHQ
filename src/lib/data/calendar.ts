@@ -28,6 +28,10 @@ export interface CalendarEventFilters {
   restrictToTeamMemberId?: string | null;
   /** Team-member scoping: client-owned follow-ups/meetings restricted to this list — lead-owned ones are always included, since leads aren't access-scoped. Undefined/null = no restriction (owner). */
   accessibleClientIds?: string[] | null;
+  /** Whose private notes to include (null = the owner's) — private notes only ever show for their author. */
+  noteAuthorTeamMemberId?: string | null;
+  /** Owner, or a team member with Partners access — partner meetings are hidden otherwise. */
+  canSeePartners?: boolean;
 }
 
 export async function listCalendarEvents(
@@ -52,17 +56,23 @@ export async function listCalendarEvents(
         )
     `,
     sql`
-      select m.id, m.meeting_date as date, m.title, m.start_time, m.client_id, m.lead_id,
-        coalesce(c.company_name, l.company_name) as owner_name
+      select m.id, m.meeting_date as date, m.title, m.start_time, m.client_id, m.lead_id, m.partner_id,
+        coalesce(c.company_name, l.company_name, p.company_name) as owner_name
       from meeting_notes m
       left join clients c on c.id = m.client_id
       left join leads l on l.id = m.lead_id
+      left join partners p on p.id = m.partner_id
       where m.business_id = ${businessId}
         and m.meeting_date between ${from} and ${to}
         and (
           ${filters.accessibleClientIds ?? null}::uuid[] is null
           or m.client_id is null
           or m.client_id = any(${filters.accessibleClientIds ?? null}::uuid[])
+        )
+        and (m.partner_id is null or ${filters.canSeePartners ?? false}::boolean)
+        and (
+          m.client_id is not null or m.lead_id is not null or m.partner_id is not null
+          or m.author_team_member_id is not distinct from ${filters.noteAuthorTeamMemberId ?? null}::uuid
         )
     `,
     sql`
@@ -97,7 +107,13 @@ export async function listCalendarEvents(
 
   for (const r of meetingRows) {
     const row = r as Record<string, unknown>;
-    const href = row.client_id ? `/clients/${row.client_id}` : `/leads/${row.lead_id}`;
+    const href = row.client_id
+      ? `/clients/${row.client_id}`
+      : row.lead_id
+        ? `/leads/${row.lead_id}`
+        : row.partner_id
+          ? `/partners/${row.partner_id}`
+          : `/meeting-notes?note=${row.id}`;
     events.push({
       id: row.id as string,
       kind: "MEETING",
