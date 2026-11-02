@@ -20,7 +20,7 @@ const VIEWS: NotesView[] = ["all", "private", "unfiled", "clients", "leads", "pa
 const VIEW_TITLES: Record<NotesView, string> = {
   all: "All notes",
   private: "Private notes",
-  unfiled: "Unfiled notes",
+  unfiled: "Unfiled private notes",
   clients: "Client notes",
   leads: "Lead notes",
   partners: "Partner notes",
@@ -31,7 +31,9 @@ function matchesView(note: MeetingNote, view: NotesView): boolean {
     case "private":
       return note.isPrivate;
     case "unfiled":
-      return !note.folderId;
+      // Private notes still to sort — client/lead/partner notes are already
+      // organized under their own views, so they never count as unfiled.
+      return note.isPrivate && !note.folderId;
     case "clients":
       return !!note.clientId;
     case "leads":
