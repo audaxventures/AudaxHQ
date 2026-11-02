@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Folder, NotebookPen, Plus } from "lucide-react";
+import { AlertCircle, ChevronRight, Folder, NotebookPen, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -197,8 +197,16 @@ export default async function MeetingNotesPage({
 
   const headingHue = folder ? folderHue(folder) : HUES[VIEW_HUES[view]];
   const HeadingIcon = folder ? Folder : VIEW_META[view].icon;
+  // A folder with subfolders is for sorting only. Notes still sitting directly
+  // in it (from before its first subfolder) are listed separately until moved.
+  const isSortingFolder = !!folder && folders.some((f) => f.parentId === folder.id);
+  const needsSubfolder = isSortingFolder ? notes.filter((n) => n.folderId === folder!.id) : [];
+  const sortedNotes = isSortingFolder ? notes.filter((n) => n.folderId !== folder!.id) : notes;
+
   const empty = folder
-    ? { title: "Nothing in this folder yet", description: "File a note here from its edit screen, or start a new one." }
+    ? isSortingFolder
+      ? { title: "Nothing in these subfolders yet", description: "Notes go in a subfolder — start one with New note." }
+      : { title: "Nothing in this folder yet", description: "File a note here from its edit screen, or start a new one." }
     : EMPTY[view];
 
   return (
@@ -268,7 +276,13 @@ export default async function MeetingNotesPage({
                     </span>
                   </h2>
                   <p className="text-sm text-navy-400">
-                    {folder ? (parentFolder ? "Subfolder" : "Includes notes in its subfolders") : VIEW_SUBTITLES[view]}
+                    {folder
+                      ? parentFolder
+                        ? "Subfolder"
+                        : isSortingFolder
+                          ? "Sorting folder — shows the notes in its subfolders"
+                          : "Folder"
+                      : VIEW_SUBTITLES[view]}
                   </p>
                 </div>
               </div>
@@ -282,21 +296,48 @@ export default async function MeetingNotesPage({
               description={empty.description}
               action={
                 view === "unfiled" && !folder ? undefined : (
-                  <LinkButton href={newNoteHref}>{folder ? `New note in ${folder.name}` : "Write a note"}</LinkButton>
+                  <LinkButton href={newNoteHref}>{folder && !isSortingFolder ? `New note in ${folder.name}` : "Write a note"}</LinkButton>
                 )
               }
             />
           ) : notes.length === 0 ? (
             <EmptyState title="No matching notes" description="Try a different search, date range or tag." />
           ) : (
-            <MeetingNotesList
-              notes={notes}
-              senderFirstName={senderFirstName(user)}
-              defaultTimezone={user.business.timezone}
-              organize={{ folders, knownTags }}
-              todoTypes={todoTypes.map((t) => ({ id: t.id, name: t.name }))}
-              initialSelectedId={sp.note ?? null}
-            />
+            <div className="space-y-8">
+              {needsSubfolder.length > 0 && (
+                <section className="rounded-2xl border border-burnt-200 bg-burnt-100/40 p-4 sm:p-5">
+                  <div className="mb-3 flex items-start gap-2.5">
+                    <AlertCircle size={18} className="mt-0.5 shrink-0 text-burnt-600" />
+                    <div>
+                      <p className="font-medium text-navy-900">
+                        {needsSubfolder.length} {needsSubfolder.length === 1 ? "note needs" : "notes need"} a subfolder
+                      </p>
+                      <p className="text-sm text-navy-500">
+                        {folder!.name} now has subfolders, so notes belong in one of them. Open a note and pick a subfolder under
+                        Folder.
+                      </p>
+                    </div>
+                  </div>
+                  <MeetingNotesList
+                    notes={needsSubfolder}
+                    senderFirstName={senderFirstName(user)}
+                    defaultTimezone={user.business.timezone}
+                    organize={{ folders, knownTags }}
+                    todoTypes={todoTypes.map((t) => ({ id: t.id, name: t.name }))}
+                  />
+                </section>
+              )}
+              {sortedNotes.length > 0 && (
+                <MeetingNotesList
+                  notes={sortedNotes}
+                  senderFirstName={senderFirstName(user)}
+                  defaultTimezone={user.business.timezone}
+                  organize={{ folders, knownTags }}
+                  todoTypes={todoTypes.map((t) => ({ id: t.id, name: t.name }))}
+                  initialSelectedId={sp.note ?? null}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

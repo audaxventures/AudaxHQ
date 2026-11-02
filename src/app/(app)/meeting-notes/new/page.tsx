@@ -25,7 +25,9 @@ export default async function NewMeetingNotePage({
     listNoteTagNames(user.businessId, me),
     listTodoTypes(user.businessId),
   ]);
-  const defaultFolderId = folders.some((f) => f.id === sp.folder) ? sp.folder : null;
+  // A folder with subfolders can't hold notes, so don't preselect it — the picker shows its subfolders instead.
+  const defaultFolderId =
+    folders.some((f) => f.id === sp.folder) && !folders.some((f) => f.parentId === sp.folder) ? sp.folder : null;
 
   return (
     <div>

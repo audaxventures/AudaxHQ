@@ -160,11 +160,21 @@ function extractOrganizing(formData: FormData): { folderId: string | null | unde
 
 type Organizing = ReturnType<typeof extractOrganizing>;
 
-/** Reads folder + tags off the form and checks the folder is one of the signed-in person's own — before anything is written. */
-async function resolveOrganizing(user: CurrentUser, formData: FormData): Promise<Organizing> {
+/**
+ * Reads folder + tags off the form and checks the folder before anything
+ * is written: it must be one of the signed-in person's own, and it can't be
+ * a folder that has subfolders (those are for sorting only) — unless the
+ * note is already in it, from before its first subfolder was added.
+ */
+async function resolveOrganizing(user: CurrentUser, formData: FormData, currentFolderId: string | null = null): Promise<Organizing> {
   const org = extractOrganizing(formData);
-  if (org.folderId && !(await meetingNotes.getNoteFolder(org.folderId, user.businessId, selfId(user)))) {
-    throw new Error("That folder doesn't exist.");
+  if (org.folderId) {
+    const folders = await meetingNotes.listNoteFolders(user.businessId, selfId(user));
+    const folder = folders.find((f) => f.id === org.folderId);
+    if (!folder) throw new Error("That folder doesn't exist.");
+    if (org.folderId !== currentFolderId && folders.some((f) => f.parentId === folder.id)) {
+      throw new Error(`"${folder.name}" has subfolders — pick one of them instead.`);
+    }
   }
   return org;
 }
@@ -319,7 +329,7 @@ export async function updateMeetingNote(id: string, formData: FormData) {
   const scheduling = extractSchedulingFields(formData);
   const todoTypeId = (formData.get("actionItemTodoTypeId") as string) || null;
   if (note.isPrivate && actionItems.length > 0) await assertActionItemCategory(user.businessId, todoTypeId);
-  const organizing = await resolveOrganizing(user, formData);
+  const organizing = await resolveOrganizing(user, formData, note.folderId ?? null);
 
   await meetingNotes.updateMeetingNote(id, user.businessId, {
     title,
