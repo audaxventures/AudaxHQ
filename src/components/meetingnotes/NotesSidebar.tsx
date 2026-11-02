@@ -3,34 +3,19 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, Folder, FolderPlus, Handshake, Inbox, Lock, MoreHorizontal, NotebookPen, Tag, Target } from "lucide-react";
+import { ChevronDown, Folder, FolderPlus, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { createNoteFolder, deleteNoteFolder, renameNoteFolder } from "@/lib/actions/meetingnotes";
 import { orderFolders } from "@/components/meetingnotes/NoteFields";
+import { HUES, VIEW_HUES, hueFor, type HueClasses } from "@/components/meetingnotes/noteColors";
+import { VIEW_META, notesHref, type NotesCounts, type NotesView } from "@/components/meetingnotes/notesNav";
 import type { NoteFolder } from "@/lib/types";
-
-export type NotesView = "all" | "private" | "unfiled" | "clients" | "leads" | "partners";
-
-interface Counts {
-  views: Record<NotesView, number>;
-  folders: Record<string, number>;
-  tags: { name: string; count: number }[];
-}
-
-/** Builds a Notes-page URL: view/folder replace each other, tags and the search/owner filters carry over. */
-function buildHref(current: Record<string, string | undefined>, changes: Record<string, string | undefined>): string {
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries({ ...current, ...changes })) {
-    if (v && k !== "note") params.set(k, v);
-  }
-  const qs = params.toString();
-  return qs ? `/meeting-notes?${qs}` : "/meeting-notes";
-}
 
 function NavItem({
   href,
   active,
   icon: Icon,
+  hue,
   label,
   count,
   indent,
@@ -38,19 +23,33 @@ function NavItem({
 }: {
   href: string;
   active: boolean;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
+  hue: HueClasses;
   label: string;
   count?: number;
   indent?: boolean;
   children?: React.ReactNode;
 }) {
   return (
-    <div className={cn("group flex items-center rounded-lg", active ? "bg-navy-900 text-cream-50" : "text-navy-700 hover:bg-navy-100/70")}>
-      <Link href={href} className={cn("flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-sm", indent && "pl-7")}>
-        <Icon size={15} className={cn("shrink-0", active ? "text-cream-50" : "text-navy-400")} />
+    <div
+      className={cn(
+        "group relative flex items-center rounded-lg transition-colors",
+        active ? cn(hue.soft, "font-medium text-navy-900") : "text-navy-600 hover:bg-cream-100"
+      )}
+    >
+      {active && <span className={cn("absolute inset-y-1.5 left-0 w-[3px] rounded-full", hue.solid)} />}
+      <Link href={href} className={cn("flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pl-3 pr-2 text-sm", indent && "pl-8")}>
+        <Icon size={16} className={cn("shrink-0", hue.text)} />
         <span className="truncate">{label}</span>
         {count !== undefined && (
-          <span className={cn("ml-auto pl-2 text-xs tabular-nums", active ? "text-cream-100" : "text-navy-400")}>{count}</span>
+          <span
+            className={cn(
+              "ml-auto rounded-full px-1.5 text-[11px] leading-5 tabular-nums",
+              active ? "bg-white/80 text-navy-700" : "text-navy-400"
+            )}
+          >
+            {count}
+          </span>
         )}
       </Link>
       {children}
@@ -58,25 +57,30 @@ function NavItem({
   );
 }
 
-export function NotesSidebar({
+function SectionLabel({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="mb-1.5 flex items-center justify-between pl-3 pr-1">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-navy-400">{children}</p>
+      {action}
+    </div>
+  );
+}
+
+/** Folder list (with create/rename/delete) and tag chips — shared by the desktop sidebar and the mobile drawer. */
+function NotesLibrary({
   folders,
   counts,
   current,
-  showPartners,
 }: {
   folders: NoteFolder[];
-  counts: Counts;
-  /** The page's current query params. */
+  counts: NotesCounts;
   current: Record<string, string | undefined>;
-  showPartners: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [adding, setAdding] = useState<{ parentId: string | null } | null>(null);
   const [newName, setNewName] = useState("");
   const [menuFor, setMenuFor] = useState<string | null>(null);
-
-  const activeView = (current.folder ? null : (current.view ?? "all")) as NotesView | null;
   const selectedTags = (current.tag ?? "").split(",").filter(Boolean);
 
   function submitNewFolder() {
@@ -87,7 +91,7 @@ export function NotesSidebar({
     if (!name) return;
     startTransition(async () => {
       const id = await createNoteFolder(name, parentId);
-      if (id) router.push(buildHref(current, { folder: id, view: undefined }));
+      if (id) router.push(notesHref(current, { folder: id, view: undefined }));
     });
   }
 
@@ -108,24 +112,15 @@ export function NotesSidebar({
     startTransition(async () => {
       await deleteNoteFolder(folder.id);
       if (current.folder === folder.id || folders.some((f) => f.id === current.folder && f.parentId === folder.id)) {
-        router.push(buildHref(current, { folder: undefined }));
+        router.push(notesHref(current, { folder: undefined }));
       }
     });
   }
 
   function toggleTag(name: string) {
     const next = selectedTags.includes(name) ? selectedTags.filter((t) => t !== name) : [...selectedTags, name];
-    return buildHref(current, { tag: next.join(",") || undefined });
+    return notesHref(current, { tag: next.join(",") || undefined });
   }
-
-  const views: { key: NotesView; label: string; icon: typeof Inbox }[] = [
-    { key: "all", label: "All notes", icon: NotebookPen },
-    { key: "private", label: "Private", icon: Lock },
-    { key: "unfiled", label: "Unfiled", icon: Inbox },
-    { key: "clients", label: "Clients", icon: Building2 },
-    { key: "leads", label: "Leads", icon: Target },
-    ...(showPartners ? [{ key: "partners" as const, label: "Partners", icon: Handshake }] : []),
-  ];
 
   const newFolderInput = (indent: boolean) => (
     <input
@@ -153,40 +148,31 @@ export function NotesSidebar({
   );
 
   return (
-    <nav aria-label="Notes" className={cn("space-y-6", pending && "opacity-70")}>
-      <div className="space-y-0.5">
-        {views.map((v) => (
-          <NavItem
-            key={v.key}
-            href={buildHref(current, { view: v.key === "all" ? undefined : v.key, folder: undefined })}
-            active={activeView === v.key}
-            icon={v.icon}
-            label={v.label}
-            count={counts.views[v.key]}
-          />
-        ))}
-      </div>
-
+    <div className={cn("space-y-6", pending && "opacity-70")}>
       <div>
-        <div className="mb-1.5 flex items-center justify-between px-2.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-navy-400">Folders</p>
-          <button
-            type="button"
-            onClick={() => setAdding({ parentId: null })}
-            className="cursor-pointer rounded p-1 text-navy-400 hover:bg-navy-100 hover:text-navy-700"
-            aria-label="New folder"
-            title="New folder"
-          >
-            <FolderPlus size={15} />
-          </button>
-        </div>
+        <SectionLabel
+          action={
+            <button
+              type="button"
+              onClick={() => setAdding({ parentId: null })}
+              className="cursor-pointer rounded-md p-1 text-navy-400 transition-colors hover:bg-cream-100 hover:text-burnt-600"
+              aria-label="New folder"
+              title="New folder"
+            >
+              <FolderPlus size={15} />
+            </button>
+          }
+        >
+          Folders
+        </SectionLabel>
         <div className="space-y-0.5">
           {orderFolders(folders).map(({ folder, depth }) => (
             <div key={folder.id}>
               <NavItem
-                href={buildHref(current, { folder: folder.id, view: undefined })}
+                href={notesHref(current, { folder: folder.id, view: undefined })}
                 active={current.folder === folder.id}
                 icon={Folder}
+                hue={hueFor(folder.name)}
                 label={folder.name}
                 count={counts.folders[folder.id] ?? 0}
                 indent={depth === 1}
@@ -195,7 +181,7 @@ export function NotesSidebar({
                   <button
                     type="button"
                     onClick={() => setMenuFor(menuFor === folder.id ? null : folder.id)}
-                    className="mr-1 cursor-pointer rounded p-1 opacity-60 hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-60 lg:focus:opacity-100"
+                    className="mr-1 cursor-pointer rounded p-1 text-navy-400 opacity-70 hover:opacity-100 lg:opacity-0 lg:group-hover:opacity-70 lg:focus:opacity-100"
                     aria-label={`Options for ${folder.name}`}
                   >
                     <MoreHorizontal size={14} />
@@ -240,7 +226,7 @@ export function NotesSidebar({
             <button
               type="button"
               onClick={() => setAdding({ parentId: null })}
-              className="w-full cursor-pointer rounded-lg border border-dashed border-navy-200 px-2.5 py-2 text-left text-xs text-navy-400 hover:border-navy-400 hover:text-navy-600"
+              className="w-full cursor-pointer rounded-lg border border-dashed border-burnt-200 bg-burnt-100/30 px-3 py-2.5 text-left text-xs text-burnt-600 transition-colors hover:border-burnt-300 hover:bg-burnt-100/60"
             >
               + Create a folder, e.g. &ldquo;Boards&rdquo;
             </button>
@@ -250,30 +236,132 @@ export function NotesSidebar({
 
       {counts.tags.length > 0 && (
         <div>
-          <p className="mb-2 px-2.5 text-xs font-semibold uppercase tracking-wide text-navy-400">Tags</p>
-          <div className="flex flex-wrap gap-1.5 px-1">
+          <SectionLabel>Tags</SectionLabel>
+          <div className="flex flex-wrap gap-1.5 px-2">
             {counts.tags.map((t) => {
               const active = selectedTags.includes(t.name);
+              const hue = hueFor(t.name);
               return (
                 <Link
                   key={t.name}
                   href={toggleTag(t.name)}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors",
-                    active
-                      ? "border-navy-900 bg-navy-900 text-cream-50"
-                      : "border-navy-200 text-navy-600 hover:border-navy-400"
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-all",
+                    hue.chip,
+                    active ? "ring-2 ring-current ring-offset-1 ring-offset-white font-medium" : "opacity-80 hover:opacity-100"
                   )}
                 >
-                  <Tag size={11} />
-                  {t.name}
-                  <span className={active ? "text-cream-100" : "text-navy-400"}>{t.count}</span>
+                  #{t.name}
+                  <span className="opacity-60">{t.count}</span>
                 </Link>
               );
             })}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function visibleViews(showPartners: boolean): NotesView[] {
+  return ["all", "private", "unfiled", "clients", "leads", ...(showPartners ? (["partners"] as const) : [])];
+}
+
+/** Desktop sidebar: views, folders, tags. */
+export function NotesSidebar({
+  folders,
+  counts,
+  current,
+  activeView,
+  showPartners,
+}: {
+  folders: NoteFolder[];
+  counts: NotesCounts;
+  current: Record<string, string | undefined>;
+  /** Null while a folder is selected. */
+  activeView: NotesView | null;
+  showPartners: boolean;
+}) {
+  return (
+    <nav aria-label="Notes" className="space-y-6">
+      <div>
+        <SectionLabel>Notes</SectionLabel>
+        <div className="space-y-0.5">
+          {visibleViews(showPartners).map((v) => (
+            <NavItem
+              key={v}
+              href={notesHref(current, { view: v === "all" ? undefined : v, folder: undefined })}
+              active={activeView === v}
+              icon={VIEW_META[v].icon}
+              hue={HUES[VIEW_HUES[v]]}
+              label={VIEW_META[v].label}
+              count={counts.views[v]}
+            />
+          ))}
+        </div>
+      </div>
+      <NotesLibrary folders={folders} counts={counts} current={current} />
     </nav>
+  );
+}
+
+/** Mobile: views as a swipeable pill row, folders + tags folded into a panel. */
+export function NotesMobileNav({
+  folders,
+  counts,
+  current,
+  activeView,
+  showPartners,
+  activeFolderName,
+}: {
+  folders: NoteFolder[];
+  counts: NotesCounts;
+  current: Record<string, string | undefined>;
+  activeView: NotesView | null;
+  showPartners: boolean;
+  activeFolderName: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-3">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        {visibleViews(showPartners).map((v) => {
+          const hue = HUES[VIEW_HUES[v]];
+          const Icon = VIEW_META[v].icon;
+          const active = activeView === v;
+          return (
+            <Link
+              key={v}
+              href={notesHref(current, { view: v === "all" ? undefined : v, folder: undefined })}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                active ? cn(hue.chip, "border-transparent font-medium") : "border-navy-200 bg-white text-navy-600"
+              )}
+            >
+              <Icon size={14} className={hue.text} />
+              {VIEW_META[v].label}
+              <span className="text-xs opacity-60">{counts.views[v]}</span>
+            </Link>
+          );
+        })}
+      </div>
+      <div className="rounded-xl border border-navy-100 bg-white">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-sm text-navy-700"
+          aria-expanded={open}
+        >
+          <Folder size={15} className={activeFolderName ? hueFor(activeFolderName).text : "text-navy-400"} />
+          <span className="font-medium">{activeFolderName ?? "Folders & tags"}</span>
+          <ChevronDown size={15} className={cn("ml-auto text-navy-400 transition-transform", open && "rotate-180")} />
+        </button>
+        {open && (
+          <div className="border-t border-navy-100 px-2 py-3">
+            <NotesLibrary folders={folders} counts={counts} current={current} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
