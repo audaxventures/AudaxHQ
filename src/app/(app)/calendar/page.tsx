@@ -38,6 +38,8 @@ export default async function CalendarPage({
   const allEvents = await listCalendarEvents(user.businessId, grid[0].date, grid[grid.length - 1].date, {
     restrictToTeamMemberId: teamMember?.id,
     accessibleClientIds,
+    noteAuthorTeamMemberId: teamMember?.id ?? null,
+    canSeePartners: !teamMember || teamMember.hasPartnersAccess,
   });
   const events = allEvents.filter((e) => activeTypes.has(e.kind));
 

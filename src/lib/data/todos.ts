@@ -307,7 +307,9 @@ export async function setTaskStatus(id: string, businessId: string, status: Task
 export interface ActionItemTaskInput {
   title: string;
   dueDate: string | null;
-  type: "CLIENT" | "LEAD" | "PARTNER";
+  /** CUSTOM for action items on a private note (no client/lead/partner) — todoTypeId is then required. */
+  type: "CLIENT" | "LEAD" | "PARTNER" | "CUSTOM";
+  todoTypeId?: string | null;
   clientId?: string | null;
   leadId?: string | null;
   partnerId?: string | null;
@@ -329,9 +331,9 @@ export async function createActionItemTask(
 ): Promise<string> {
   const assignedTo = input.ownedBy === "EXTERNAL" ? null : createdByTeamMemberId;
   const rows = await sql`
-    insert into todos (business_id, title, due_date, type, client_id, lead_id, partner_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id, owned_by)
+    insert into todos (business_id, title, due_date, type, todo_type_id, client_id, lead_id, partner_id, meeting_note_id, assigned_to_team_member_id, created_by_team_member_id, owned_by)
     values (
-      ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.partnerId ?? null},
+      ${businessId}, ${input.title}, ${input.dueDate}, ${input.type}, ${input.todoTypeId ?? null}, ${input.clientId ?? null}, ${input.leadId ?? null}, ${input.partnerId ?? null},
       ${input.meetingNoteId}, ${assignedTo}, ${createdByTeamMemberId}, ${input.ownedBy}
     )
     returning id

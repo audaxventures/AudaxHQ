@@ -29,6 +29,7 @@ export function ActionItemsQuickAdd({
   theirLabel = "Client",
   existingTasks,
   onToggleExisting,
+  teamOnly = false,
 }: {
   name: string;
   /** What to call the other party in the toggle/badge — "Client" or "Lead". */
@@ -37,6 +38,8 @@ export function ActionItemsQuickAdd({
   existingTasks?: MeetingActionItemTask[];
   /** Called when an existing linked to-do's checkbox is toggled. */
   onToggleExisting?: (taskId: string, completed: boolean) => void;
+  /** Hide the Us/Them toggle — private notes have no "them", every item is your own to-do. */
+  teamOnly?: boolean;
 }) {
   const [items, setItems] = useState<QueuedActionItem[]>([]);
   const [text, setText] = useState("");
@@ -117,32 +120,34 @@ export function ActionItemsQuickAdd({
           placeholder="Add an action item…"
           className="min-w-[10rem] flex-1"
         />
-        <div className="flex shrink-0 rounded-lg border border-navy-200 p-0.5">
-          <button
-            type="button"
-            aria-label="This action item is for our team"
-            aria-pressed={ownedBy === "TEAM"}
-            onClick={() => setOwnedBy("TEAM")}
-            className={cn(
-              "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
-              ownedBy === "TEAM" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
-            )}
-          >
-            Us
-          </button>
-          <button
-            type="button"
-            aria-label={`This action item is for the ${theirLabel.toLowerCase()}`}
-            aria-pressed={ownedBy === "EXTERNAL"}
-            onClick={() => setOwnedBy("EXTERNAL")}
-            className={cn(
-              "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
-              ownedBy === "EXTERNAL" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
-            )}
-          >
-            {theirLabel}
-          </button>
-        </div>
+        {!teamOnly && (
+          <div className="flex shrink-0 rounded-lg border border-navy-200 p-0.5">
+            <button
+              type="button"
+              aria-label="This action item is for our team"
+              aria-pressed={ownedBy === "TEAM"}
+              onClick={() => setOwnedBy("TEAM")}
+              className={cn(
+                "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                ownedBy === "TEAM" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
+              )}
+            >
+              Us
+            </button>
+            <button
+              type="button"
+              aria-label={`This action item is for the ${theirLabel.toLowerCase()}`}
+              aria-pressed={ownedBy === "EXTERNAL"}
+              onClick={() => setOwnedBy("EXTERNAL")}
+              className={cn(
+                "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                ownedBy === "EXTERNAL" ? "bg-navy-900 text-cream-50" : "text-navy-500 hover:bg-navy-100"
+              )}
+            >
+              {theirLabel}
+            </button>
+          </div>
+        )}
         <Input
           type="date"
           value={dueDate}

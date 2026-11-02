@@ -72,7 +72,7 @@ function MeetingNotePdfDocument({
         </View>
         <View style={styles.divider} />
 
-        <Text style={styles.title}>{note.title || "Meeting Notes"}</Text>
+        <Text style={styles.title}>{note.title || (note.isPrivate ? "Note" : "Meeting Notes")}</Text>
 
         <View style={styles.metaRow}>
           <MetaItem label="Date" value={formatDate(note.meetingDate)} />

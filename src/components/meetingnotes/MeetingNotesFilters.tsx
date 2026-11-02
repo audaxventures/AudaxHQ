@@ -73,7 +73,7 @@ export function MeetingNotesFilters({
           <Label htmlFor="filter-search">Search</Label>
           <Input
             id="filter-search"
-            placeholder="Search title, attendees, notes…"
+            placeholder="Search title, attendees, notes, tags…"
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
             icon={Search}
