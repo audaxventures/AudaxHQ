@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Folder, Lock, Users } from "lucide-react";
+import { ChevronRight, Folder, Lock, Users } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AvatarChip } from "@/components/ui/AvatarChip";
-import { Badge } from "@/components/ui/Badge";
 import { RichTextView } from "@/components/ui/RichTextEditor";
 import { formatDate, formatDateInput, formatMonthYear } from "@/lib/format";
-import { entityColorClass } from "@/lib/avatar";
+import { entityColorChipClass } from "@/lib/avatar";
 import { cn } from "@/lib/cn";
 import type { MeetingNote, NoteFolder } from "@/lib/types";
 import { MeetingNoteDetailModal } from "@/components/meetingnotes/MeetingNoteDetailModal";
+import { hueFor } from "@/components/meetingnotes/noteColors";
 
-/** Notes arrive sorted by meeting_date desc, so consecutive same-month runs group cleanly without re-sorting. */
+/** Notes arrive already sorted by date (either direction), so consecutive same-month runs group cleanly without re-sorting. */
 function groupByMonth(notes: MeetingNote[]): { month: string; notes: MeetingNote[] }[] {
   const groups: { month: string; notes: MeetingNote[] }[] = [];
   for (const note of notes) {
@@ -26,6 +26,8 @@ function groupByMonth(notes: MeetingNote[]): { month: string; notes: MeetingNote
   }
   return groups;
 }
+
+const OWNER_KIND = (note: MeetingNote) => (note.clientId ? "Client" : note.leadId ? "Lead" : "Partner");
 
 export function MeetingNotesList({
   notes,
@@ -45,79 +47,100 @@ export function MeetingNotesList({
   initialSelectedId?: string | null;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
-  const folderNames = new Map((organize?.folders ?? []).map((f) => [f.id, f.name]));
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null;
   const groups = groupByMonth(notes);
+  const folderNames = new Map((organize?.folders ?? []).map((f) => [f.id, f.name]));
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-7">
         {groups.map((group) => (
-          <div key={group.month}>
-            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-navy-400">
-              {formatMonthYear(group.notes[0].meetingDate)}
-            </p>
-            <Card tone="slate" className="divide-y divide-navy-100 overflow-hidden">
-              {group.notes.map((note) => (
-                <button
-                  key={note.id}
-                  type="button"
-                  onClick={() => setSelectedId(note.id)}
-                  className="relative flex w-full items-start gap-4 py-4 pl-6 pr-5 text-left hover:bg-cream-100/60 transition-colors cursor-pointer"
-                >
-                  {note.isPrivate ? (
-                    <>
-                      <span className="absolute inset-y-0 left-0 w-1.5 bg-navy-300" />
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-100 text-navy-500">
-                        <Lock size={14} />
+          <section key={group.month}>
+            <div className="mb-2 flex items-baseline gap-2 px-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-navy-500">
+                {formatMonthYear(group.notes[0].meetingDate)}
+              </p>
+              <span className="text-xs text-navy-300">{group.notes.length}</span>
+            </div>
+            <Card className="divide-y divide-navy-100/80 overflow-hidden bg-white">
+              {group.notes.map((note) => {
+                const folderName = note.folderId ? folderNames.get(note.folderId) : undefined;
+                const preview = note.notes ?? note.agenda ?? "";
+                return (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => setSelectedId(note.id)}
+                    className="group flex w-full cursor-pointer items-start gap-4 px-4 py-4 text-left transition-colors hover:bg-cream-50 sm:px-5"
+                  >
+                    {note.isPrivate ? (
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-teal-100 text-teal-600">
+                        <Lock size={15} />
                       </span>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        className={cn(
-                          "absolute inset-y-0 left-0 w-1.5",
-                          entityColorClass(note.ownerColor, note.ownerName ?? "?")
-                        )}
-                      />
-                      <AvatarChip name={note.ownerName ?? "?"} color={note.ownerColor} className="mt-0.5" />
-                    </>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                      <p className="font-heading text-base font-medium text-navy-900">
-                        {note.title ?? note.ownerName ?? "Untitled note"}
-                      </p>
-                      {note.title && !note.isPrivate && (
-                        <Badge tone={note.clientId ? "sage" : note.leadId ? "violet" : "gold"}>{note.ownerName}</Badge>
-                      )}
-                      {note.folderId && folderNames.has(note.folderId) && (
-                        <span className="inline-flex items-center gap-1 text-xs text-navy-500">
-                          <Folder size={12} /> {folderNames.get(note.folderId)}
-                        </span>
-                      )}
-                      <span className="text-xs text-navy-400">{formatDate(note.meetingDate)}</span>
-                    </div>
-                    {note.attendees && (
-                      <p className="flex items-center gap-1 text-xs text-navy-400 mb-1.5">
-                        <Users size={12} /> {note.attendees}
-                      </p>
+                    ) : (
+                      <AvatarChip name={note.ownerName ?? "?"} color={note.ownerColor} className="h-9 w-9" />
                     )}
-                    <RichTextView html={note.notes ?? note.agenda ?? ""} className="text-sm text-navy-700 line-clamp-2" />
-                    {!!note.tags?.length && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {note.tags.map((t) => (
-                          <span key={t} className="rounded-full bg-navy-100 px-2 py-0.5 text-[11px] text-navy-600">
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="line-clamp-2 font-heading text-[15px] font-medium text-navy-900 group-hover:text-burnt-700 sm:line-clamp-1">
+                          {note.title ?? note.ownerName ?? "Untitled note"}
+                        </p>
+                        <span className="shrink-0 text-xs tabular-nums text-navy-400">{formatDate(note.meetingDate)}</span>
+                      </div>
+
+                      {preview && (
+                        <RichTextView html={preview} className="mt-1 text-sm leading-relaxed text-navy-500 line-clamp-2" />
+                      )}
+
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                        {note.isPrivate ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-medium text-teal-600">
+                            <Lock size={10} /> Private
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              entityColorChipClass(note.ownerColor, note.ownerName ?? "?")
+                            )}
+                            title={OWNER_KIND(note)}
+                          >
+                            {note.ownerName}
+                          </span>
+                        )}
+                        {folderName && (
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              hueFor(folderName).chip
+                            )}
+                          >
+                            <Folder size={10} /> {folderName}
+                          </span>
+                        )}
+                        {note.tags?.map((t) => (
+                          <span key={t} className={cn("rounded-full px-2 py-0.5 text-[11px]", hueFor(t).chip)}>
                             #{t}
                           </span>
                         ))}
+                        {note.attendees && (
+                          <span className="inline-flex min-w-0 max-w-[16rem] items-center gap-1 truncate text-[11px] text-navy-400">
+                            <Users size={11} className="shrink-0" /> <span className="truncate">{note.attendees}</span>
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </button>
-              ))}
+                    </div>
+
+                    <ChevronRight
+                      size={16}
+                      className="mt-2.5 hidden shrink-0 text-navy-300 transition-transform group-hover:translate-x-0.5 group-hover:text-burnt-500 sm:block"
+                    />
+                  </button>
+                );
+              })}
             </Card>
-          </div>
+          </section>
         ))}
       </div>
 
