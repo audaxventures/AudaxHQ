@@ -87,7 +87,7 @@ export const config = {
   // has bitten us before (sidebar.png/login.png 404ing on marketing hosts
   // because they weren't on the old list) — exclude the whole class instead.
   // api/webhooks and api/cron are excluded too — Stripe's webhook requests
-  // and the hourly Daily Brief trigger (see api/cron/daily-brief/route.ts)
+  // and the cron triggers (api/cron/daily-brief, api/cron/supabase-keepalive)
   // both carry no session cookie (they're server-to-server), so gating them
   // here would bounce every delivery to /login instead of reaching the
   // route handler. Both routes do their own auth (webhook signature / cron

@@ -1,0 +1,26 @@
+name: Supabase Keep-Alive
+
+# Free-tier Supabase projects get paused after ~7 days of inactivity. This
+# pings the app once a day, and the route makes a real Supabase Storage
+# request (see src/app/api/cron/supabase-keepalive/route.ts), so the
+# project always shows recent activity. Twice a day gives slack in case
+# GitHub skips a scheduled run (it sometimes does under load).
+#
+# Uses the same two repo secrets as daily-brief.yml:
+#   APP_BASE_URL, DAILY_BRIEF_CRON_SECRET
+
+on:
+  schedule:
+    - cron: "17 3,15 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the Supabase keep-alive route
+        run: |
+          curl --fail --show-error --silent \
+            --retry 3 --retry-delay 10 \
+            -H "Authorization: Bearer ${{ secrets.DAILY_BRIEF_CRON_SECRET }}" \
+            "${{ secrets.APP_BASE_URL }}/api/cron/supabase-keepalive"
