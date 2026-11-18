@@ -7,7 +7,8 @@ import { LeadListRow } from "@/components/leads/LeadListRow";
 import { LeadGridCard } from "@/components/leads/LeadGridCard";
 import { ConvertedLeadsDrawer } from "@/components/leads/ConvertedLeadsDrawer";
 import { LostLeadsDrawer } from "@/components/leads/LostLeadsDrawer";
-import { listConvertedLeads, listLeads, listLostLeads } from "@/lib/data/leads";
+import { ArchivedLeadsDrawer } from "@/components/leads/ArchivedLeadsDrawer";
+import { listArchivedLeads, listConvertedLeads, listLeads, listLostLeads } from "@/lib/data/leads";
 import { listLeadSources } from "@/lib/data/leadSources";
 import { listTeamMembers } from "@/lib/data/teamMembers";
 import { getBusinessToday } from "@/lib/data/businesses";
@@ -29,7 +30,7 @@ export default async function LeadsPage({
   const includeUnassignedOwner = ownerValues.includes(UNASSIGNED_OWNER_TOKEN);
   const leadOwnerIds = ownerValues.filter((v) => v !== UNASSIGNED_OWNER_TOKEN);
 
-  const [leads, convertedLeads, lostLeads, today, leadSources, teamMembers] = await Promise.all([
+  const [leads, convertedLeads, lostLeads, archivedLeads, today, leadSources, teamMembers] = await Promise.all([
     listLeads(user.businessId, {
       status: status as LeadStatus | undefined,
       sourceIds,
@@ -39,6 +40,7 @@ export default async function LeadsPage({
     }),
     listConvertedLeads(user.businessId),
     listLostLeads(user.businessId),
+    listArchivedLeads(user.businessId),
     getBusinessToday(user.businessId),
     listLeadSources(user.businessId, { includeInactive: true }),
     listTeamMembers(user.businessId),
@@ -71,6 +73,7 @@ export default async function LeadsPage({
           />
         </div>
         <div className="flex shrink-0 items-center gap-3">
+          <ArchivedLeadsDrawer leads={archivedLeads} />
           <LostLeadsDrawer leads={lostLeads} />
           <ConvertedLeadsDrawer leads={convertedLeads} />
         </div>

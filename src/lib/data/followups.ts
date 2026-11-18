@@ -90,6 +90,7 @@ export async function listHotFollowUps(
     where f.business_id = ${businessId}
       and f.partner_id is null
       and f.status = 'UPCOMING' and f.date <= ${today}::date
+      and (l.id is null or l.archived_at is null)
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
         or f.client_id is null
@@ -139,6 +140,8 @@ export async function listAllFollowUps(
     left join partners p on p.id = f.partner_id
     left join prospects pr on pr.id = f.prospect_id
     where f.business_id = ${businessId}
+      -- Archived leads' follow-ups stay on the lead's own page only.
+      and (l.id is null or l.archived_at is null)
       and (
         ${accessibleClientIds ?? null}::uuid[] is null
         or f.client_id is null

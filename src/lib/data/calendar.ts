@@ -49,6 +49,7 @@ export async function listCalendarEvents(
       left join leads l on l.id = f.lead_id
       where f.business_id = ${businessId}
         and f.status = 'UPCOMING' and f.date between ${from} and ${to}
+        and (l.id is null or l.archived_at is null)
         and (
           ${filters.accessibleClientIds ?? null}::uuid[] is null
           or f.client_id is null
@@ -84,6 +85,7 @@ export async function listCalendarEvents(
       where t.business_id = ${businessId}
         and t.owned_by = 'TEAM'
         and t.due_date is not null and t.due_date between ${from} and ${to}
+        and (l.id is null or l.archived_at is null)
         and (${filters.restrictToTeamMemberId ?? null}::uuid is null or t.assigned_to_team_member_id = ${filters.restrictToTeamMemberId ?? null})
     `,
   ]);

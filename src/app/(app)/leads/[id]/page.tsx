@@ -18,6 +18,7 @@ import { requireCurrentUser, senderFirstName } from "@/lib/currentUser";
 import { mentionOptions } from "@/lib/mentions";
 import { convertLeadToClient, setLeadColor } from "@/app/(app)/leads/actions";
 import { DeleteLeadButton } from "@/components/leads/DeleteLeadButton";
+import { ArchiveLeadButton } from "@/components/leads/ArchiveLeadButton";
 import { Card } from "@/components/ui/Card";
 import { PanelHeading } from "@/components/ui/PanelHeading";
 import { RecordSectionTabs, type SectionTab } from "@/components/ui/RecordSectionTabs";
@@ -201,6 +202,7 @@ export default async function LeadDetailPage({
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             <EntityColorPicker color={lead.color} onSelect={setLeadColor.bind(null, id)} />
             <LeadStatusBadge status={lead.status} />
+            {lead.archivedAt && <Badge tone="slate">Archived {formatDate(lead.archivedAt)}</Badge>}
             {(lead.workTypeName || lead.workTypeOther) && (
               <Badge tone="burnt">{lead.workTypeOther || lead.workTypeName}</Badge>
             )}
@@ -224,6 +226,7 @@ export default async function LeadDetailPage({
               View client <ArrowRight size={15} />
             </LinkButton>
           )}
+          {!lead.convertedClientId && <ArchiveLeadButton leadId={id} archived={Boolean(lead.archivedAt)} />}
           <DeleteLeadButton leadId={id} companyName={lead.companyName} />
         </div>
       </div>

@@ -67,6 +67,7 @@ export async function getDailyBriefItems(
       where business_id = ${businessId} and owned_by = 'TEAM' and status <> 'COMPLETED'
         and assigned_to_team_member_id is not distinct from ${recipientTeamMemberId}::uuid
         and due_date is not null
+        and (lead_id is null or not exists (select 1 from leads l where l.id = todos.lead_id and l.archived_at is not null))
       order by due_date asc
       limit 100
     `,
@@ -74,6 +75,7 @@ export async function getDailyBriefItems(
       select id, label, date, client_id, lead_id, partner_id, prospect_id from follow_ups
       where business_id = ${businessId} and status = 'UPCOMING'
         and assigned_to_team_member_id is not distinct from ${recipientTeamMemberId}::uuid
+        and (lead_id is null or not exists (select 1 from leads l where l.id = follow_ups.lead_id and l.archived_at is not null))
       order by date asc
       limit 100
     `,

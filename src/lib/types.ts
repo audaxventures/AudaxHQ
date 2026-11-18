@@ -296,6 +296,8 @@ export interface Lead {
   referredByPartnerColor: EntityColor | null;
   /** Flagged as needing extra focus — sorts to the top of the Leads list ahead of the normal sort order. */
   hot: boolean;
+  /** When the lead was archived — null means active. Archived leads are hidden from the main Leads list (see migration 054) but keep their pipeline status. */
+  archivedAt: string | null;
 }
 
 export interface LeadWithRelations extends Lead {

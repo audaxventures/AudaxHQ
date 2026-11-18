@@ -40,7 +40,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       break;
     }
     case "leads": {
-      const leads = await listLeads(businessId, { converted: "include" });
+      const leads = await listLeads(businessId, { converted: "include", includeArchived: true });
       lines.push(
         csvRow(["Company Name", "Contact Name", "Email", "Phone", "Status", "Estimated Value", "Work Type", "Source", "Created At"])
       );
@@ -80,7 +80,7 @@ async function buildCsv(entity: Entity, businessId: string): Promise<string> {
       break;
     }
     case "tasks": {
-      const tasks = await listTasks(businessId, { includePartnerOwned: true, includeExternal: true });
+      const tasks = await listTasks(businessId, { includePartnerOwned: true, includeExternal: true, includeArchivedLeads: true });
       lines.push(csvRow(["Title", "Description", "Due Date", "Status", "Type", "Client", "Lead", "Partner", "Tags", "Created At"]));
       for (const t of tasks) {
         lines.push(
