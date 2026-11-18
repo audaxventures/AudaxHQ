@@ -135,8 +135,11 @@ export async function deleteClientPermanently(id: string) {
     console.error(`Failed to clean up storage for deleted client ${id}`, err);
   }
   await clients.deleteClient(id, user.businessId);
-  revalidatePath("/clients");
-  revalidatePath("/");
+  // No revalidatePath here: in a Server Action it re-renders the *current*
+  // route in the same response, which is the record just deleted — its page
+  // calls notFound() and the action rejects with a generic Server Components
+  // error. The delete button navigates away with router.push instead, and
+  // the destination list is dynamic (client stale time 0), so it loads fresh.
 }
 
 export async function setClientColor(id: string, color: EntityColor | null) {

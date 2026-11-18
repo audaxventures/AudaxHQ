@@ -119,8 +119,11 @@ export async function setLeadArchived(id: string, archived: boolean) {
 export async function deleteLead(id: string) {
   const user = await requireLeadAccess(id);
   await leads.deleteLead(id, user.businessId);
-  revalidatePath("/leads");
-  revalidatePath("/");
+  // No revalidatePath here: in a Server Action it re-renders the *current*
+  // route in the same response, which is the record just deleted — its page
+  // calls notFound() and the action rejects with a generic Server Components
+  // error. The delete button navigates away with router.push instead, and
+  // the destination list is dynamic (client stale time 0), so it loads fresh.
 }
 
 /** Fires a "mentioned you" notification for each valid @mention in a note body — never for a self-mention, and only for team members who actually exist in this business (a raw @[Name](id) token in a direct POST could otherwise be forged). Mirrors notifyTaskAssignee in actions/tasks.ts. */
