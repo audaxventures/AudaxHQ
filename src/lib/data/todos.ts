@@ -84,6 +84,8 @@ export interface TaskFilters {
    * the normal 'TEAM' rows, e.g. for the owner-scoped views that show
    * what's still outstanding from the other side.
    */
+  /** Include to-dos tied to an archived lead. Off by default so shelved leads stay off the board; implied when filtering by leadId (the lead's own page). */
+  includeArchivedLeads?: boolean;
   includeExternal?: boolean;
   /** Case-insensitive substring match against title or description. */
   search?: string;
@@ -144,6 +146,12 @@ export async function listTasks(businessId: string, filters: TaskFilters = {}): 
       and (${filters.todoTypeId ?? null}::uuid is null or t.todo_type_id = ${filters.todoTypeId ?? null})
       and (${filters.clientId ?? null}::uuid is null or t.client_id = ${filters.clientId ?? null})
       and (${filters.leadId ?? null}::uuid is null or t.lead_id = ${filters.leadId ?? null})
+      and (
+        ${filters.includeArchivedLeads ?? false}
+        or ${filters.leadId ?? null}::uuid is not null
+        or l.id is null
+        or l.archived_at is null
+      )
       and (
         ${filters.includePartnerOwned ?? false}
         or (${filters.partnerId ?? null}::uuid is not null and t.partner_id = ${filters.partnerId ?? null})

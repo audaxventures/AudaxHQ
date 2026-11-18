@@ -106,6 +106,16 @@ export async function setLeadHot(id: string, hot: boolean) {
   revalidatePath("/");
 }
 
+export async function setLeadArchived(id: string, archived: boolean) {
+  const user = await requireLeadAccess(id);
+  await leads.setLeadArchived(id, user.businessId, archived);
+  revalidatePath(`/leads/${id}`);
+  revalidatePath("/leads");
+  revalidatePath("/todos");
+  revalidatePath("/follow-ups");
+  revalidatePath("/");
+}
+
 export async function deleteLead(id: string) {
   const user = await requireLeadAccess(id);
   await leads.deleteLead(id, user.businessId);

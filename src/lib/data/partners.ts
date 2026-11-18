@@ -160,6 +160,7 @@ export async function listReferredLeads(partnerId: string, businessId: string): 
       referredByPartnerName: null,
       referredByPartnerColor: null,
       hot: row.hot as boolean,
+      archivedAt: (row.archived_at as string | null) ?? null,
     };
   });
 }

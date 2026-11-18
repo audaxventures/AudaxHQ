@@ -32,6 +32,7 @@ function mapLead(row: Record<string, unknown>): Lead {
     referredByPartnerName: (row.referred_by_partner_name as string | null) ?? null,
     referredByPartnerColor: (row.referred_by_partner_color as EntityColor | null) ?? null,
     hot: row.hot as boolean,
+    archivedAt: (row.archived_at as string | null) ?? null,
   };
 }
 
@@ -69,6 +70,12 @@ export interface LeadFilters {
    * history, like the data export.
    */
   includeLost?: boolean;
+  /**
+   * Archived leads (archived_at set) default to hidden the same way — shelved
+   * for later, surfaced via the Archived leads drawer. Pass true for views
+   * that need full history, like the data export.
+   */
+  includeArchived?: boolean;
   /** Matches against company name or contact name (case-insensitive, substring). */
   search?: string;
   limit?: number;
@@ -107,6 +114,7 @@ export async function listLeads(
       )
       and (${filters.converted === "include"} or l.converted_client_id is null)
       and (${filters.includeLost === true} or l.status <> 'LOST')
+      and (${filters.includeArchived === true} or l.archived_at is null)
       and (
         ${searchPattern}::text is null
         or l.company_name ilike ${searchPattern}
@@ -150,8 +158,24 @@ export async function listLostLeads(businessId: string): Promise<Lead[]> {
     left join lead_sources ls on ls.id = l.source_id
     left join team_members lo on lo.id = l.lead_owner_team_member_id
     left join partners rp on rp.id = l.referred_by_partner_id
-    where l.business_id = ${businessId} and l.status = 'LOST'
+    where l.business_id = ${businessId} and l.status = 'LOST' and l.archived_at is null
     order by l.updated_at desc
+  `;
+  return rows.map((row) => mapLead(row as Record<string, unknown>));
+}
+
+/** Archived leads (not converted) — hidden from the main leads list, surfaced only via the Archived leads drawer. Most recently archived first. */
+export async function listArchivedLeads(businessId: string): Promise<Lead[]> {
+  const rows = await sql`
+    select l.*, wt.name as work_type_name, ls.name as source_name, lo.name as lead_owner_name, lo.color as lead_owner_color,
+      rp.company_name as referred_by_partner_name, rp.color as referred_by_partner_color
+    from leads l
+    left join work_types wt on wt.id = l.work_type_id
+    left join lead_sources ls on ls.id = l.source_id
+    left join team_members lo on lo.id = l.lead_owner_team_member_id
+    left join partners rp on rp.id = l.referred_by_partner_id
+    where l.business_id = ${businessId} and l.archived_at is not null and l.converted_client_id is null
+    order by l.archived_at desc
   `;
   return rows.map((row) => mapLead(row as Record<string, unknown>));
 }
@@ -179,6 +203,8 @@ export async function getLeadPipelineSummary(businessId: string, today: string):
       coalesce(sum(estimated_value) filter (where status in ('NEW', 'CONTACTED', 'PROPOSAL_SENT', 'NEGOTIATING')), 0) as pipeline_value
     from leads
     where business_id = ${businessId}
+      -- Archived leads are shelved, not in the active pipeline; WON leads stay counted regardless.
+      and (archived_at is null or status = 'WON')
   `;
   const row = rows[0] as Record<string, unknown>;
   return {
@@ -307,6 +333,16 @@ export async function updateLead(
 
 export async function setLeadColor(id: string, businessId: string, color: EntityColor | null): Promise<void> {
   await sql`update leads set color = ${color}, updated_at = now() where id = ${id} and business_id = ${businessId}`;
+}
+
+/** Archives (archived=true) or unarchives a lead. Leaves status untouched, so an unarchived lead returns at the stage it was shelved at. */
+export async function setLeadArchived(id: string, businessId: string, archived: boolean): Promise<void> {
+  await sql`
+    update leads set
+      archived_at = case when ${archived} then coalesce(archived_at, now()) else null end,
+      updated_at = now()
+    where id = ${id} and business_id = ${businessId}
+  `;
 }
 
 export async function setLeadHot(id: string, businessId: string, hot: boolean): Promise<void> {

@@ -67,7 +67,7 @@ export async function getConversionBySource(businessId: string): Promise<Convers
       count(*) as total,
       count(*) filter (where l.status = 'WON') as won,
       count(*) filter (where l.status = 'LOST') as lost,
-      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      count(*) filter (where l.status not in ('WON', 'LOST') and l.archived_at is null) as in_progress,
       coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join lead_sources ls on ls.id = l.source_id
@@ -98,7 +98,7 @@ export async function getConversionByPartner(businessId: string): Promise<Conver
       count(*) as total,
       count(*) filter (where l.status = 'WON') as won,
       count(*) filter (where l.status = 'LOST') as lost,
-      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      count(*) filter (where l.status not in ('WON', 'LOST') and l.archived_at is null) as in_progress,
       coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     join partners p on p.id = l.referred_by_partner_id
@@ -233,7 +233,7 @@ export async function getConversionByWorkType(businessId: string): Promise<Conve
       count(*) as total,
       count(*) filter (where l.status = 'WON') as won,
       count(*) filter (where l.status = 'LOST') as lost,
-      count(*) filter (where l.status not in ('WON', 'LOST')) as in_progress,
+      count(*) filter (where l.status not in ('WON', 'LOST') and l.archived_at is null) as in_progress,
       coalesce(sum(cr.revenue) filter (where l.status = 'WON'), 0) as won_value
     from leads l
     left join work_types wt on wt.id = l.work_type_id
